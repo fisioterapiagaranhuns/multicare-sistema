@@ -584,7 +584,7 @@ textarea.form-control{resize:vertical;min-height:80px}
           <div class="card">
             <div class="sec-title" style="margin-bottom:8px">Link de Agendamento + Anamnese</div>
             <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:20px">Envie ao paciente no primeiro contato para ele escolher o horário e preencher a ficha de anamnese.</p>
-            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-sistema</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
+            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-sistema#agendar</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
             <button class="btn btn-wa" onclick="enviarLink()">Enviar via WhatsApp</button>
           </div>
           <div class="card"><div class="sec-title" style="margin-bottom:16px">Fichas Recebidas</div><div id="listaAnamnese"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma ficha recebida ainda</p></div></div>
@@ -1620,7 +1620,11 @@ function renderAniversariantes(){
 // ── MSG ──
 function enviarParaTodos(tipo){if(!state.pacientes.length){toast('Nenhum paciente','error');return;}var msg=tipo==='natal'?document.getElementById('msgNatal').value:document.getElementById('msgAnoNovo').value;state.pacientes.forEach((p,i)=>setTimeout(()=>waMsg(p.tel,msg),i*1000));toast('Abrindo WhatsApp...','success');}
 function enviarFalta(){var pid=document.getElementById('selFalta').value;if(!pid){toast('Selecione um paciente','error');return;}var p=state.pacientes.find(x=>x.id==pid);if(p)waMsg(p.tel,document.getElementById('msgFalta').value);}
-function enviarLink(){waMsg('5587999221295',`Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia. Acesse o link para agendar sua consulta: ${document.getElementById('linkAgenda').textContent}`);}
+function enviarLink(){
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema#agendar\n\nQualquer dúvida estou à disposição!';
+  document.getElementById('msgLinkPreview').value = msg;
+  openModal('modalMsgLink');
+}
 
 // ── UTILS ──
 function waMsg(tel,msg){var num=tel.replace(/\D/g,'');if(num.length<=11)num='55'+num;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');}
@@ -2769,15 +2773,14 @@ async function confirmarFicha(agId){
 }
 
 function copiarLinkAgendar(){
-  var link = 'fisioterapiagaranhuns.github.io/multicare-sistema';
+  var link = 'https://fisioterapiagaranhuns.github.io/multicare-sistema#agendar';
   navigator.clipboard.writeText(link).then(function(){toast('Link copiado!','success');});
 }
 
 function enviarLinkAgendar(){
-  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema#agendar\n\nEm caso de dúvidas, estou à disposição!';
-  // Show message in a modal for Dr. Igor to copy and send manually
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema#agendar\n\nQualquer dúvida estou à disposição!';
   document.getElementById('msgLinkPreview').value = msg;
-  document.getElementById('modalMsgLink').classList.add('open');
+  openModal('modalMsgLink');
 }
 
 // Override renderLinkPaciente
