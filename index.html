@@ -221,6 +221,27 @@ textarea.form-control{resize:vertical;min-height:80px}
 .forgot-panel.show{display:block}
 .login-main-panel.hide{display:none}
 @keyframes shake{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+
+/* PRINT */
+@media print {
+  .sidebar,.topbar,.btn-menu,.logout-btn,.modal-overlay{display:none!important}
+  .main{margin-left:0!important}
+  .page{display:block!important}
+  .card{box-shadow:none!important;border:1px solid #ddd!important}
+  body{background:white!important}
+}
+/* EVA COLORS */
+.eva-0,.eva-1,.eva-2{color:#2a7d48}
+.eva-3,.eva-4{color:#b8965a}
+.eva-5,.eva-6{color:#f77f00}
+.eva-7,.eva-8,.eva-9,.eva-10{color:#e63946}
+/* PROTOCOL PHASE */
+.fase-bar-item{flex:1;height:8px;border-radius:100px;margin:0 2px;transition:all 0.3s}
+.fase-label{font-size:10px;color:var(--ink3);text-align:center;flex:1;letter-spacing:0.03em}
+.fase-label.active{color:var(--forest-mid);font-weight:600}
+/* BODY MAP */
+.body-dot{position:absolute;border-radius:50%;cursor:pointer;transform:translate(-50%,-50%);transition:transform 0.15s;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)}
+.body-dot:hover{transform:translate(-50%,-50%) scale(1.3)}
 </style>
 </head>
 <body>
@@ -271,6 +292,7 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div class="sb-section">Principal</div>
       <div class="nav-item active" onclick="goTo('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
       <div class="nav-item" onclick="goTo('agenda')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</div>
+      <div class="nav-item" onclick="goTo('protocolo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Protocolos Clínicos</div>
       <div class="nav-item" onclick="goTo('pacientes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes</div>
       <div class="sb-section">Financeiro</div>
       <div class="nav-item" onclick="goTo('financeiro')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Financeiro</div>
@@ -554,6 +576,162 @@ textarea.form-control{resize:vertical;min-height:80px}
         </div>
       </div>
 
+
+    <!-- PROTOCOLO CLÍNICO -->
+    <div class="page" id="page-protocolo">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <select class="form-control" style="max-width:300px" id="protPacienteSelect" onchange="carregarProtocolo(this.value)">
+          <option value="">— Selecione um paciente —</option>
+        </select>
+        <button class="btn btn-green" onclick="novoProtocolo()">+ Novo Protocolo</button>
+      </div>
+      <div id="protVazio" style="text-align:center;padding:60px 20px;color:var(--ink3)">
+        <div style="font-size:48px;margin-bottom:16px">🩺</div>
+        <div style="font-size:15px;font-weight:500;color:var(--ink2);margin-bottom:8px">Selecione um paciente para acessar o protocolo clínico</div>
+        <div style="font-size:13px">Cada paciente possui um protocolo único e exclusivo</div>
+      </div>
+      <div id="protConteudo" style="display:none">
+        <!-- HEADER + PROGRESSÃO -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--ink)" id="protNomePac">—</div>
+              <div style="font-size:12px;color:var(--ink3);margin-top:2px" id="protSubtituloPac">Protocolo personalizado</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="imprimirProtocolo()">🖨 Imprimir</button>
+              <button class="btn btn-wa btn-sm" onclick="enviarProtocoloWa()">Enviar WA</button>
+            </div>
+          </div>
+          <!-- BARRA FASES -->
+          <div style="background:var(--paper);border-radius:10px;padding:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span style="font-size:12px;font-weight:600;color:var(--ink2)">Jornada de Recuperação</span>
+              <span style="font-size:14px;font-weight:700;color:var(--forest-mid)" id="protPct">0%</span>
+            </div>
+            <div style="height:12px;background:var(--line);border-radius:100px;overflow:hidden;margin-bottom:16px">
+              <div id="protBar" style="height:100%;background:linear-gradient(90deg,var(--forest-mid),#52c97a);border-radius:100px;width:0%;transition:width 0.8s ease"></div>
+            </div>
+            <div style="display:flex;gap:3px" id="protFaseBars"></div>
+            <div style="display:flex;margin-top:6px" id="protFaseNames"></div>
+          </div>
+          <!-- STATS -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px">
+            <div style="text-align:center;padding:14px;background:var(--paper);border-radius:8px">
+              <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest)" id="stSessaoAtual">0</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em">Sessão Atual</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--paper);border-radius:8px">
+              <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--blue)" id="stTotalPrev">—</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em">Sessões Previstas</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--paper);border-radius:8px">
+              <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--amber)" id="stEvaAtual">—</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em">EVA Atual</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--paper);border-radius:8px">
+              <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--red)" id="stEvaInicio">—</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em">EVA Inicial</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- MAPA DE DOR -->
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Mapa de Dor</div><div class="sec-sub" id="mapaLabel">Clique no corpo para marcar dor</div></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-sm" id="btnFrenteMap" onclick="setMapView('frente')" style="background:var(--forest-mid);color:white;padding:5px 10px;font-size:11px">Frente</button>
+                <button class="btn btn-outline btn-sm" id="btnVersoMap" onclick="setMapView('verso')" style="padding:5px 10px;font-size:11px">Verso</button>
+                <button class="btn btn-outline btn-sm" id="btnCompar" onclick="toggleComparativo()" style="padding:5px 10px;font-size:11px">📊 Antes/Depois</button>
+              </div>
+            </div>
+            <!-- LEGENDA DOR -->
+            <div style="display:flex;gap:12px;margin-bottom:14px;font-size:12px;flex-wrap:wrap;align-items:center">
+              <div onclick="setDorCor('leve')" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;border-radius:100px;transition:background 0.15s" id="legLeve"><div style="width:13px;height:13px;border-radius:50%;background:#f9c74f;flex-shrink:0"></div>Leve</div>
+              <div onclick="setDorCor('moderada')" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;border-radius:100px;transition:background 0.15s" id="legModerada"><div style="width:13px;height:13px;border-radius:50%;background:#f77f00;flex-shrink:0"></div>Moderada</div>
+              <div onclick="setDorCor('aguda')" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;border-radius:100px;transition:background 0.15s" id="legAguda"><div style="width:13px;height:13px;border-radius:50%;background:#e63946;flex-shrink:0"></div>Aguda / Trigger</div>
+              <div style="margin-left:auto;font-size:11px;font-weight:600;color:var(--forest-mid)" id="dorCorLabel">● Leve</div>
+            </div>
+            <!-- CANVAS CORPO -->
+            <div id="mapaNormal" style="display:flex;gap:12px;justify-content:center">
+              <div style="text-align:center">
+                <canvas id="canvasFrenteNorm" width="160" height="300" style="cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                <div style="font-size:11px;color:var(--ink3);margin-top:4px">Frente</div>
+              </div>
+              <div id="mapaVersoWrap" style="text-align:center;display:none">
+                <canvas id="canvasVersoNorm" width="160" height="300" style="cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                <div style="font-size:11px;color:var(--ink3);margin-top:4px">Verso</div>
+              </div>
+            </div>
+            <!-- COMPARATIVO -->
+            <div id="mapaCompar" style="display:none;margin-top:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px;text-align:center">Comparativo — Início vs Sessão Atual</div>
+              <div style="display:flex;gap:16px;justify-content:center">
+                <div style="text-align:center">
+                  <canvas id="canvasCompInicio" width="130" height="240" style="border-radius:6px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                  <div style="font-size:11px;color:var(--ink3);margin-top:4px">1ª Sessão</div>
+                </div>
+                <div style="text-align:center">
+                  <canvas id="canvasCompAtual" width="130" height="240" style="border-radius:6px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                  <div style="font-size:11px;color:var(--ink3);margin-top:4px">Atual</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="limparMapaAtual()">🗑 Limpar</button>
+              <button class="btn btn-green btn-sm" onclick="salvarMapaDor()">💾 Salvar Mapa</button>
+            </div>
+          </div>
+
+          <!-- PROTOCOLO IA -->
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Protocolo Clínico IA</div><div class="sec-sub" id="protFaseLabel">—</div></div>
+              <button class="btn btn-green btn-sm" onclick="gerarProtocoloIA()">🧠 Gerar com IA</button>
+            </div>
+            <!-- ALERTA -->
+            <div id="iaAlerta" style="display:none;background:var(--red-light);border:1px solid #f5c6c6;border-radius:8px;padding:12px;margin-bottom:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">⚠️ Alerta Clínico</div>
+              <div style="font-size:13px;color:var(--red)" id="iaAlertaTxt"></div>
+            </div>
+            <div id="protIABody">
+              <div style="background:var(--paper);border-radius:8px;padding:20px;text-align:center;color:var(--ink3)">
+                <div style="font-size:32px;margin-bottom:8px">🧠</div>
+                <div style="font-size:13px;line-height:1.6">Clique em <strong>Gerar com IA</strong> para criar o protocolo personalizado baseado na anamnese deste paciente.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EVOLUÇÃO + GRÁFICO EVA -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Evolução por Sessão</div></div>
+              <button class="btn btn-green btn-sm" onclick="openModal('modalEvolucao')">+ Registrar Sessão</button>
+            </div>
+            <div id="listaEvolucoes"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma evolução registrada</p></div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:16px">Curva de Dor — EVA</div>
+            <div style="position:relative;height:190px"><canvas id="chartEvaLine"></canvas></div>
+            <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:8px">0 = sem dor · 10 = dor máxima</div>
+          </div>
+        </div>
+
+        <!-- VOZ DO PACIENTE -->
+        <div class="card">
+          <div class="sec-head">
+            <div><div class="sec-title">Voz do Paciente</div><div class="sec-sub">Relatos de melhora e feedbacks</div></div>
+            <button class="btn btn-outline btn-sm" onclick="openModal('modalFeedback')">+ Adicionar Relato</button>
+          </div>
+          <div id="listaFeedbacks"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum relato registrado</p></div>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 </div>
@@ -610,6 +788,90 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-head"><span class="modal-title" id="drillTitle">Detalhes</span><button class="modal-close" onclick="closeModal('modalDrill')">×</button></div>
     <div class="modal-body" id="drillBody"></div>
     <div class="modal-foot" id="drillFoot"><button class="btn btn-outline" onclick="closeModal('modalDrill')">Fechar</button></div>
+  </div>
+</div>
+
+
+<!-- Modal Evolução da Sessão -->
+<div class="modal-overlay" id="modalEvolucao">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head"><span class="modal-title">Registrar Evolução da Sessão</span><button class="modal-close" onclick="closeModal('modalEvolucao')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sessão Nº</label><input class="form-control" id="evSessao" type="number" min="1" placeholder="Ex: 5"/></div>
+        <div class="form-group"><label class="form-label">Data</label><input class="form-control" id="evData" type="date"/></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Escala de Dor EVA (0–10)</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="range" id="evEvaRange" min="0" max="10" value="5" oninput="document.getElementById('evEvaVal').textContent=this.value;updateEvaColor(this.value)" style="flex:1"/>
+          <div id="evEvaVal" style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;min-width:32px;text-align:center;color:var(--amber)">5</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:4px"><span>Sem dor</span><span>Dor máxima</span></div>
+      </div>
+      <div class="form-group"><label class="form-label">Fase Atual</label><select class="form-control" id="evFase"><option>Fase Aguda</option><option>Fase Subaguda</option><option>Ganho de Função</option><option>Retorno às Atividades</option><option>Alta</option></select></div>
+      <div class="form-group"><label class="form-label">Condutas Aplicadas nesta Sessão</label><textarea class="form-control" id="evCondutas" placeholder="Descreva as técnicas, exercícios e recursos utilizados..." rows="3"></textarea></div>
+      <div class="form-group"><label class="form-label">Observações Clínicas</label><textarea class="form-control" id="evObs" placeholder="Resposta do paciente, achados, ajustes..." rows="2"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalEvolucao')">Cancelar</button>
+      <button class="btn btn-green" onclick="salvarEvolucao()">Salvar Evolução</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Feedback Paciente -->
+<div class="modal-overlay" id="modalFeedback">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head"><span class="modal-title">Relato do Paciente</span><button class="modal-close" onclick="closeModal('modalFeedback')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Data</label><input class="form-control" id="fbData" type="date"/></div>
+      <div class="form-group"><label class="form-label">Relato / Feedback</label><textarea class="form-control" id="fbTexto" placeholder='Ex: "Esta semana consegui brincar com meu filho no chão sem travar a coluna"' rows="4"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">Nível de Satisfação</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" id="fbSat1" onclick="setFbSat(1)" style="border:2px solid var(--line);background:white;font-size:16px;padding:8px 12px">😟</button>
+          <button class="btn btn-sm" id="fbSat2" onclick="setFbSat(2)" style="border:2px solid var(--line);background:white;font-size:16px;padding:8px 12px">😐</button>
+          <button class="btn btn-sm" id="fbSat3" onclick="setFbSat(3)" style="border:2px solid var(--line);background:white;font-size:16px;padding:8px 12px">🙂</button>
+          <button class="btn btn-sm" id="fbSat4" onclick="setFbSat(4)" style="border:2px solid var(--line);background:white;font-size:16px;padding:8px 12px">😊</button>
+          <button class="btn btn-sm" id="fbSat5" onclick="setFbSat(5)" style="border:2px solid var(--line);background:white;font-size:16px;padding:8px 12px">🤩</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalFeedback')">Cancelar</button>
+      <button class="btn btn-green" onclick="salvarFeedback()">Salvar Relato</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Anamnese Clínica -->
+<div class="modal-overlay" id="modalAnamnese">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-head"><span class="modal-title">Anamnese Clínica Completa</span><button class="modal-close" onclick="closeModal('modalAnamnese')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Queixa Principal</label><input class="form-control" id="anQueixa" placeholder="Ex: Dor lombar irradiando para MMII há 3 meses"/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Diagnóstico / CID</label><input class="form-control" id="anDiagnostico" placeholder="Ex: Lombociatalgia, CID M54.4"/></div>
+        <div class="form-group"><label class="form-label">Fase Clínica</label><select class="form-control" id="anFase"><option>Aguda (0-72h)</option><option>Subaguda (3-21 dias)</option><option>Crônica (>21 dias)</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Profissão / Estilo de Vida</label><input class="form-control" id="anProfissao" placeholder="Ex: Motorista, sedentário"/></div>
+        <div class="form-group"><label class="form-label">Nível de Atividade Física</label><select class="form-control" id="anAtividade"><option>Sedentário</option><option>Levemente ativo</option><option>Moderadamente ativo</option><option>Muito ativo</option><option>Atleta</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Histórico de Saúde (cirurgias, traumas, comorbidades)</label><textarea class="form-control" id="anHistorico" placeholder="Ex: HAS controlada, cirurgia de joelho em 2019, sem alergias..." rows="2"></textarea></div>
+      <div class="form-group"><label class="form-label">Achados da Avaliação Física</label><textarea class="form-control" id="anAchados" placeholder="Ex: Limitação de flexão lombar, encurtamento de isquiotibiais, marcha antálgica..." rows="2"></textarea></div>
+      <div class="form-group"><label class="form-label">Objetivo Principal do Paciente</label><input class="form-control" id="anObjetivo" placeholder='Ex: "Quero voltar a jogar futebol com meu filho sem sentir dor"'/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">EVA Inicial (0–10)</label><input class="form-control" id="anEva" type="number" min="0" max="10" placeholder="7"/></div>
+        <div class="form-group"><label class="form-label">Nº Mínimo de Sessões (IA sugerirá)</label><input class="form-control" id="anSessoes" type="number" min="1" placeholder="12"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Gênero (para mapa de dor)</label><select class="form-control" id="anGenero"><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalAnamnese')">Cancelar</button>
+      <button class="btn btn-green" onclick="salvarAnamnese()">Salvar e Gerar Protocolo</button>
+    </div>
   </div>
 </div>
 
@@ -690,11 +952,11 @@ function goTo(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   var el=document.getElementById('page-'+page);if(el)el.classList.add('active');
-  var titles={dashboard:'Dashboard',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
+  var titles={dashboard:'Dashboard',protocolo:'Protocolos Clínicos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
   closeSidebar();
-  var renders={dashboard:renderDashboard,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
+  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
   if(renders[page])renders[page]();
   populateSelects();
 }
@@ -1045,6 +1307,8 @@ function initApp(){
   document.getElementById('todayDate').textContent=now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('agData').value=hoje();
   document.getElementById('lanData').value=hoje();
+  document.getElementById('evData').value=hoje();
+  document.getElementById('fbData').value=hoje();
   var mes=hoje().substring(0,7);
   ['relFiltroMes','relFiltroLanMes'].forEach(id=>{var el=document.getElementById(id);if(el)el.value=mes;});
   // Definir período padrão dos gráficos (últimos 30 dias)
@@ -1054,6 +1318,711 @@ function initApp(){
   renderDashboard();renderAgenda();populateSelects();
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
+
+// ══════════════════════════════════════
+// PROTOCOLO CLÍNICO — MÓDULO COMPLETO
+// ══════════════════════════════════════
+
+var protState = {
+  pacienteId: null,
+  genero: 'M',
+  mapView: 'frente',
+  dorCor: 'leve',
+  pontosFrente: [],
+  pontosVerso: [],
+  pontosInicioFrente: [],
+  pontosInicioVerso: [],
+  evolucoes: [],
+  feedbacks: [],
+  anamnese: null,
+  protocolo: null,
+  comparativo: false,
+  fbSat: 3,
+  evaChart: null
+};
+
+var COR_DOR = {leve:'#f9c74f', moderada:'#f77f00', aguda:'#e63946'};
+var FASES = ['Fase Aguda','Fase Subaguda','Ganho de Função','Retorno às Atividades','Alta'];
+var FASE_CORES = ['#e63946','#f77f00','#f9c74f','#2a7d48','#1a5f8a'];
+
+// ── INIT PROTOCOLO ──
+function renderProtocolo(){
+  var sel = document.getElementById('protPacienteSelect');
+  sel.innerHTML = '<option value="">— Selecione um paciente —</option>' +
+    state.pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('protVazio').style.display = 'block';
+  document.getElementById('protConteudo').style.display = 'none';
+  initCanvases();
+}
+
+function carregarProtocolo(pid){
+  if(!pid){ document.getElementById('protVazio').style.display='block'; document.getElementById('protConteudo').style.display='none'; return; }
+  var p = state.pacientes.find(x=>x.id==pid);
+  if(!p) return;
+  protState.pacienteId = pid;
+  protState.genero = p.genero || 'M';
+  protState.pontosFrente = [];
+  protState.pontosVerso = [];
+  protState.pontosInicioFrente = [];
+  protState.pontosInicioVerso = [];
+  protState.evolucoes = [];
+  protState.feedbacks = [];
+  protState.anamnese = null;
+  protState.protocolo = null;
+
+  // Load from localStorage (will be Supabase in production)
+  var key = 'mc_prot_' + pid;
+  var saved = localStorage.getItem(key);
+  if(saved){
+    var data = JSON.parse(saved);
+    protState.anamnese = data.anamnese || null;
+    protState.protocolo = data.protocolo || null;
+    protState.pontosFrente = data.pontosFrente || [];
+    protState.pontosVerso = data.pontosVerso || [];
+    protState.pontosInicioFrente = data.pontosInicioFrente || protState.pontosFrente.slice();
+    protState.pontosInicioVerso = data.pontosInicioVerso || protState.pontosVerso.slice();
+    protState.evolucoes = data.evolucoes || [];
+    protState.feedbacks = data.feedbacks || [];
+  }
+
+  document.getElementById('protVazio').style.display='none';
+  document.getElementById('protConteudo').style.display='block';
+  document.getElementById('protNomePac').textContent = p.nome;
+  document.getElementById('protSubtituloPac').textContent = protState.anamnese ? 
+    'Protocolo: ' + (protState.anamnese.diagnostico || 'Personalizado') :
+    'Anamnese pendente — clique em Gerar com IA para começar';
+
+  updateProgressao();
+  desenharMapa('canvasFrenteNorm', protState.pontosFrente);
+  desenharMapa('canvasVersoNorm', protState.pontosVerso);
+  renderEvolucoes();
+  renderFeedbacks();
+  renderEvaChart();
+  if(protState.protocolo) renderProtocoloBody(protState.protocolo);
+  verificarAlertas();
+}
+
+function novoProtocolo(){
+  if(!protState.pacienteId){ 
+    var sel = document.getElementById('protPacienteSelect');
+    if(!sel.value){ toast('Selecione um paciente primeiro','error'); return; }
+    carregarProtocolo(sel.value);
+  }
+  openModal('modalAnamnese');
+  document.getElementById('evData').value = hoje();
+  document.getElementById('fbData').value = hoje();
+}
+
+function salvarProtState(){
+  if(!protState.pacienteId) return;
+  localStorage.setItem('mc_prot_' + protState.pacienteId, JSON.stringify({
+    anamnese: protState.anamnese,
+    protocolo: protState.protocolo,
+    pontosFrente: protState.pontosFrente,
+    pontosVerso: protState.pontosVerso,
+    pontosInicioFrente: protState.pontosInicioFrente,
+    pontosInicioVerso: protState.pontosInicioVerso,
+    evolucoes: protState.evolucoes,
+    feedbacks: protState.feedbacks
+  }));
+}
+
+// ── PROGRESSÃO ──
+function updateProgressao(){
+  var an = protState.anamnese;
+  var evs = protState.evolucoes;
+  var totalPrev = an ? parseInt(an.sessoes) || 12 : 12;
+  var sessaoAtual = evs.length;
+  var pct = Math.min(Math.round(sessaoAtual / totalPrev * 100), 100);
+  var evaAtual = evs.length ? evs[evs.length-1].eva : '—';
+  var evaInicio = an ? an.eva : '—';
+  var faseAtual = evs.length ? evs[evs.length-1].fase : (an ? 'Fase '+(an.fase||'Aguda') : '—');
+
+  document.getElementById('protPct').textContent = pct + '%';
+  document.getElementById('protBar').style.width = pct + '%';
+  document.getElementById('stSessaoAtual').textContent = sessaoAtual;
+  document.getElementById('stTotalPrev').textContent = totalPrev;
+  document.getElementById('stEvaAtual').textContent = evaAtual;
+  document.getElementById('stEvaAtual').style.color = evaAtual !== '—' ? (evaAtual <= 3 ? 'var(--forest)' : evaAtual <= 6 ? 'var(--amber)' : 'var(--red)') : 'var(--ink3)';
+  document.getElementById('stEvaInicio').textContent = evaInicio;
+  document.getElementById('protFaseLabel').textContent = 'Fase atual: ' + faseAtual;
+
+  // Fase bars
+  var faseBars = document.getElementById('protFaseBars');
+  var faseNames = document.getElementById('protFaseNames');
+  faseBars.innerHTML = FASES.map((f,i) => {
+    var ativa = faseAtual && faseAtual.includes(f.split(' ')[1]||f);
+    return `<div style="flex:1;height:8px;border-radius:100px;background:${ativa?FASE_CORES[i]:i<(sessaoAtual/totalPrev*FASES.length)?FASE_CORES[i]+'88':'var(--line)'};margin:0 2px;transition:all 0.3s"></div>`;
+  }).join('');
+  faseNames.innerHTML = FASES.map((f,i) => {
+    var ativa = faseAtual && faseAtual.toLowerCase().includes(f.toLowerCase().split(' ')[1]||f);
+    return `<div style="flex:1;font-size:9px;color:${ativa?FASE_CORES[i]:'var(--ink3)'};text-align:center;letter-spacing:0.02em;font-weight:${ativa?'700':'400'}">${f.split(' ').slice(-1)[0]}</div>`;
+  }).join('');
+}
+
+// ── MAPA DE DOR ──
+function initCanvases(){
+  var ids = ['canvasFrenteNorm','canvasVersoNorm','canvasCompInicio','canvasCompAtual'];
+  ids.forEach(id => {
+    var c = document.getElementById(id); if(!c) return;
+    var ctx = c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    desenharSilhueta(ctx, c.width, c.height, protState.genero);
+    c.onclick = null;
+  });
+  var cf = document.getElementById('canvasFrenteNorm');
+  var cv = document.getElementById('canvasVersoNorm');
+  if(cf) cf.onclick = e => adicionarPonto(e,'frente');
+  if(cv) cv.onclick = e => adicionarPonto(e,'verso');
+}
+
+function desenharSilhueta(ctx, w, h, genero){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = '#c8d4c0';
+  ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#f0f4ee';
+
+  var cx = w/2, escala = h/340;
+  // Cabeça
+  ctx.beginPath();
+  ctx.arc(cx, 38*escala, 22*escala, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  // Pescoço
+  ctx.beginPath();
+  ctx.rect(cx-8*escala, 58*escala, 16*escala, 18*escala);
+  ctx.fill(); ctx.stroke();
+  // Tronco
+  var tw = genero==='F' ? 44 : 48;
+  ctx.beginPath();
+  ctx.roundRect(cx-tw*escala/2, 76*escala, tw*escala, 90*escala, 8*escala);
+  ctx.fill(); ctx.stroke();
+  if(genero==='F'){
+    // Curvas femininas
+    ctx.beginPath();
+    ctx.ellipse(cx-16*escala, 130*escala, 12*escala, 10*escala, 0, 0, Math.PI*2);
+    ctx.fillStyle='#e0e8dc'; ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx+16*escala, 130*escala, 12*escala, 10*escala, 0, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#f0f4ee';
+  }
+  // Pelve/Quadril
+  var pw = genero==='F' ? 52 : 44;
+  ctx.beginPath();
+  ctx.roundRect(cx-pw*escala/2, 165*escala, pw*escala, 50*escala, 6*escala);
+  ctx.fill(); ctx.stroke();
+  // Braço esquerdo
+  ctx.beginPath();
+  ctx.roundRect(cx-(tw/2+14)*escala, 76*escala, 14*escala, 80*escala, 7*escala);
+  ctx.fill(); ctx.stroke();
+  // Braço direito
+  ctx.beginPath();
+  ctx.roundRect(cx+(tw/2)*escala, 76*escala, 14*escala, 80*escala, 7*escala);
+  ctx.fill(); ctx.stroke();
+  // Coxa esquerda
+  ctx.beginPath();
+  ctx.roundRect(cx-24*escala, 215*escala, 20*escala, 60*escala, 7*escala);
+  ctx.fill(); ctx.stroke();
+  // Coxa direita
+  ctx.beginPath();
+  ctx.roundRect(cx+4*escala, 215*escala, 20*escala, 60*escala, 7*escala);
+  ctx.fill(); ctx.stroke();
+  // Perna esquerda
+  ctx.beginPath();
+  ctx.roundRect(cx-23*escala, 275*escala, 18*escala, 50*escala, 6*escala);
+  ctx.fill(); ctx.stroke();
+  // Perna direita
+  ctx.beginPath();
+  ctx.roundRect(cx+5*escala, 275*escala, 18*escala, 50*escala, 6*escala);
+  ctx.fill(); ctx.stroke();
+}
+
+function adicionarPonto(e, lado){
+  var canvas = e.target;
+  var rect = canvas.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / (rect.width / canvas.width);
+  var y = (e.clientY - rect.top) / (rect.height / canvas.height);
+  var ponto = {x, y, cor: protState.dorCor};
+  if(lado === 'frente') protState.pontosFrente.push(ponto);
+  else protState.pontosVerso.push(ponto);
+  redesenharMapa(canvas.id, lado==='frente' ? protState.pontosFrente : protState.pontosVerso);
+}
+
+function redesenharMapa(canvasId, pontos){
+  var c = document.getElementById(canvasId); if(!c) return;
+  var ctx = c.getContext('2d');
+  desenharSilhueta(ctx, c.width, c.height, protState.genero);
+  desenharPontos(ctx, pontos, c.width, c.height);
+}
+
+function desenharPontos(ctx, pontos, w, h){
+  pontos.forEach(p => {
+    var x = p.x * (w/160) * (160/w) * w / (w > 160 ? w/160 : 1);
+    var y = p.y * h / (h > 300 ? h/300 : 1);
+    // Normaliza para canvas atual
+    var nx = p.x < 1 ? p.x * w : p.x;
+    var ny = p.y < 1 ? p.y * h : p.y;
+    // Glow
+    var grad = ctx.createRadialGradient(nx, ny, 2, nx, ny, 14);
+    var cor = COR_DOR[p.cor] || '#f9c74f';
+    grad.addColorStop(0, cor + 'cc');
+    grad.addColorStop(1, cor + '22');
+    ctx.beginPath();
+    ctx.arc(nx, ny, 14, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(nx, ny, 5, 0, Math.PI*2);
+    ctx.fillStyle = cor;
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+}
+
+function desenharMapa(canvasId, pontos){
+  var c = document.getElementById(canvasId); if(!c) return;
+  var ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  desenharSilhueta(ctx, c.width, c.height, protState.genero);
+  // Normalizar pontos para canvas atual
+  var basePontos = pontos.map(p => ({
+    x: p.x <= 1 ? p.x * c.width : p.x,
+    y: p.y <= 1 ? p.y * c.height : p.y,
+    cor: p.cor
+  }));
+  desenharPontos(ctx, basePontos, c.width, c.height);
+}
+
+function setMapView(view){
+  protState.mapView = view;
+  var fw = document.getElementById('mapaVersoWrap');
+  document.getElementById('btnFrenteMap').style.background = view==='frente'?'var(--forest-mid)':'';
+  document.getElementById('btnFrenteMap').style.color = view==='frente'?'white':'';
+  document.getElementById('btnFrenteMap').className = view==='frente'?'btn btn-sm':'btn btn-outline btn-sm';
+  document.getElementById('btnVersoMap').className = view==='verso'?'btn btn-sm':'btn btn-outline btn-sm';
+  document.getElementById('btnVersoMap').style.background = view==='verso'?'var(--forest-mid)':'';
+  document.getElementById('btnVersoMap').style.color = view==='verso'?'white':'';
+  if(view==='frente'){ fw.style.display='none'; }
+  else { fw.style.display='block'; desenharMapa('canvasVersoNorm', protState.pontosVerso); }
+}
+
+function setDorCor(cor){
+  protState.dorCor = cor;
+  document.getElementById('dorCorLabel').textContent = '● ' + cor.charAt(0).toUpperCase()+cor.slice(1);
+  document.getElementById('dorCorLabel').style.color = COR_DOR[cor];
+  ['legLeve','legModerada','legAguda'].forEach(id=>{
+    document.getElementById(id).style.background = '';
+    document.getElementById(id).style.fontWeight = '400';
+  });
+  var map = {leve:'legLeve',moderada:'legModerada',aguda:'legAguda'};
+  var el = document.getElementById(map[cor]);
+  if(el){ el.style.background='var(--forest-light)'; el.style.fontWeight='600'; }
+}
+
+function limparMapaAtual(){
+  if(protState.mapView==='frente') protState.pontosFrente=[];
+  else protState.pontosVerso=[];
+  redesenharMapa(protState.mapView==='frente'?'canvasFrenteNorm':'canvasVersoNorm', []);
+}
+
+function salvarMapaDor(){
+  // Se for a primeira sessão, salvar como mapa inicial
+  if(protState.evolucoes.length === 0 && protState.pontosInicioFrente.length===0){
+    protState.pontosInicioFrente = JSON.parse(JSON.stringify(protState.pontosFrente));
+    protState.pontosInicioVerso = JSON.parse(JSON.stringify(protState.pontosVerso));
+  }
+  salvarProtState();
+  toast('Mapa de dor salvo!','success');
+}
+
+function toggleComparativo(){
+  protState.comparativo = !protState.comparativo;
+  var wrap = document.getElementById('mapaCompar');
+  var norm = document.getElementById('mapaNormal');
+  wrap.style.display = protState.comparativo ? 'block' : 'none';
+  norm.style.display = protState.comparativo ? 'none' : 'flex';
+  if(protState.comparativo){
+    setTimeout(()=>{
+      desenharMapa('canvasCompInicio', protState.pontosInicioFrente);
+      desenharMapa('canvasCompAtual', protState.pontosFrente);
+    }, 50);
+  }
+}
+
+// ── PROTOCOLO IA ──
+async function gerarProtocoloIA(){
+  if(!protState.pacienteId){ toast('Selecione um paciente','error'); return; }
+  if(!protState.anamnese){ openModal('modalAnamnese'); return; }
+  var an = protState.anamnese;
+  var el = document.getElementById('protIABody');
+  el.innerHTML = '<div class="loading"><div class="spin"></div>Gerando protocolo personalizado com IA...</div>';
+
+  var prompt = `Você é um fisioterapeuta especialista baseado em evidências. Crie um protocolo clínico personalizado e detalhado para este paciente:
+
+DADOS DO PACIENTE:
+- Queixa principal: ${an.queixa}
+- Diagnóstico/CID: ${an.diagnostico}
+- Fase clínica: ${an.fase}
+- Profissão/Estilo de vida: ${an.profissao}
+- Nível de atividade: ${an.atividade}
+- Histórico de saúde: ${an.historico}
+- Achados da avaliação: ${an.achados}
+- Objetivo do paciente: ${an.objetivo}
+- EVA inicial: ${an.eva}/10
+- Sessões mínimas estimadas: ${an.sessoes}
+
+Responda APENAS em JSON puro (sem markdown, sem explicações extras) com esta estrutura exata:
+{
+  "resumo": "Resumo clínico em 2 frases",
+  "causaRaiz": "Análise da causa raiz em 2-3 frases",
+  "sessoesMinimas": número,
+  "fases": [
+    {
+      "nome": "Nome da fase",
+      "sessoes": "Ex: Sessões 1-4",
+      "objetivo": "Objetivo desta fase",
+      "condutas": ["conduta 1", "conduta 2", "conduta 3"],
+      "exercicios": ["exercicio 1", "exercicio 2"],
+      "alerta": "Sinal de alerta para regressão (pode ser null)"
+    }
+  ],
+  "exerciciosDomiciliares": ["exercicio 1", "exercicio 2", "exercicio 3"],
+  "orientacoes": ["orientação 1", "orientação 2", "orientação 3"],
+  "previsaoAlta": "Previsão narrativa de alta",
+  "alertaClinico": "Alerta crítico se houver (pode ser null)"
+}`;
+
+  try{
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    var data = await r.json();
+    var txt = data.content[0].text.trim();
+    txt = txt.replace(/```json|```/g,'').trim();
+    var prot = JSON.parse(txt);
+    protState.protocolo = prot;
+    salvarProtState();
+    renderProtocoloBody(prot);
+    verificarAlertas();
+    toast('Protocolo gerado com sucesso!','success');
+  } catch(e){
+    // Fallback: protocolo baseado nos dados sem IA
+    var prot = gerarProtocoloFallback(an);
+    protState.protocolo = prot;
+    salvarProtState();
+    renderProtocoloBody(prot);
+    toast('Protocolo gerado localmente','success');
+  }
+}
+
+function gerarProtocoloFallback(an){
+  var n = parseInt(an.sessoes) || 12;
+  return {
+    resumo: `Paciente com ${an.queixa}. Fase ${an.fase}. Objetivo: ${an.objetivo}.`,
+    causaRaiz: `Baseado nos achados (${an.achados}) e no estilo de vida (${an.profissao}), o tratamento foca na causa raiz e não apenas no sintoma.`,
+    sessoesMinimas: n,
+    fases: [
+      {nome:'Fase Aguda — Controle da Dor',sessoes:'Sessões 1-'+(Math.round(n*0.25)),objetivo:'Reduzir inflamação e dor',condutas:['Eletroterapia analgésica (TENS/FES)','Crioterapia ou termoterapia','Terapia manual suave'],exercicios:['Mobilização ativa suave','Respiração diafragmática'],alerta:'Piora da dor após exercícios'},
+      {nome:'Fase Subaguda — Ganho de Função',sessoes:'Sessões '+(Math.round(n*0.25)+1)+'-'+(Math.round(n*0.6)),objetivo:'Recuperar mobilidade e força',condutas:['Fortalecimento progressivo','Alongamento específico','Mobilização articular'],exercicios:['Core estabilizador','Fortalecimento de glúteos','Alongamento cadeia posterior'],alerta:'Dor acima de 4/10 após sessão'},
+      {nome:'Retorno às Atividades',sessoes:'Sessões '+(Math.round(n*0.6)+1)+'-'+n,objetivo:'Retorno funcional pleno',condutas:['Treino funcional','Exercícios específicos para atividade do paciente','Orientação ergonômica'],exercicios:['Exercícios funcionais','Treino de equilíbrio','Atividade específica do objetivo'],alerta:null}
+    ],
+    exerciciosDomiciliares:['Alongamento matinal 10 min','Caminhada progressiva','Exercícios de core (conforme orientação)'],
+    orientacoes:['Manter boa postura no trabalho','Evitar posições de sobrecarga','Hidratação adequada — mínimo 2L/dia'],
+    previsaoAlta:'Previsão de alta funcional após '+n+' sessões, com retorno pleno ao objetivo declarado pelo paciente.',
+    alertaClinico: an.eva >= 8 ? 'EVA inicial muito alta ('+an.eva+'/10). Avaliar necessidade de interconsulta médica.' : null
+  };
+}
+
+function renderProtocoloBody(prot){
+  var el = document.getElementById('protIABody');
+  el.innerHTML = `
+    <div style="background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--forest);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Resumo Clínico</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6">${prot.resumo}</div>
+    </div>
+    <div style="background:var(--blue-light);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Causa Raiz Identificada</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6">${prot.causaRaiz}</div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">Protocolo por Fases (${prot.sessoesMinimas} sessões mínimas)</div>
+    ${prot.fases.map((f,i)=>`
+      <div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid ${FASE_CORES[i]}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:4px">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">${f.nome}</div>
+          <span style="font-size:11px;color:var(--ink3);background:var(--paper);padding:2px 8px;border-radius:100px">${f.sessoes}</span>
+        </div>
+        <div style="font-size:12px;color:var(--forest-mid);margin-bottom:8px">🎯 ${f.objetivo}</div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">CONDUTAS:</div>
+        ${f.condutas.map(c=>`<div style="font-size:12px;color:var(--ink2);padding:2px 0">• ${c}</div>`).join('')}
+        <div style="font-size:11px;font-weight:600;color:var(--ink3);margin:8px 0 4px">EXERCÍCIOS:</div>
+        ${f.exercicios.map(e=>`<div style="font-size:12px;color:var(--ink2);padding:2px 0">▶ ${e}</div>`).join('')}
+        ${f.alerta?`<div style="margin-top:8px;font-size:11px;color:var(--amber);background:var(--amber-light);padding:6px 10px;border-radius:6px">⚠️ ${f.alerta}</div>`:''}
+      </div>
+    `).join('')}
+    <div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">🏠 Exercícios Domiciliares</div>
+      ${prot.exerciciosDomiciliares.map(e=>`<div style="font-size:13px;color:var(--ink2);padding:3px 0">• ${e}</div>`).join('')}
+    </div>
+    <div style="margin-top:10px;background:var(--forest-light);border-radius:8px;padding:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--forest);margin-bottom:8px">✅ Orientações ao Paciente</div>
+      ${prot.orientacoes.map(o=>`<div style="font-size:13px;color:var(--ink2);padding:3px 0">• ${o}</div>`).join('')}
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--ink3);font-style:italic;padding:10px;background:var(--paper);border-radius:6px">
+      🏁 ${prot.previsaoAlta}
+    </div>
+  `;
+}
+
+function verificarAlertas(){
+  var alerta = document.getElementById('iaAlerta');
+  var alertaTxt = document.getElementById('iaAlertaTxt');
+  var evs = protState.evolucoes;
+  var msgs = [];
+  if(protState.protocolo && protState.protocolo.alertaClinico) msgs.push(protState.protocolo.alertaClinico);
+  if(evs.length >= 2){
+    var ultimas = evs.slice(-3);
+    var evaMedia = ultimas.reduce((s,e)=>s+parseInt(e.eva),0)/ultimas.length;
+    if(evaMedia > 6) msgs.push('EVA média nas últimas sessões acima de 6/10. Considere revisão do protocolo ou encaminhamento.');
+    var fasesIguais = ultimas.every(e=>e.fase===ultimas[0].fase);
+    if(fasesIguais && evs.length > 4) msgs.push('Paciente permanece na mesma fase há '+(evs.length)+' sessões. Avaliar ajuste no protocolo.');
+  }
+  if(msgs.length){
+    alertaTxt.innerHTML = msgs.map(m=>`<div style="margin-bottom:4px">• ${m}</div>`).join('');
+    alerta.style.display = 'block';
+  } else { alerta.style.display = 'none'; }
+}
+
+// ── EVOLUÇÃO ──
+function salvarEvolucao(){
+  var sessao = document.getElementById('evSessao').value;
+  var data = document.getElementById('evData').value;
+  var eva = parseInt(document.getElementById('evEvaRange').value);
+  var fase = document.getElementById('evFase').value;
+  var condutas = document.getElementById('evCondutas').value.trim();
+  if(!sessao || !data){ toast('Preencha sessão e data','error'); return; }
+  var ev = { id:Date.now(), sessao:parseInt(sessao), data, eva, fase, condutas, obs:document.getElementById('evObs').value };
+  protState.evolucoes.push(ev);
+  protState.evolucoes.sort((a,b)=>a.sessao-b.sessao);
+  salvarProtState();
+  closeModal('modalEvolucao');
+  renderEvolucoes();
+  renderEvaChart();
+  updateProgressao();
+  verificarAlertas();
+  toast('Evolução registrada!','success');
+  ['evSessao','evCondutas','evObs'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderEvolucoes(){
+  var el = document.getElementById('listaEvolucoes');
+  var evs = protState.evolucoes;
+  if(!evs.length){ el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma evolução registrada</p>'; return; }
+  el.innerHTML = evs.slice().reverse().slice(0,8).map(ev=>{
+    var cor = ev.eva <= 3 ? 'var(--forest)' : ev.eva <= 6 ? 'var(--amber)' : 'var(--red)';
+    return`<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)">
+      <div style="min-width:36px;height:36px;border-radius:50%;background:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--forest);border:1.5px solid var(--forest-mid);flex-shrink:0">${ev.sessao}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:4px">
+          <div style="font-size:13px;font-weight:500">${ev.fase}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:11px;color:var(--ink3)">${ev.data?ev.data.split('-').reverse().join('/'):'—'}</span>
+            <span style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:${cor}">EVA ${ev.eva}</span>
+          </div>
+        </div>
+        ${ev.condutas?`<div style="font-size:12px;color:var(--ink3);line-height:1.5">${ev.condutas}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateEvaColor(val){
+  var cor = val <= 3 ? 'var(--forest)' : val <= 6 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('evEvaVal').style.color = cor;
+}
+
+// ── GRÁFICO EVA ──
+function renderEvaChart(){
+  var evs = protState.evolucoes;
+  if(chartInstances['chartEvaLine']){ chartInstances['chartEvaLine'].destroy(); }
+  var ctx = document.getElementById('chartEvaLine'); if(!ctx) return;
+  var labels = evs.map(e=>'S'+e.sessao);
+  var vals = evs.map(e=>e.eva);
+  chartInstances['chartEvaLine'] = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'EVA',data:vals,
+        borderColor:'rgba(192,57,43,0.8)',
+        backgroundColor:'rgba(192,57,43,0.08)',
+        borderWidth:2.5,fill:true,tension:0.4,pointRadius:5,
+        pointBackgroundColor: vals.map(v=>v<=3?'#2a7d48':v<=6?'#b8760a':'#c0392b'),
+        pointBorderColor:'white',pointBorderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`EVA: ${ctx.raw}/10`}}},
+      scales:{
+        y:{min:0,max:10,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{family:"'Outfit',sans-serif",size:10},callback:v=>v+'/10'}},
+        x:{grid:{display:false},ticks:{font:{family:"'Outfit',sans-serif",size:10}}}
+      }
+    }
+  });
+}
+
+// ── FEEDBACK ──
+var fbSatVal = 3;
+function setFbSat(n){
+  fbSatVal = n;
+  [1,2,3,4,5].forEach(i=>{
+    var btn = document.getElementById('fbSat'+i);
+    if(btn) btn.style.borderColor = i===n ? 'var(--forest-mid)' : 'var(--line)';
+  });
+}
+function salvarFeedback(){
+  var txt = document.getElementById('fbTexto').value.trim();
+  var data = document.getElementById('fbData').value;
+  if(!txt){ toast('Escreva o relato do paciente','error'); return; }
+  var fb = { id:Date.now(), data, texto:txt, satisfacao:fbSatVal };
+  protState.feedbacks.push(fb);
+  salvarProtState();
+  closeModal('modalFeedback');
+  renderFeedbacks();
+  toast('Relato salvo!','success');
+  document.getElementById('fbTexto').value='';
+}
+function renderFeedbacks(){
+  var el = document.getElementById('listaFeedbacks');
+  if(!protState.feedbacks.length){ el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum relato registrado</p>'; return; }
+  var emojis = ['','😟','😐','🙂','😊','🤩'];
+  el.innerHTML = protState.feedbacks.slice().reverse().map(fb=>`
+    <div style="border-left:3px solid var(--forest-mid);padding:12px 14px;margin-bottom:10px;background:var(--paper);border-radius:0 8px 8px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px">
+        <span style="font-size:11px;color:var(--ink3)">${fb.data?fb.data.split('-').reverse().join('/'):'—'}</span>
+        <span style="font-size:18px">${emojis[fb.satisfacao||3]}</span>
+      </div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6;font-style:italic">"${fb.texto}"</div>
+    </div>
+  `).join('');
+}
+
+// ── ANAMNESE ──
+function salvarAnamnese(){
+  var queixa = document.getElementById('anQueixa').value.trim();
+  if(!queixa){ toast('Preencha a queixa principal','error'); return; }
+  protState.anamnese = {
+    queixa, diagnostico:document.getElementById('anDiagnostico').value,
+    fase:document.getElementById('anFase').value, profissao:document.getElementById('anProfissao').value,
+    atividade:document.getElementById('anAtividade').value, historico:document.getElementById('anHistorico').value,
+    achados:document.getElementById('anAchados').value, objetivo:document.getElementById('anObjetivo').value,
+    eva:parseInt(document.getElementById('anEva').value)||5, sessoes:parseInt(document.getElementById('anSessoes').value)||12,
+    genero:document.getElementById('anGenero').value
+  };
+  protState.genero = protState.anamnese.genero;
+  salvarProtState();
+  closeModal('modalAnamnese');
+  updateProgressao();
+  initCanvases();
+  desenharMapa('canvasFrenteNorm', protState.pontosFrente);
+  toast('Anamnese salva! Gerando protocolo...','success');
+  setTimeout(gerarProtocoloIA, 500);
+}
+
+// ── IMPRIMIR / WA ──
+function imprimirProtocolo(){
+  if(!protState.protocolo){ toast('Gere o protocolo primeiro','error'); return; }
+  var p = state.pacientes.find(x=>x.id==protState.pacienteId);
+  var prot = protState.protocolo;
+  var win = window.open('','_blank','width=800,height=600');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Protocolo — ${p?p.nome:''}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'Outfit',sans-serif;padding:40px;color:#0f1410;max-width:700px;margin:0 auto}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #1c5c34}
+      .clinic-name{font-family:'Playfair Display',serif;font-size:22px;color:#1c5c34;font-weight:700}
+      .clinic-sub{font-size:11px;color:#7a8077;margin-top:2px;letter-spacing:0.1em;text-transform:uppercase}
+      .patient-name{font-family:'Playfair Display',serif;font-size:18px;color:#0f1410}
+      .patient-date{font-size:12px;color:#7a8077;margin-top:2px}
+      .section{margin-bottom:20px}
+      .section-title{font-size:11px;font-weight:600;color:#7a8077;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;border-bottom:1px solid #e4e6e0;padding-bottom:4px}
+      .box{background:#f7f8f5;border-radius:8px;padding:14px;margin-bottom:10px;font-size:13px;line-height:1.65;color:#3a4038}
+      .box-green{background:#e8f4ed;border-left:3px solid #2a7d48}
+      .box-blue{background:#e8f2f9;border-left:3px solid #1a5f8a}
+      .fase{border:1px solid #e4e6e0;border-radius:8px;padding:14px;margin-bottom:8px}
+      .fase-title{font-size:13px;font-weight:600;color:#0f1410;margin-bottom:6px}
+      .fase-obj{font-size:12px;color:#2a7d48;margin-bottom:6px}
+      ul{padding-left:16px;font-size:12px;line-height:1.8;color:#3a4038}
+      .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e4e6e0;font-size:11px;color:#7a8077;text-align:center}
+    </style>
+  </head><body>
+    <div class="header">
+      <div><div class="clinic-name">MultiCare Fisioterapia</div><div class="clinic-sub">Dr. Igor Matheus · CREFITO · Garanhuns, PE</div></div>
+      <div style="text-align:right"><div class="patient-name">${p?p.nome:''}</div><div class="patient-date">Emitido em ${new Date().toLocaleDateString('pt-BR')}</div></div>
+    </div>
+    <div style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:20px;color:#1c5c34">Protocolo Clínico Personalizado</div>
+    <div class="section"><div class="section-title">Resumo Clínico</div><div class="box box-green">${prot.resumo}</div></div>
+    <div class="section"><div class="section-title">Causa Raiz Identificada</div><div class="box box-blue">${prot.causaRaiz}</div></div>
+    <div class="section"><div class="section-title">Protocolo por Fases (${prot.sessoesMinimas} sessões mínimas)</div>
+      ${prot.fases.map(f=>`<div class="fase"><div class="fase-title">${f.nome} <span style="font-size:11px;color:#7a8077;font-weight:400">(${f.sessoes})</span></div><div class="fase-obj">🎯 ${f.objetivo}</div><div style="font-size:11px;font-weight:600;color:#7a8077;margin-bottom:2px">Condutas:</div><ul>${f.condutas.map(c=>`<li>${c}</li>`).join('')}</ul><div style="font-size:11px;font-weight:600;color:#7a8077;margin:6px 0 2px">Exercícios:</div><ul>${f.exercicios.map(e=>`<li>${e}</li>`).join('')}</ul>${f.alerta?`<div style="margin-top:6px;font-size:11px;color:#b8760a">⚠️ ${f.alerta}</div>`:''}</div>`).join('')}
+    </div>
+    <div class="section"><div class="section-title">Exercícios Domiciliares</div><ul>${prot.exerciciosDomiciliares.map(e=>`<li>${e}</li>`).join('')}</ul></div>
+    <div class="section"><div class="section-title">Orientações</div><ul>${prot.orientacoes.map(o=>`<li>${o}</li>`).join('')}</ul></div>
+    <div class="box" style="font-size:12px;font-style:italic;margin-top:16px">🏁 ${prot.previsaoAlta}</div>
+    <div class="footer">Este protocolo foi gerado exclusivamente para este paciente e não deve ser compartilhado.<br>MultiCare Fisioterapia · Dr. Igor Matheus · (87) 9.9922-1295 · @multicarefisioterapia</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(), 800);
+}
+
+function enviarProtocoloWa(){
+  if(!protState.protocolo){ toast('Gere o protocolo primeiro','error'); return; }
+  var p = state.pacientes.find(x=>x.id==protState.pacienteId);
+  if(!p){ toast('Paciente não encontrado','error'); return; }
+  var prot = protState.protocolo;
+  var evs = protState.evolucoes;
+  var sessaoAtual = evs.length;
+  var evaAtual = evs.length ? evs[evs.length-1].eva : protState.anamnese?.eva || '—';
+  var msg = `Olá ${p.nome}! 👋
+
+Aqui está o resumo do seu protocolo clínico personalizado na MultiCare Fisioterapia:
+
+📋 *${prot.resumo}*
+
+🔍 *Causa raiz:* ${prot.causaRaiz}
+
+📊 *Progresso atual:*
+• Sessão: ${sessaoAtual} de ${prot.sessoesMinimas}
+• EVA atual: ${evaAtual}/10
+
+✅ *Orientações para casa:*
+${prot.exerciciosDomiciliares.map(e=>`• ${e}`).join('
+')}
+
+💚 ${prot.previsaoAlta}
+
+Continuamos firmes rumo à sua recuperação!
+— Dr. Igor Matheus · MultiCare Fisioterapia`;
+  waMsg(p.tel, msg);
+}
+
+// Expose initCanvases to be called on tab switch
+window.initProtocoloCanvases = function(){
+  if(protState.pacienteId) {
+    setTimeout(()=>{ desenharMapa('canvasFrenteNorm', protState.pontosFrente); desenharMapa('canvasVersoNorm', protState.pontosVerso); }, 100);
+  }
+};
+
 </script>
 </body>
 </html>
