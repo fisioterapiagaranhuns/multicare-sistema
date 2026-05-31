@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agendar Consulta — MultiCare Fisioterapia</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green:#2a7d48;--green-dark:#1c5c34;--green-light:#e8f4ed;--gold:#b8965a;--ink:#0f1410;--ink2:#3a4038;--ink3:#7a8077;--paper:#f7f8f5;--white:#fff;--line:#e4e6e0;--red:#c0392b;--red-light:#fdecea}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+.header{background:var(--green-dark);padding:32px 24px;text-align:center}
+.logo-box{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.header h1{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:4px}
+.header p{font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px}
+.header .desc{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6;max-width:380px;margin:0 auto}
+.steps{display:flex;background:#fff;border-bottom:1px solid var(--line)}
+.step{flex:1;padding:13px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);border-bottom:2px solid transparent;letter-spacing:0.05em;text-transform:uppercase;transition:all 0.2s}
+.step.active{color:var(--green);border-bottom-color:var(--green)}
+.step.done{color:var(--green-dark);border-bottom-color:var(--green-light)}
+.wrap{max-width:500px;margin:0 auto;padding:24px 18px 80px}
+.card{background:#fff;border-radius:12px;border:1px solid var(--line);padding:22px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.card h2{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--ink3);margin-bottom:18px;line-height:1.5}
+.panel{display:none}.panel.active{display:block}
+/* Calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav h3{font-family:'Playfair Display',serif;font-size:16px;font-weight:700}
+.cal-btn{background:none;border:1px solid var(--line);border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--ink3)}
+.cal-btn:hover{border-color:var(--green);color:var(--green)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-head{text-align:center;font-size:10px;font-weight:600;color:var(--ink3);padding:4px 0;text-transform:uppercase}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:500;border:2px solid transparent;transition:all 0.15s;cursor:pointer}
+.cal-day.off{color:var(--line);cursor:not-allowed}
+.cal-day.avail{background:var(--paper);color:var(--ink)}
+.cal-day.avail:hover{background:var(--green-light);border-color:var(--green)}
+.cal-day.sel{background:var(--green);color:#fff;border-color:var(--green)}
+.legend{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)}
+.legend i{width:10px;height:10px;border-radius:50%}
+/* Horários */
+.hor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hor{padding:14px;border:2px solid var(--line);border-radius:8px;background:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:center;width:100%}
+.hor:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.hor.sel{background:var(--green);border-color:var(--green);color:#fff}
+.hor.ocup{background:var(--paper);border-color:var(--line);color:var(--line);cursor:not-allowed;text-decoration:line-through}
+/* Form */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+.fg label.req::after{content:' *';color:var(--red)}
+.fc{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;font-family:'Outfit',sans-serif;color:var(--ink);background:#fff;transition:border-color 0.15s;outline:none}
+.fc:focus{border-color:var(--green)}
+.fc.err{border-color:var(--red)}
+select.fc{cursor:pointer}
+textarea.fc{resize:vertical;min-height:76px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err-box{background:var(--red-light);border-radius:6px;padding:10px;font-size:13px;color:var(--red);margin-top:10px;display:none}
+/* EVA */
+.eva-row{display:flex;align-items:center;gap:12px;margin-top:6px}
+.eva-row input[type=range]{flex:1;accent-color:var(--green)}
+.eva-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--green);min-width:26px;text-align:center}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:'Outfit',sans-serif;width:100%}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:var(--green-dark)}
+.btn-o{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}.btn-o:hover{border-color:var(--ink3)}
+.btn-wa{background:#25D366;color:#fff}.btn-wa:hover{background:#1da851}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn-o{flex:0 0 auto;width:auto;padding:14px 18px}
+.btn-row .btn-g{flex:1}
+/* Resumo */
+.res-card{background:var(--green-light);border:1px solid #b8d9c0;border-radius:10px;padding:18px;margin-bottom:14px}
+.res-card h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--green-dark);margin-bottom:12px}
+.res-item{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.res-item:last-child{margin-bottom:0}
+.res-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.res-label{font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.06em}
+.res-val{font-size:13px;font-weight:500;color:var(--ink);margin-top:1px}
+.policy{background:#fef6e7;border:1px solid #f0c97a;border-radius:8px;padding:12px;font-size:12px;color:#7a4f00;line-height:1.65;margin-bottom:14px}
+/* Sucesso */
+.succ{text-align:center;padding:40px 10px}
+.succ-ico{width:76px;height:76px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:34px}
+.succ h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--green-dark);margin-bottom:8px}
+.succ p{font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:24px}
+.footer{text-align:center;padding:20px;font-size:12px;color:var(--ink3);border-top:1px solid var(--line)}
+.footer a{color:var(--green);text-decoration:none}
+@media(max-width:420px){.fr{grid-template-columns:1fr}.wrap{padding:16px 14px 80px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-box">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+  </div>
+  <h1>Dr. Igor Matheus</h1>
+  <p>Fisioterapia &amp; Reabilitação · Garanhuns, PE</p>
+  <div class="desc">Agende sua consulta e preencha uma breve ficha. Isso nos ajuda a preparar o melhor atendimento para você.</div>
+</div>
+
+<div class="steps">
+  <div class="step active" id="nav1">1 · Horário</div>
+  <div class="step" id="nav2">2 · Dados</div>
+  <div class="step" id="nav3">3 · Saúde</div>
+  <div class="step" id="nav4">4 · Confirmar</div>
+</div>
+
+<div class="wrap">
+
+  <!-- STEP 1 -->
+  <div class="panel active" id="s1">
+    <div class="card">
+      <h2>Escolha o dia</h2>
+      <div class="sub">Atendimentos de segunda a sexta, das 14h às 18h. Cada sessão tem 1 hora.</div>
+      <div class="cal-nav">
+        <button class="cal-btn" onclick="calNav(-1)">‹</button>
+        <h3 id="calTitle"></h3>
+        <button class="cal-btn" onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <span><i style="background:var(--green)"></i>Selecionado</span>
+        <span><i style="background:var(--paper);border:1px solid var(--line)"></i>Disponível</span>
+        <span><i style="background:var(--line)"></i>Indisponível</span>
+      </div>
+    </div>
+    <div class="card" id="horCard" style="display:none">
+      <h2>Escolha o horário</h2>
+      <div class="sub" id="horSub"></div>
+      <div class="hor-grid" id="horGrid"></div>
+    </div>
+    <button class="btn btn-g" id="btnS1" onclick="goStep(2)" style="display:none">Continuar →</button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="panel" id="s2">
+    <div class="card">
+      <h2>Seus dados pessoais</h2>
+      <div class="sub">Precisamos de algumas informações para confirmar seu agendamento.</div>
+      <div class="fg"><label class="req">Nome completo</label><input class="fc" id="fNome" placeholder="Seu nome completo"/></div>
+      <div class="fr">
+        <div class="fg"><label class="req">Nascimento</label><input class="fc" id="fNasc" type="date"/></div>
+        <div class="fg"><label class="req">Sexo</label>
+          <select class="fc" id="fSexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="req">WhatsApp</label><input class="fc" id="fTel" placeholder="(87) 99999-9999" oninput="this.value=mTel(this.value)"/></div>
+      <div class="fr">
+        <div class="fg"><label>CPF</label><input class="fc" id="fCpf" placeholder="000.000.000-00" oninput="this.value=mCpf(this.value)"/></div>
+        <div class="fg"><label>Convênio</label><input class="fc" id="fConvenio" placeholder="Particular ou plano"/></div>
+      </div>
+      <div class="err-box" id="errD">Preencha todos os campos obrigatórios (*)</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-o" onclick="goStep(1)">‹</button>
+      <button class="btn btn-g" onclick="validar2()">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="panel" id="s3">
+    <div class="card">
+      <h2>Sobre sua saúde</h2>
+      <div class="sub">Informações confidenciais que ajudam o Dr. Igor a preparar um atendimento personalizado.</div>
+      <div class="fg"><label class="req">Queixa principal — O que está sentindo e desde quando?</label><textarea class="fc" id="fQueixa" placeholder="Descreva onde dói, o que sente, desde quando..." rows="3"></textarea></div>
+      <div class="fg">
+        <label>Nível de dor atual (0 = sem dor · 10 = dor máxima)</label>
+        <div class="eva-row">
+          <input type="range" id="fEva" min="0" max="10" value="0" oninput="updEva(this.value)"/>
+          <div class="eva-num" id="evaNum">0</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:3px"><span>Sem dor</span><span>Dor máxima</span></div>
+      </div>
+      <div class="fg"><label>Há quanto tempo sente esse problema?</label>
+        <select class="fc" id="fTempo"><option value="">— Selecione —</option><option>Menos de 1 semana</option><option>1 a 4 semanas</option><option>1 a 3 meses</option><option>3 a 6 meses</option><option>Mais de 6 meses</option><option>Mais de 1 ano</option></select>
+      </div>
+      <div class="fg"><label>Profissão e rotina diária</label><input class="fc" id="fProf" placeholder="Ex: Motorista, trabalho sentado no computador..."/></div>
+      <div class="fg"><label>Condições de saúde, cirurgias ou medicamentos</label><textarea class="fc" id="fHist" placeholder="Ex: Hipertensão, cirurgia no joelho em 2020..." rows="2"></textarea></div>
+      <div class="fg"><label>Pratica atividade física?</label><input class="fc" id="fAtiv" placeholder="Ex: Caminhada 3x por semana, não pratico..."/></div>
+      <div class="fg"><label class="req">Objetivo principal com o tratamento</label><input class="fc" id="fObj" placeholder='Ex: "Quero voltar a caminhar sem dor"'/></div>
+      <div class="err-box" id="errS">Preencha a queixa principal e o objetivo</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-o" onclick="goStep(2)">‹</button>
+      <button class="btn btn-g" onclick="validar3()">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="panel" id="s4">
+    <div class="res-card">
+      <h3>Confirme seu agendamento</h3>
+      <div class="res-item"><div class="res-ico">📅</div><div><div class="res-label">Data e Horário</div><div class="res-val" id="rDH">—</div></div></div>
+      <div class="res-item"><div class="res-ico">👤</div><div><div class="res-label">Paciente</div><div class="res-val" id="rNome">—</div></div></div>
+      <div class="res-item"><div class="res-ico">📱</div><div><div class="res-label">WhatsApp</div><div class="res-val" id="rTel">—</div></div></div>
+      <div class="res-item"><div class="res-ico">🩺</div><div><div class="res-label">Queixa</div><div class="res-val" id="rQ">—</div></div></div>
+      <div class="res-item"><div class="res-ico">🎯</div><div><div class="res-label">Objetivo</div><div class="res-val" id="rObj">—</div></div></div>
+    </div>
+    <div class="policy">⏰ <strong>Política de cancelamento:</strong> Avise com pelo menos 24h de antecedência. Faltas sem aviso implicam cobrança da sessão.</div>
+    <button class="btn btn-g" id="btnConf" onclick="confirmar()" style="margin-bottom:10px">✅ Confirmar Agendamento</button>
+    <button class="btn btn-o" onclick="goStep(3)">‹ Voltar e editar</button>
+  </div>
+
+  <!-- STEP 5: SUCESSO -->
+  <div class="panel" id="s5">
+    <div class="succ">
+      <div class="succ-ico">🎉</div>
+      <h2>Agendamento confirmado!</h2>
+      <p>Seu agendamento foi registrado com sucesso.<br>Em breve o Dr. Igor entrará em contato para confirmar.</p>
+      <div class="res-card" style="text-align:left;margin-bottom:20px">
+        <div class="res-item"><div class="res-ico">📅</div><div><div class="res-label">Consulta agendada</div><div class="res-val" id="succDH">—</div></div></div>
+        <div class="res-item"><div class="res-ico">📍</div><div><div class="res-label">Local</div><div class="res-val">MultiCare Fisioterapia · Garanhuns, PE</div></div></div>
+      </div>
+      <button class="btn btn-wa" onclick="abrirWA()" style="margin-bottom:10px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar com Dr. Igor no WhatsApp
+      </button>
+      <div style="font-size:12px;color:var(--ink3)">Uma confirmação será enviada ao seu WhatsApp em breve.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>MultiCare Fisioterapia</strong> · Dr. Igor Matheus · Garanhuns, PE<br>
+  <a href="https://wa.me/5587999221295">📱 (87) 9.9922-1295</a>
+</div>
+
+<script>
+var SB = 'https://etwozhnvxbqpayxmmnme.supabase.co';
+var KEY = 'sb_publishable_FrJa-XnW0x6rHrmfTYRKsw_I0jI6sWE';
+var HORS = ['14:00','15:00','16:00','17:00','18:00'];
+var MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var MESES_L = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+var DIAS_L = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+var st = {yr:0,mo:0,dia:null,hora:null,ocup:[],step:1,dados:{}};
+
+function init(){
+  var d = new Date();
+  st.yr=d.getFullYear(); st.mo=d.getMonth();
+  carregarOcup(); renderCal();
+}
+
+function ds(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function carregarOcup(){
+  var hoje = ds(new Date());
+  fetch(SB+'/rest/v1/agendamentos?data=gte.'+hoje+'&select=data,hora',{
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+  }).then(function(r){return r.json();}).then(function(d){
+    st.ocup=d||[]; renderCal();
+  }).catch(function(){ st.ocup=[]; });
+}
+
+function calNav(dir){
+  st.mo+=dir;
+  if(st.mo>11){st.mo=0;st.yr++;}
+  if(st.mo<0){st.mo=11;st.yr--;}
+  renderCal();
+}
+
+function renderCal(){
+  document.getElementById('calTitle').textContent = MESES[st.mo]+' '+st.yr;
+  var g = document.getElementById('calGrid');
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+  var n = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+  var h = n.map(function(x){return '<div class="cal-head">'+x+'</div>';}).join('');
+  var p = new Date(st.yr,st.mo,1);
+  var tot = new Date(st.yr,st.mo+1,0).getDate();
+  for(var i=0;i<p.getDay();i++) h+='<div></div>';
+  for(var d=1;d<=tot;d++){
+    var dt = new Date(st.yr,st.mo,d); dt.setHours(0,0,0,0);
+    var dstr = ds(dt);
+    var isWe = dt.getDay()===0||dt.getDay()===6;
+    var isPast = dt<amanha;
+    var ocN = st.ocup.filter(function(a){return a.data===dstr;}).length;
+    var isFull = ocN>=HORS.length;
+    var isSel = dstr===st.dia;
+    var cls = 'cal-day ';
+    var click = '';
+    if(isSel) cls+='sel';
+    else if(isWe||isPast||isFull) cls+='off';
+    else{ cls+='avail'; click=' data-d="'+dstr+'" onclick="selDia(this.dataset.d)"'; }
+    h+='<div class="'+cls+'"'+click+'>'+d+'</div>';
+  }
+  g.innerHTML=h;
+}
+
+function selDia(d){
+  st.dia=d; st.hora=null;
+  renderCal(); renderHors(d);
+  document.getElementById('horCard').style.display='block';
+  document.getElementById('btnS1').style.display='none';
+}
+
+function renderHors(d){
+  var dt = new Date(d+'T12:00:00');
+  document.getElementById('horSub').textContent = DIAS_L[dt.getDay()]+', '+dt.getDate()+' de '+MESES_L[dt.getMonth()];
+  var ocup = st.ocup.filter(function(a){return a.data===d;}).map(function(a){return a.hora;});
+  var h='';
+  HORS.forEach(function(hr){
+    var isO=ocup.indexOf(hr)>=0;
+    var isS=hr===st.hora;
+    var cls='hor '+(isO?'ocup':isS?'sel':'');
+    var extra=isO?' disabled':' data-h="'+hr+'" onclick="selHora(this.dataset.h)"';
+    h+='<button class="'+cls+'"'+extra+'>'+hr+'h'+(isO?' — Ocupado':'')+'</button>';
+  });
+  document.getElementById('horGrid').innerHTML=h;
+}
+
+function selHora(h){
+  st.hora=h; renderHors(st.dia);
+  document.getElementById('btnS1').style.display='block';
+}
+
+function setNav(n){
+  for(var i=1;i<=4;i++){
+    var el=document.getElementById('nav'+i);
+    el.className='step'+(i===n?' active':i<n?' done':'');
+  }
+}
+
+function goStep(n){
+  document.getElementById('s'+st.step).classList.remove('active');
+  st.step=n;
+  document.getElementById('s'+n).classList.add('active');
+  setNav(n); window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function validar2(){
+  var ok=document.getElementById('fNome').value.trim().length>=3
+    &&document.getElementById('fNasc').value
+    &&document.getElementById('fSexo').value
+    &&document.getElementById('fTel').value.replace(/\D/g,'').length>=10;
+  document.getElementById('errD').style.display=ok?'none':'block';
+  if(ok) goStep(3);
+}
+
+function validar3(){
+  var ok=document.getElementById('fQueixa').value.trim().length>=5
+    &&document.getElementById('fObj').value.trim().length>=3;
+  document.getElementById('errS').style.display=ok?'none':'block';
+  if(ok){ preencherRes(); goStep(4); }
+}
+
+function updEva(v){
+  document.getElementById('evaNum').textContent=v;
+  var c=v<=3?'var(--green)':v<=6?'#b8760a':'var(--red)';
+  document.getElementById('evaNum').style.color=c;
+}
+
+function preencherRes(){
+  var d=new Date(st.dia+'T12:00:00');
+  var fmt=DIAS_L[d.getDay()]+', '+d.getDate()+' de '+MESES_L[d.getMonth()]+' de '+d.getFullYear();
+  document.getElementById('rDH').textContent=fmt+' às '+st.hora+'h';
+  document.getElementById('rNome').textContent=document.getElementById('fNome').value;
+  document.getElementById('rTel').textContent=document.getElementById('fTel').value;
+  document.getElementById('rQ').textContent=document.getElementById('fQueixa').value;
+  document.getElementById('rObj').textContent=document.getElementById('fObj').value;
+}
+
+async function confirmar(){
+  var btn=document.getElementById('btnConf');
+  btn.disabled=true; btn.textContent='Salvando...';
+  st.dados={
+    nome:document.getElementById('fNome').value.trim(),
+    nasc:document.getElementById('fNasc').value,
+    tel:document.getElementById('fTel').value,
+    cpf:document.getElementById('fCpf').value,
+    convenio:document.getElementById('fConvenio').value,
+    queixa:document.getElementById('fQueixa').value,
+    eva:parseInt(document.getElementById('fEva').value),
+    tempo:document.getElementById('fTempo').value,
+    prof:document.getElementById('fProf').value,
+    hist:document.getElementById('fHist').value,
+    ativ:document.getElementById('fAtiv').value,
+    obj:document.getElementById('fObj').value,
+    data:st.dia, hora:st.hora
+  };
+  var d=st.dados;
+  try{
+    var rP=await fetch(SB+'/rest/v1/pacientes',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({nome:d.nome,nasc:d.nasc,tel:d.tel,cpf:d.cpf,convenio:d.convenio,obs:'Queixa: '+d.queixa+' | Objetivo: '+d.obj+(d.prof?' | Prof: '+d.prof:'')+(d.hist?' | Hist: '+d.hist:'')})});
+    var pR=await rP.json();
+    var pId=pR[0]&&pR[0].id;
+    if(pId) await fetch(SB+'/rest/v1/agendamentos',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({paciente_id:pId,tipo:'Avaliação',data:d.data,hora:d.hora,valor:0,status:'Pendente',obs:'Agendado pelo paciente · EVA '+d.eva+'/10'})});
+    st.ocup.push({data:d.data,hora:d.hora});
+  }catch(e){ console.log('Erro:',e); }
+  var dt2=new Date(d.data+'T12:00:00');
+  document.getElementById('succDH').textContent=DIAS_L[dt2.getDay()]+', '+dt2.getDate()+' de '+MESES_L[dt2.getMonth()]+' às '+d.hora+'h';
+  goStep(5);
+  document.getElementById('nav4').className='step done';
+}
+
+function abrirWA(){
+  var d=st.dados;
+  var fmt=d.data?d.data.split('-').reverse().join('/'):'';
+  waMsg('5587999221295','Olá Dr. Igor! Acabei de agendar minha consulta para '+fmt+' às '+d.hora+'h. Fico no aguardo da confirmação!');
+}
+
+function waMsg(tel,msg){ window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg),'_blank'); }
+function mTel(v){ v=v.replace(/\D/g,'').substring(0,11); if(v.length<=10) v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3'); else v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3'); return v.replace(/-$/,''); }
+function mCpf(v){ v=v.replace(/\D/g,'').substring(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2'); return v; }
+
+window.onload = init;
+</script>
+</body>
+</html>
