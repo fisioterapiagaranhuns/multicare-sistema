@@ -571,7 +571,7 @@ textarea.form-control{resize:vertical;min-height:80px}
           <div class="card">
             <div class="sec-title" style="margin-bottom:8px">Link de Agendamento + Anamnese</div>
             <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:20px">Envie ao paciente no primeiro contato para ele escolher o horário e preencher a ficha de anamnese.</p>
-            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">multicare.com.br/agendar</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
+            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-agendar</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
             <button class="btn btn-wa" onclick="enviarLink()">Enviar via WhatsApp</button>
           </div>
           <div class="card"><div class="sec-title" style="margin-bottom:16px">Fichas Recebidas</div><div id="listaAnamnese"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma ficha recebida ainda</p></div></div>
@@ -1256,7 +1256,7 @@ function goTo(page){
   document.getElementById('pageTitle').textContent=titles[page]||page;
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
   closeSidebar();
-  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
+  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,'link-paciente':renderLinkPaciente,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
   if(renders[page])renders[page]();
   populateSelects();
 }
@@ -2235,6 +2235,369 @@ openModal = function(id){
   _origOpenModal(id);
   setTimeout(applyMasks, 50);
 };
+
+
+// ════════════════════════════════════════════
+// FORMULÁRIO PÚBLICO DE AGENDAMENTO
+// ════════════════════════════════════════════
+
+var pubState = {
+  calYear:0, calMonth:0,
+  diaSelecionado:null,
+  horarioSelecionado:null,
+  agendamentosOcupados:[],
+  currentStep:1,
+  dadosConfirmados:{}
+};
+
+var PUB_HORARIOS = ['14:00','15:00','16:00','17:00','18:00'];
+var PUB_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var PUB_MESES_LONG = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+var PUB_DIAS_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+function abrirFormPublico(){
+  document.getElementById('viewGestor').style.display='none';
+  document.getElementById('viewFormPublico').style.display='block';
+  var hoje = new Date();
+  pubState.calYear = hoje.getFullYear();
+  pubState.calMonth = hoje.getMonth();
+  pubState.currentStep = 1;
+  pubState.diaSelecionado = null;
+  pubState.horarioSelecionado = null;
+  pubCarregarOcupados();
+  pubRenderCal();
+  pubSetStepNav(1);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function fecharFormPublico(){
+  document.getElementById('viewGestor').style.display='block';
+  document.getElementById('viewFormPublico').style.display='none';
+  carregarFichas();
+}
+
+// ── CALENDÁRIO ──
+function pubCarregarOcupados(){
+  // From Supabase
+  var hojeStr = pubToDateStr(new Date());
+  fetch(SB_URL+'/rest/v1/agendamentos?data=gte.'+hojeStr+'&select=data,hora',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(data){
+    pubState.agendamentosOcupados = data||[];
+    pubRenderCal();
+  }).catch(function(){
+    // fallback: use local state
+    pubState.agendamentosOcupados = state.agendamentos.map(function(a){return {data:a.data,hora:a.hora};});
+    pubRenderCal();
+  });
+}
+
+function pubToDateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function pubCalNav(dir){
+  pubState.calMonth += dir;
+  if(pubState.calMonth>11){pubState.calMonth=0;pubState.calYear++;}
+  if(pubState.calMonth<0){pubState.calMonth=11;pubState.calYear--;}
+  pubRenderCal();
+}
+
+function pubRenderCal(){
+  var el = document.getElementById('pubCalTitle');
+  if(!el)return;
+  el.textContent = PUB_MESES[pubState.calMonth]+' '+pubState.calYear;
+  var grid = document.getElementById('pubCalGrid');
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+  var diasNomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var html = diasNomes.map(function(d){return '<div style="text-align:center;font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase;padding:4px 0">'+d+'</div>';}).join('');
+  var primeiro = new Date(pubState.calYear, pubState.calMonth, 1);
+  var diasNoMes = new Date(pubState.calYear, pubState.calMonth+1, 0).getDate();
+  var inicioDia = primeiro.getDay();
+  for(var i=0;i<inicioDia;i++) html+='<div></div>';
+  for(var d=1;d<=diasNoMes;d++){
+    var data = new Date(pubState.calYear,pubState.calMonth,d);
+    data.setHours(0,0,0,0);
+    var dow = data.getDay();
+    var dataStr = pubToDateStr(data);
+    var isWeekend = dow===0||dow===6;
+    var isPast = data<amanha;
+    var isSelected = dataStr===pubState.diaSelecionado;
+    var ocupados = pubState.agendamentosOcupados.filter(function(a){return a.data===dataStr;}).length;
+    var isFull = ocupados>=PUB_HORARIOS.length;
+    var baseStyle = 'aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:500;border:2px solid transparent;transition:all 0.15s;';
+    var style,onclick='';
+    if(isSelected){
+      style=baseStyle+'background:var(--forest-mid);color:white;cursor:pointer;';
+    } else if(isWeekend||isPast||isFull){
+      style=baseStyle+'color:var(--line);cursor:not-allowed;';
+    } else {
+      style=baseStyle+'background:var(--paper);color:var(--ink);cursor:pointer;';
+      onclick='onclick="pubSelecionarDia(''+dataStr+'')"';
+      style+='" onmouseover="this.style.background='var(--forest-light)';this.style.borderColor='var(--forest-mid)'" onmouseout="this.style.background='var(--paper)';this.style.borderColor='transparent'"';
+    }
+    html+='<div style="'+style+'" '+onclick+'>'+d+'</div>';
+  }
+  grid.innerHTML=html;
+}
+
+function pubSelecionarDia(dataStr){
+  pubState.diaSelecionado=dataStr;
+  pubState.horarioSelecionado=null;
+  pubRenderCal();
+  pubRenderHorarios(dataStr);
+  document.getElementById('pubHorariosCard').style.display='block';
+  document.getElementById('pubBtnStep1').style.display='none';
+}
+
+function pubRenderHorarios(dataStr){
+  var d = new Date(dataStr+'T12:00:00');
+  document.getElementById('pubHorarioSub').textContent = PUB_DIAS_LONG[d.getDay()]+', '+d.getDate()+' de '+PUB_MESES_LONG[d.getMonth()];
+  var ocupados = pubState.agendamentosOcupados.filter(function(a){return a.data===dataStr;}).map(function(a){return a.hora;});
+  var grid = document.getElementById('pubHorariosGrid');
+  grid.innerHTML = PUB_HORARIOS.map(function(h){
+    var isOcup = ocupados.indexOf(h)>=0;
+    var isSel = h===pubState.horarioSelecionado;
+    var base = 'padding:14px;border-radius:8px;font-family:Outfit,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:center;width:100%;';
+    var style,onclick='';
+    if(isOcup){
+      style=base+'background:var(--paper);border:2px solid var(--line);color:var(--line);cursor:not-allowed;text-decoration:line-through;';
+    } else if(isSel){
+      style=base+'background:var(--forest-mid);border:2px solid var(--forest-mid);color:white;';
+    } else {
+      style=base+'background:var(--white);border:2px solid var(--line);color:var(--ink);';
+      onclick='onclick="pubSelecionarHorario(''+h+'')"';
+    }
+    return '<button style="'+style+'" '+onclick+(isOcup?' disabled':'')+'>'+h+'h'+(isOcup?' — Ocupado':'')+'</button>';
+  }).join('');
+}
+
+function pubSelecionarHorario(hora){
+  pubState.horarioSelecionado=hora;
+  pubRenderHorarios(pubState.diaSelecionado);
+  document.getElementById('pubBtnStep1').style.display='block';
+}
+
+// ── STEPS ──
+function pubSetStepNav(n){
+  for(var i=1;i<=4;i++){
+    var nav = document.getElementById('pnav'+i);
+    if(!nav)continue;
+    nav.style.color = i===n?'var(--forest-mid)':'var(--ink3)';
+    nav.style.borderBottom = i===n?'2px solid var(--forest-mid)':'2px solid transparent';
+  }
+}
+
+function pubGoStep(n){
+  document.getElementById('pstep'+pubState.currentStep).style.display='none';
+  pubState.currentStep=n;
+  document.getElementById('pstep'+n).style.display='block';
+  pubSetStepNav(n);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function pubValidarStep2(){
+  var nome=document.getElementById('pubNome').value.trim();
+  var nasc=document.getElementById('pubNasc').value;
+  var sexo=document.getElementById('pubSexo').value;
+  var tel=document.getElementById('pubTel').value.replace(/\D/g,'');
+  var ok = nome.length>=3 && nasc && sexo && tel.length>=10;
+  document.getElementById('pubErrDados').style.display = ok?'none':'block';
+  if(ok) pubGoStep(3);
+}
+
+function pubValidarStep3(){
+  var queixa=document.getElementById('pubQueixa').value.trim();
+  var objetivo=document.getElementById('pubObjetivo').value.trim();
+  var ok = queixa.length>=5 && objetivo.length>=3;
+  document.getElementById('pubErrSaude').style.display = ok?'none':'block';
+  if(ok){ pubPreencherResumo(); pubGoStep(4); }
+}
+
+function pubUpdateEva(v){
+  document.getElementById('pubEvaVal').textContent=v;
+  var cor = v<=3?'var(--forest)':v<=6?'#b8760a':'var(--red)';
+  document.getElementById('pubEvaVal').style.color=cor;
+}
+
+function pubPreencherResumo(){
+  var d = new Date(pubState.diaSelecionado+'T12:00:00');
+  var dataFmt = PUB_DIAS_LONG[d.getDay()]+', '+d.getDate()+' de '+PUB_MESES_LONG[d.getMonth()]+' de '+d.getFullYear();
+  document.getElementById('pubResDataHora').textContent = dataFmt+' às '+pubState.horarioSelecionado+'h';
+  document.getElementById('pubResNome').textContent = document.getElementById('pubNome').value;
+  document.getElementById('pubResTel').textContent = document.getElementById('pubTel').value;
+  document.getElementById('pubResQueixa').textContent = document.getElementById('pubQueixa').value;
+  document.getElementById('pubResObjetivo').textContent = document.getElementById('pubObjetivo').value;
+}
+
+// ── CONFIRMAR — salva direto no Supabase ──
+async function pubConfirmar(){
+  var btn = document.getElementById('pubBtnConfirmar');
+  btn.disabled=true; btn.textContent='Salvando...';
+
+  var dados = {
+    nome: document.getElementById('pubNome').value.trim(),
+    nasc: document.getElementById('pubNasc').value,
+    sexo: document.getElementById('pubSexo').value,
+    tel:  document.getElementById('pubTel').value,
+    cpf:  document.getElementById('pubCpf').value,
+    convenio: document.getElementById('pubConvenio').value,
+    queixa: document.getElementById('pubQueixa').value,
+    eva:  parseInt(document.getElementById('pubEva').value),
+    tempo: document.getElementById('pubTempo').value,
+    profissao: document.getElementById('pubProfissao').value,
+    historico: document.getElementById('pubHistorico').value,
+    atividade: document.getElementById('pubAtividade').value,
+    objetivo: document.getElementById('pubObjetivo').value,
+    data: pubState.diaSelecionado,
+    hora: pubState.horarioSelecionado
+  };
+  pubState.dadosConfirmados = dados;
+
+  try{
+    // 1. Criar paciente no Supabase
+    var rPac = await fetch(SB_URL+'/rest/v1/pacientes',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({
+        nome:dados.nome, nasc:dados.nasc, tel:dados.tel,
+        cpf:dados.cpf, convenio:dados.convenio,
+        obs:'Queixa: '+dados.queixa+' | Objetivo: '+dados.objetivo+(dados.profissao?' | Profissão: '+dados.profissao:'')+(dados.historico?' | Histórico: '+dados.historico:'')+(dados.atividade?' | Atividade: '+dados.atividade:'')
+      })
+    });
+    var pacRes = await rPac.json();
+    var pacId = pacRes[0]&&pacRes[0].id;
+
+    // 2. Criar agendamento no Supabase
+    if(pacId){
+      await fetch(SB_URL+'/rest/v1/agendamentos',{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+        body:JSON.stringify({
+          paciente_id:pacId, tipo:'Avaliação',
+          data:dados.data, hora:dados.hora,
+          valor:0, status:'Pendente',
+          obs:'Agendado pelo paciente · EVA '+dados.eva+'/10 · Tempo: '+dados.tempo
+        })
+      });
+    }
+
+    // 3. Atualizar estado local
+    await loadAll();
+
+    // 4. Marcar horário como ocupado localmente
+    pubState.agendamentosOcupados.push({data:dados.data,hora:dados.hora});
+
+    toast('Agendamento salvo com sucesso!','success');
+  } catch(e){
+    // Salvar localmente como fallback
+    state.pacientes.push({id:Date.now(),nome:dados.nome,tel:dados.tel,nasc:dados.nasc,cpf:dados.cpf,convenio:dados.convenio,obs:dados.queixa});
+    state.agendamentos.push({id:Date.now()+1,paciente_id:state.pacientes[state.pacientes.length-1].id,tipo:'Avaliação',data:dados.data,hora:dados.hora,valor:0,status:'Pendente',obs:'Agendado pelo paciente'});
+    toast('Salvo localmente','success');
+  }
+
+  // Mostrar sucesso
+  var d2 = new Date(dados.data+'T12:00:00');
+  var dataFmt = PUB_DIAS_LONG[d2.getDay()]+', '+d2.getDate()+' de '+PUB_MESES_LONG[d2.getMonth()];
+  document.getElementById('pubSuccDataHora').textContent = dataFmt+' às '+dados.hora+'h';
+  pubGoStep(5);
+  document.getElementById('pnav4').style.color='var(--forest)';
+
+  // Notificar Dr. Igor
+  setTimeout(pubNotificarDrIgor, 1200);
+}
+
+function pubNotificarDrIgor(){
+  var d = pubState.dadosConfirmados;
+  if(!d.nome)return;
+  var dataFmt = d.data?d.data.split('-').reverse().join('/'):'';
+  var msg = '🔔 Novo agendamento via sistema!
+
+'
+    +'👤 Paciente: '+d.nome+'
+'
+    +'📱 WhatsApp: '+d.tel+'
+'
+    +'📅 Data: '+dataFmt+' às '+d.hora+'h
+'
+    +'📊 EVA: '+d.eva+'/10
+'
+    +'🩺 Queixa: '+d.queixa+'
+'
+    +'🎯 Objetivo: '+d.objetivo+'
+'
+    +(d.profissao?'💼 Profissão: '+d.profissao+'
+':'')
+    +(d.historico?'📋 Histórico: '+d.historico+'
+':'')
+    +'
+MultiCare Fisioterapia — Agendamento automático';
+  window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
+}
+
+function pubAbrirWA(){
+  var d = pubState.dadosConfirmados;
+  var dataFmt = d.data?d.data.split('-').reverse().join('/'):'';
+  var msg = 'Olá Dr. Igor! Acabei de agendar minha consulta para '+dataFmt+' às '+d.hora+'h. Fico no aguardo da confirmação!';
+  window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ── FICHAS RECEBIDAS (visão do gestor) ──
+function carregarFichas(){
+  var el = document.getElementById('listaFichas');
+  var count = document.getElementById('fichasCount');
+  // Show patients who were created via booking (status Pendente)
+  var pendentes = state.agendamentos.filter(function(a){return a.status==='Pendente' && a.obs && a.obs.indexOf('Agendado pelo paciente')>=0;});
+  count.textContent = pendentes.length+' ficha'+(pendentes.length!==1?'s':'')+' recebida'+(pendentes.length!==1?'s':'');
+  if(!pendentes.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma ficha recebida ainda</p>';
+    return;
+  }
+  el.innerHTML = pendentes.slice().reverse().map(function(a){
+    var p = state.pacientes.find(function(x){return x.id==a.paciente_id;});
+    return '<div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px">'
+      +'<div style="font-size:14px;font-weight:500">'+(p?p.nome:'—')+'</div>'
+      +'<span class="badge badge-amber">Pendente</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">📅 '+(a.data?a.data.split('-').reverse().join('/'):'—')+' às '+a.hora+'h</div>'
+      +(p&&p.obs?'<div style="font-size:12px;color:var(--ink2);line-height:1.5;margin-bottom:10px">'+p.obs.substring(0,120)+'...</div>':'')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +'<button class="btn btn-green btn-sm" onclick="confirmarFicha('+a.id+')">✓ Confirmar</button>'
+      +(p?'<button class="btn btn-wa btn-sm" onclick="waMsg(''+p.tel+'','Olá '+p.nome+'! Sua consulta de '+(a.data?a.data.split('-').reverse().join('/'):'\'')+'  às '+a.hora+'h está confirmada. Aguardamos você na MultiCare Fisioterapia!')">WA</button>':'')
+      +'<button class="btn btn-outline btn-sm" onclick="'+(p?'verPerfil('+a.paciente_id+')':'')+'">Ver ficha</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+async function confirmarFicha(agId){
+  try{
+    await apiPatch('agendamentos',agId,{status:'Confirmado'});
+    await loadAll();
+    carregarFichas();
+    renderDashboard();
+    toast('Consulta confirmada!','success');
+  } catch(e){ toast('Erro ao confirmar','error'); }
+}
+
+function copiarLinkAgendar(){
+  var link = window.location.href.split('#')[0]+'#agendar';
+  navigator.clipboard.writeText(link).then(function(){toast('Link copiado!','success');});
+}
+
+function enviarLinkAgendar(){
+  var link = window.location.href.split('#')[0];
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\n'+link+'\n\nEm caso de dúvidas, estou à disposição!';
+  window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
+}
+
+// Override renderLinkPaciente
+function renderLinkPaciente(){
+  carregarFichas();
+  // Also reload appointments to have fresh data
+  pubState.agendamentosOcupados = state.agendamentos.map(function(a){return {data:a.data,hora:a.hora};});
+}
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
