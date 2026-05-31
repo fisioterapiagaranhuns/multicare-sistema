@@ -1604,6 +1604,8 @@ function initApp(){
   document.getElementById('lanData').value=hoje();
   document.getElementById('evData').value=hoje();
   document.getElementById('fbData').value=hoje();
+  loadEng2State();
+  initPromTipoListener();
   var mes=hoje().substring(0,7);
   ['relFiltroMes','relFiltroLanMes'].forEach(id=>{var el=document.getElementById(id);if(el)el.value=mes;});
   // Definir período padrão dos gráficos (últimos 30 dias)
@@ -1638,11 +1640,16 @@ var PROMS_TIPOS = {
   sono: ['Como foi seu sono esta noite? (0-10)','Acordou com dor? (Sim/Não)','Quantas horas dormiu?']
 };
 
-document.getElementById('promTipo').addEventListener('change', function(){
-  var perguntas = PROMS_TIPOS[this.value] || [];
-  document.getElementById('promPreview').innerHTML = '<div style="font-weight:600;margin-bottom:8px;color:var(--ink)">Prévia das perguntas:</div>' +
-    perguntas.map((p,i)=>`<div style="margin-bottom:4px">${i+1}. ${p}</div>`).join('');
-});
+// promTipo listener — attached when engajamento page loads
+function initPromTipoListener(){
+  var el = document.getElementById('promTipo');
+  if(!el) return;
+  el.addEventListener('change', function(){
+    var perguntas = PROMS_TIPOS[this.value] || [];
+    document.getElementById('promPreview').innerHTML = '<div style="font-weight:600;margin-bottom:8px;color:var(--ink)">Prévia das perguntas:</div>' +
+      perguntas.map((p,i)=>`<div style="margin-bottom:4px">${i+1}. ${p}</div>`).join('');
+  });
+}
 
 function enviarPROM(){
   var pid = document.getElementById('promPaciente').value;
@@ -2161,8 +2168,7 @@ function loadEng2State(){
   }
 }
 
-// Load on init
-loadEng2State();
+// loadEng2State() is called inside initApp()
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
