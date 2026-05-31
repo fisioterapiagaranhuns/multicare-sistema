@@ -968,8 +968,8 @@ Vamos retomar? Aguardo você!
     <div class="modal-body">
       <input type="hidden" id="pacId"/>
       <div class="form-row"><div class="form-group"><label class="form-label">Nome Completo *</label><input class="form-control" id="pNome" placeholder="Nome do paciente"/></div><div class="form-group"><label class="form-label">Data de Nascimento</label><input class="form-control" id="pNasc" type="date"/></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">WhatsApp *</label><input class="form-control" id="pTel" placeholder="(87) 9xxxx-xxxx"/></div><div class="form-group"><label class="form-label">E-mail</label><input class="form-control" id="pEmail" type="email" placeholder="email@exemplo.com"/></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">CPF</label><input class="form-control" id="pCpf" placeholder="000.000.000-00"/></div><div class="form-group"><label class="form-label">Convênio</label><input class="form-control" id="pConvenio" placeholder="Particular / Nome do plano"/></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">WhatsApp *</label><input class="form-control" id="pTel" placeholder="(87) 9xxxx-xxxx" oninput="this.value=maskTel(this.value)"/></div><div class="form-group"><label class="form-label">E-mail</label><input class="form-control" id="pEmail" type="email" placeholder="email@exemplo.com"/></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">CPF</label><input class="form-control" id="pCpf" placeholder="000.000.000-00" oninput="this.value=maskCPF(this.value)"/></div><div class="form-group"><label class="form-label">Convênio</label><input class="form-control" id="pConvenio" placeholder="Particular / Nome do plano"/></div></div>
       <div class="form-group"><label class="form-label">Observações / Queixa Principal</label><textarea class="form-control" id="pObs" placeholder="Histórico, motivo do atendimento..."></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('modalPaciente')">Cancelar</button><button class="btn btn-green" onclick="salvarPaciente()">Salvar Paciente</button></div>
@@ -1611,6 +1611,7 @@ function initApp(){
   document.getElementById('fbData').value=hoje();
   loadEng2State();
   initPromTipoListener();
+  setTimeout(applyMasks, 300);
   var mes=hoje().substring(0,7);
   ['relFiltroMes','relFiltroLanMes'].forEach(id=>{var el=document.getElementById(id);if(el)el.value=mes;});
   // Definir período padrão dos gráficos (últimos 30 dias)
@@ -2174,6 +2175,66 @@ function loadEng2State(){
 }
 
 // loadEng2State() is called inside initApp()
+
+
+// ── MÁSCARAS AUTOMÁTICAS ──
+function maskTel(v){
+  v = v.replace(/\D/g,'').substring(0,11);
+  if(v.length <= 10){
+    v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  } else {
+    v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  }
+  return v.replace(/-$/,'');
+}
+
+function maskCPF(v){
+  v = v.replace(/\D/g,'').substring(0,11);
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  return v;
+}
+
+function applyMasks(){
+  // Tel fields
+  ['pTel','blPaciente'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el || el.dataset.masked) return;
+    if(el.type === 'tel' || el.placeholder && el.placeholder.includes('9xxxx')) {
+      el.addEventListener('input', function(){
+        var pos = this.selectionStart;
+        this.value = maskTel(this.value);
+      });
+      el.dataset.masked = '1';
+    }
+  });
+
+  // Apply to all tel/phone inputs by placeholder pattern
+  document.querySelectorAll('input[placeholder*="9xxxx"], input[id*="Tel"], input[id*="tel"]').forEach(function(el){
+    if(el.dataset.masked) return;
+    el.addEventListener('input', function(){
+      this.value = maskTel(this.value);
+    });
+    el.dataset.masked = '1';
+  });
+
+  // Apply to all CPF inputs
+  document.querySelectorAll('input[placeholder*="000.000"], input[id*="Cpf"], input[id*="cpf"]').forEach(function(el){
+    if(el.dataset.masked) return;
+    el.addEventListener('input', function(){
+      this.value = maskCPF(this.value);
+    });
+    el.dataset.masked = '1';
+  });
+}
+
+// Apply masks on page load and whenever a modal opens
+var _origOpenModal = openModal;
+openModal = function(id){
+  _origOpenModal(id);
+  setTimeout(applyMasks, 50);
+};
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
