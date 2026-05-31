@@ -1778,7 +1778,7 @@ function verificarAbandono(){
     var ultima = ags[0];
     var ultima_d = new Date(ultima.data.replace(/-/g,'/'));
     var dias = Math.floor((hoje_d - ultima_d)/(1000*60*60*24));
-    var msgPersonalizada = document.getElementById('msgAbandono').value.replace('[Nome]',p.nome).replace('[N]',Math.ceil((parseInt(protState.anamnese?.sessoes||12) - ags.length)));
+    var msgPersonalizada = document.getElementById('msgAbandono').value.replace('[Nome]',p.nome).replace('[N]',Math.ceil((parseInt((protState.anamnese&&protState.anamnese.sessoes)||12) - ags.length)));
     return`<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">
       <div class="p-avatar" style="background:var(--red-light);color:var(--red)">${p.nome[0]}</div>
       <div style="flex:1">
@@ -2131,7 +2131,7 @@ function enviarInterconsultaWa(){
   var p = state.pacientes.find(x=>x.id==pid);if(!p)return;
   var motivo = document.getElementById('intercMotivo').value;
   var medico = document.getElementById('intercMedico').value;
-  var msg = `Relatório de Interconsulta — Dr. Igor Matheus | MultiCare Fisioterapia\n\nPaciente: ${p.nome}\nMotivo: ${motivo||'Ver relatório impresso'}\n\nEstou à disposição para mais informações.\n(87) 9.9922-1295`;
+  var msg = 'Relatório de Interconsulta — Dr. Igor Matheus | MultiCare Fisioterapia\n\nPaciente: '+p.nome+'\nMotivo: '+(motivo||'Ver relatório impresso')+'\n\nEstou à disposição para mais informações.\n(87) 9.9922-1295';
   waMsg(p.tel, msg);
 }
 
@@ -2850,27 +2850,9 @@ function enviarProtocoloWa(){
   var prot = protState.protocolo;
   var evs = protState.evolucoes;
   var sessaoAtual = evs.length;
-  var evaAtual = evs.length ? evs[evs.length-1].eva : protState.anamnese?.eva || '—';
-  var msg = `Olá ${p.nome}! 👋
-
-Aqui está o resumo do seu protocolo clínico personalizado na MultiCare Fisioterapia:
-
-📋 *${prot.resumo}*
-
-🔍 *Causa raiz:* ${prot.causaRaiz}
-
-📊 *Progresso atual:*
-• Sessão: ${sessaoAtual} de ${prot.sessoesMinimas}
-• EVA atual: ${evaAtual}/10
-
-✅ *Orientações para casa:*
-${prot.exerciciosDomiciliares.map(e=>`• ${e}`).join('
-')}
-
-💚 ${prot.previsaoAlta}
-
-Continuamos firmes rumo à sua recuperação!
-— Dr. Igor Matheus · MultiCare Fisioterapia`;
+  var evaAtual = evs.length ? evs[evs.length-1].eva : (protState.anamnese&&protState.anamnese.eva) || '—';
+  var linhaExercicios = prot.exerciciosDomiciliares.map(function(e){return '• '+e;}).join('\n');
+  var msg = 'Olá '+p.nome+'! 👋\n\nAqui está o resumo do seu protocolo clínico personalizado na MultiCare Fisioterapia:\n\n📋 '+prot.resumo+'\n\n🔍 Causa raiz: '+prot.causaRaiz+'\n\n📊 Progresso atual:\n• Sessão: '+sessaoAtual+' de '+prot.sessoesMinimas+'\n• EVA atual: '+evaAtual+'/10\n\n✅ Orientações para casa:\n'+linhaExercicios+'\n\n💚 '+prot.previsaoAlta+'\n\nContinuamos firmes rumo à sua recuperação!\n— Dr. Igor Matheus · MultiCare Fisioterapia';
   waMsg(p.tel, msg);
 }
 
