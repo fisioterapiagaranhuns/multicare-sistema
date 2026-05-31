@@ -301,6 +301,8 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div class="sb-section">Comunicação</div>
       <div class="nav-item" onclick="goTo('lembretes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Lembretes &amp; Msg</div>
       <div class="nav-item" onclick="goTo('aniversariantes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Aniversariantes</div>
+      <div class="nav-item" onclick="goTo('engajamento')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><circle cx="12" cy="12" r="1"/></svg>Engajamento</div>
+      <div class="nav-item" onclick="goTo('autoridade')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Autoridade</div>
       <div class="nav-item" onclick="goTo('link-paciente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Link do Paciente</div>
     </nav>
     <div class="sb-bottom"><div class="sb-user"><div class="sb-avatar" id="sbAvatar">IM</div><div><div class="sb-user-name" id="sbName">Dr. Igor</div><div class="sb-user-role" id="sbRole">Fisioterapeuta</div></div></div></div>
@@ -576,6 +578,229 @@ textarea.form-control{resize:vertical;min-height:80px}
         </div>
       </div>
 
+
+    <!-- ENGAJAMENTO (FASE 2) -->
+    <div class="page" id="page-engajamento">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tabProms')">PROMs — Questionários</div>
+        <div class="tab" onclick="switchTab(this,'tabExercicios')">Exercícios Domiciliares</div>
+        <div class="tab" onclick="switchTab(this,'tabAbandono')">Alerta de Abandono</div>
+        <div class="tab" onclick="switchTab(this,'tabNPS')">NPS do Atendimento</div>
+      </div>
+
+      <!-- PROMS -->
+      <div class="tab-panel active" id="tabProms">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Enviar Questionário PROMs</div><div class="sec-sub">Percepção de melhora do paciente</div></div>
+            </div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Envie ao paciente um questionário rápido para ele responder entre as sessões. As respostas alimentam o gráfico de evolução.</p>
+            <div class="form-group"><label class="form-label">Selecionar Paciente</label><select class="form-control" id="promPaciente"><option value="">— Selecione —</option></select></div>
+            <div class="form-group"><label class="form-label">Tipo de Questionário</label>
+              <select class="form-control" id="promTipo">
+                <option value="dor">Escala de Dor Diária</option>
+                <option value="funcional">Funcionalidade</option>
+                <option value="qualidade">Qualidade de Vida</option>
+                <option value="sono">Sono e Bem-Estar</option>
+              </select>
+            </div>
+            <div style="background:var(--paper);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--ink2);line-height:1.7" id="promPreview">
+              <div style="font-weight:600;margin-bottom:8px;color:var(--ink)">Prévia das perguntas:</div>
+              <div>1. De 0 a 10, qual foi o nível médio de dor hoje?</div>
+              <div>2. A dor limitou alguma atividade do seu dia?</div>
+              <div>3. Qual movimento você fez hoje que antes era difícil?</div>
+            </div>
+            <button class="btn btn-wa" onclick="enviarPROM()">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Enviar via WhatsApp
+            </button>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:16px">Respostas Registradas</div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Registre manualmente a resposta do paciente ao questionário:</p>
+            <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="promRespPaciente"><option value="">— Selecione —</option></select></div>
+            <div class="form-group"><label class="form-label">Data da Resposta</label><input class="form-control" id="promRespData" type="date"/></div>
+            <div class="form-group">
+              <label class="form-label">EVA Reportado pelo Paciente (0–10)</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <input type="range" id="promEvaRange" min="0" max="10" value="5" oninput="document.getElementById('promEvaDisp').textContent=this.value" style="flex:1"/>
+                <span id="promEvaDisp" style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--amber);min-width:28px">5</span>
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Relato livre do paciente</label><textarea class="form-control" id="promRelato" placeholder='Ex: "Hoje consegui subir escadas sem dor pela primeira vez"' rows="3"></textarea></div>
+            <button class="btn btn-green" onclick="salvarRespPROM()">Salvar Resposta</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:0">
+          <div class="sec-title" style="margin-bottom:16px">Histórico de PROMs</div>
+          <div id="listaProms"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma resposta registrada</p></div>
+        </div>
+      </div>
+
+      <!-- EXERCÍCIOS DOMICILIARES -->
+      <div class="tab-panel" id="tabExercicios">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div class="sec-title">Prescrever Exercícios</div><button class="btn btn-green btn-sm" onclick="openModal('modalExercicio')">+ Prescrever</button></div>
+            <div id="listaExercicios"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum exercício prescrito</p></div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:8px">Enviar ao Paciente</div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Envie a lista de exercícios domiciliares via WhatsApp com instruções detalhadas.</p>
+            <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="exPacEnvio"><option value="">— Selecione —</option></select></div>
+            <button class="btn btn-wa" onclick="enviarExerciciosWa()">Enviar Exercícios via WA</button>
+            <div style="margin-top:20px;background:var(--paper);border-radius:8px;padding:14px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px">📱 Exemplo de mensagem enviada:</div>
+              <div style="font-size:12px;color:var(--ink3);line-height:1.7">Olá [Nome]! 💪 Aqui estão seus exercícios para esta semana:<br><br>1. Alongamento lombar — 3x30seg — manhã<br>2. Core estabilizador — 3x10 rep — tarde<br>3. Caminhada progressiva — 20min — dia sim dia não<br><br>Dúvidas, me chame! — Dr. Igor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTA DE ABANDONO -->
+      <div class="tab-panel" id="tabAbandono">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div><div class="sec-title">Pacientes em Risco de Abandono</div><div class="sec-sub">2+ faltas ou sem agendamento</div></div><button class="btn btn-outline btn-sm" onclick="verificarAbandono()">🔄 Atualizar</button></div>
+            <div id="listaAbandono"><div class="loading"><div class="spin"></div>Analisando...</div></div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:8px">Mensagem de Reengajamento</div>
+            <div class="form-group"><label class="form-label">Mensagem padrão (editável)</label>
+              <textarea class="form-control" id="msgAbandono" rows="6">Olá [Nome]! 😊 Sentimos sua falta na MultiCare Fisioterapia!
+
+Sabemos que a rotina pode ser corrida, mas sua recuperação é nossa prioridade — e a sua também deveria ser. 💚
+
+Você está a apenas [N] sessões de atingir sua meta!
+
+Vamos retomar? Aguardo você! 
+— Dr. Igor Matheus</textarea>
+            </div>
+            <div style="background:var(--amber-light);border-radius:8px;padding:12px;font-size:13px;color:var(--amber);margin-bottom:14px">
+              ⚠️ O alerta dispara automaticamente quando um paciente com protocolo ativo fica 14+ dias sem sessão registrada.
+            </div>
+            <button class="btn btn-wa" onclick="enviarReengajamentoTodos()">Enviar para todos em risco</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NPS -->
+      <div class="tab-panel" id="tabNPS">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div class="sec-title">Enviar NPS Pós-Sessão</div></div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Após cada sessão, envie uma pergunta rápida de satisfação. As respostas geram seu score de reputação.</p>
+            <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="npsPaciente"><option value="">— Selecione —</option></select></div>
+            <div style="background:var(--paper);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--ink2)">
+              <div style="font-weight:600;margin-bottom:6px">Mensagem enviada:</div>
+              <div style="line-height:1.7">Olá [Nome]! Que bom te ter hoje 😊<br><br>De 0 a 10, quanto você indicaria o Dr. Igor para um amigo ou familiar?<br><br>Responda com apenas um número. Sua opinião é muito importante para nós! 💚</div>
+            </div>
+            <button class="btn btn-wa" onclick="enviarNPS()">Enviar NPS via WhatsApp</button>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:16px">Registrar Resposta NPS</div>
+            <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="npsRespPac"><option value="">— Selecione —</option></select></div>
+            <div class="form-group">
+              <label class="form-label">Nota (0–10)</label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="npsNotaBtns">
+                <!-- Rendered by JS -->
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Comentário (opcional)</label><input class="form-control" id="npsComentario" placeholder="Comentário do paciente..."/></div>
+            <button class="btn btn-green" onclick="salvarNPS()">Salvar Resposta</button>
+            <div style="margin-top:20px" id="npsScore">
+              <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Seu NPS Score</div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--forest)" id="npsValor">—</div>
+                <div id="npsCategoria" style="font-size:13px;color:var(--ink3)">Registre respostas para calcular</div>
+              </div>
+              <div style="height:8px;background:var(--line);border-radius:100px;overflow:hidden;margin-top:10px">
+                <div id="npsBar" style="height:100%;background:var(--forest-mid);border-radius:100px;width:0%;transition:width 0.8s ease"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sec-title" style="margin-bottom:16px">Histórico de Avaliações NPS</div>
+          <div id="listaNPS"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma avaliação registrada</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTORIDADE (FASE 3) -->
+    <div class="page" id="page-autoridade">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tabAssinatura')">Assinatura Digital</div>
+        <div class="tab" onclick="switchTab(this,'tabBaseline')">Baseline Funcional</div>
+        <div class="tab" onclick="switchTab(this,'tabLaudos')">Laudos Médicos</div>
+      </div>
+
+      <!-- ASSINATURA DIGITAL -->
+      <div class="tab-panel active" id="tabAssinatura">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div><div class="sec-title">Termo de Consentimento</div><div class="sec-sub">Assinatura digital do protocolo</div></div></div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">O paciente assina digitalmente o protocolo de tratamento, criando comprometimento psicológico e proteção jurídica para o profissional.</p>
+            <div class="form-group"><label class="form-label">Selecionar Paciente</label><select class="form-control" id="assigPaciente"><option value="">— Selecione —</option></select></div>
+            <div style="background:var(--paper);border-radius:8px;padding:14px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">Termo de Consentimento Livre e Esclarecido</div>
+              <div style="font-size:12px;color:var(--ink3);line-height:1.7">Eu, _______________, declaro ter sido informado(a) sobre o protocolo de fisioterapia proposto pelo Dr. Igor Matheus (CREFITO), compreendendo os objetivos, métodos, riscos e benefícios do tratamento. Autorizo a realização das condutas fisioterapêuticas descritas no protocolo personalizado, bem como o registro fotográfico para fins de evolução clínica. Comprometo-me a seguir as orientações domiciliares e a comunicar qualquer alteração no meu quadro clínico.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assinatura do Paciente</label>
+              <canvas id="canvasAssinatura" width="100%" height="140" style="border:2px dashed var(--line);border-radius:8px;cursor:crosshair;background:white;display:block;width:100%"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="limparAssinatura()">🗑 Limpar</button>
+              <button class="btn btn-green btn-sm" onclick="salvarAssinatura()">✅ Confirmar Assinatura</button>
+              <button class="btn btn-outline btn-sm" onclick="imprimirTermo()">🖨 Imprimir Termo</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:16px">Termos Assinados</div>
+            <div id="listaAssinaturas"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum termo assinado ainda</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BASELINE FUNCIONAL -->
+      <div class="tab-panel" id="tabBaseline">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div><div class="sec-title">Registrar Baseline</div><div class="sec-sub">Métricas objetivas da 1ª sessão</div></div><button class="btn btn-green btn-sm" onclick="openModal('modalBaseline')">+ Registrar</button></div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Na primeira sessão, registre métricas objetivas. Nas sessões seguintes, compare automaticamente a evolução real.</p>
+            <div id="listaBaselines"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum baseline registrado</p></div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:16px">Comparativo de Evolução</div>
+            <div id="baselineComparativo"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Registre pelo menos 2 avaliações para ver o comparativo</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAUDOS -->
+      <div class="tab-panel" id="tabLaudos">
+        <div class="grid-2">
+          <div class="card">
+            <div class="sec-head"><div><div class="sec-title">Laudos e Documentos</div><div class="sec-sub">Anexar arquivos do paciente</div></div><button class="btn btn-green btn-sm" onclick="openModal('modalLaudo')">+ Anexar</button></div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Registre laudos médicos, exames de imagem, encaminhamentos e outros documentos relevantes para o protocolo.</p>
+            <div id="listaLaudos"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum documento anexado</p></div>
+          </div>
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:8px">Gerar Relatório de Interconsulta</div>
+            <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:16px">Gere um relatório profissional para enviar a médicos parceiros com o progresso do paciente.</p>
+            <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="intercPaciente"><option value="">— Selecione —</option></select></div>
+            <div class="form-group"><label class="form-label">Médico Destinatário</label><input class="form-control" id="intercMedico" placeholder="Dr. Nome — Especialidade"/></div>
+            <div class="form-group"><label class="form-label">Motivo da Interconsulta</label><textarea class="form-control" id="intercMotivo" placeholder="Ex: Paciente sem melhora após 8 sessões, solicito avaliação ortopédica..." rows="3"></textarea></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="imprimirInterconsulta()">🖨 Imprimir</button>
+              <button class="btn btn-wa" onclick="enviarInterconsultaWa()">Enviar via WA</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- PROTOCOLO CLÍNICO -->
     <div class="page" id="page-protocolo">
@@ -875,6 +1100,76 @@ textarea.form-control{resize:vertical;min-height:80px}
   </div>
 </div>
 
+
+<!-- Modal Exercício Domiciliar -->
+<div class="modal-overlay" id="modalExercicio">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head"><span class="modal-title">Prescrever Exercício</span><button class="modal-close" onclick="closeModal('modalExercicio')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="exPaciente"><option value="">— Selecione —</option></select></div>
+      <div class="form-group"><label class="form-label">Nome do Exercício</label><input class="form-control" id="exNome" placeholder="Ex: Alongamento lombar em decúbito dorsal"/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Séries x Repetições</label><input class="form-control" id="exSeries" placeholder="Ex: 3x10 ou 2x30seg"/></div>
+        <div class="form-group"><label class="form-label">Frequência</label><select class="form-control" id="exFreq"><option>Diário</option><option>2x ao dia</option><option>Dia sim, dia não</option><option>3x por semana</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Período do Dia</label><select class="form-control" id="exPeriodo"><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Qualquer momento</option></select></div>
+      <div class="form-group"><label class="form-label">Descrição / Como Fazer</label><textarea class="form-control" id="exDescricao" placeholder="Descreva o passo a passo do exercício..." rows="3"></textarea></div>
+      <div class="form-group"><label class="form-label">Link de Vídeo (opcional)</label><input class="form-control" id="exVideo" placeholder="https://youtube.com/..."/></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('modalExercicio')">Cancelar</button><button class="btn btn-green" onclick="salvarExercicio()">Salvar Exercício</button></div>
+  </div>
+</div>
+
+<!-- Modal Baseline Funcional -->
+<div class="modal-overlay" id="modalBaseline">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head"><span class="modal-title">Registrar Avaliação Funcional</span><button class="modal-close" onclick="closeModal('modalBaseline')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="blPaciente"><option value="">— Selecione —</option></select></div>
+        <div class="form-group"><label class="form-label">Data da Avaliação</label><input class="form-control" id="blData" type="date"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sessão Nº</label><input class="form-control" id="blSessao" type="number" placeholder="1"/></div>
+        <div class="form-group"><label class="form-label">EVA (0–10)</label><input class="form-control" id="blEva" type="number" min="0" max="10" placeholder="7"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Flexão Lombar (cm do solo)</label><input class="form-control" id="blFlexao" type="number" placeholder="Ex: 28"/></div>
+        <div class="form-group"><label class="form-label">Força (1–5 — escala MRC)</label><input class="form-control" id="blForca" type="number" min="1" max="5" placeholder="3"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Amplitude de Movimento (°)</label><input class="form-control" id="blAmplitude" placeholder="Ex: 45° flexão quadril"/></div>
+        <div class="form-group"><label class="form-label">Marcha / Equilíbrio (1–5)</label><input class="form-control" id="blMarcha" type="number" min="1" max="5" placeholder="3"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Teste Funcional Principal</label><input class="form-control" id="blTeste" placeholder="Ex: Timed Up and Go — 14 seg | 6MWT — 320m"/></div>
+      <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="blObs" rows="2" placeholder="Achados relevantes desta avaliação..."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('modalBaseline')">Cancelar</button><button class="btn btn-green" onclick="salvarBaseline()">Salvar Avaliação</button></div>
+  </div>
+</div>
+
+<!-- Modal Laudo -->
+<div class="modal-overlay" id="modalLaudo">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head"><span class="modal-title">Anexar Documento</span><button class="modal-close" onclick="closeModal('modalLaudo')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="laudoPaciente"><option value="">— Selecione —</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tipo de Documento</label>
+          <select class="form-control" id="laudoTipo">
+            <option>Laudo Médico</option><option>Raio-X</option><option>Ressonância Magnética</option>
+            <option>Ultrassonografia</option><option>Encaminhamento</option><option>Relatório de Alta</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Data do Documento</label><input class="form-control" id="laudoData" type="date"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Médico / Instituição Emissora</label><input class="form-control" id="laudoMedico" placeholder="Ex: Dr. Paulo Souza — Ortopedista | Hospital X"/></div>
+      <div class="form-group"><label class="form-label">Resumo / Achados Principais</label><textarea class="form-control" id="laudoResumo" placeholder="Ex: RMN coluna lombar — Protrusão discal L4-L5 com contato radicular..." rows="4"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('modalLaudo')">Cancelar</button><button class="btn btn-green" onclick="salvarLaudo()">Salvar Documento</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -952,11 +1247,11 @@ function goTo(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   var el=document.getElementById('page-'+page);if(el)el.classList.add('active');
-  var titles={dashboard:'Dashboard',protocolo:'Protocolos Clínicos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
+  var titles={dashboard:'Dashboard',protocolo:'Protocolos Clínicos',engajamento:'Engajamento & PROMs',autoridade:'Autoridade & Laudos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
   closeSidebar();
-  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
+  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
   if(renders[page])renders[page]();
   populateSelects();
 }
@@ -1317,6 +1612,558 @@ function initApp(){
   document.getElementById('chartAte').value=ate;
   renderDashboard();renderAgenda();populateSelects();
 }
+
+// ════════════════════════════════════════════
+// FASE 2 — ENGAJAMENTO
+// ════════════════════════════════════════════
+
+var eng2State = {
+  exercicios: [],
+  proms: [],
+  npsRespostas: [],
+  npsNota: null,
+  assinaturas: [],
+  baselines: [],
+  laudos: [],
+  assigCanvas: null,
+  assigCtx: null,
+  assigDrawing: false
+};
+
+// ── PROMs ──
+var PROMS_TIPOS = {
+  dor: ['De 0 a 10, qual foi o nível médio de dor hoje?','A dor limitou alguma atividade do seu dia? (Sim/Não)','Qual movimento você fez hoje que antes era difícil?'],
+  funcional: ['Conseguiu realizar suas tarefas do dia? (0-10)','Amarrou o sapato sem dor? (Sim/Não/Não tentou)','Quanto tempo ficou em pé sem descansar?'],
+  qualidade: ['Como foi sua qualidade de vida hoje? (0-10)','Conseguiu praticar alguma atividade de lazer?','Seu humor hoje foi afetado pela dor? (Sim/Não)'],
+  sono: ['Como foi seu sono esta noite? (0-10)','Acordou com dor? (Sim/Não)','Quantas horas dormiu?']
+};
+
+document.getElementById('promTipo').addEventListener('change', function(){
+  var perguntas = PROMS_TIPOS[this.value] || [];
+  document.getElementById('promPreview').innerHTML = '<div style="font-weight:600;margin-bottom:8px;color:var(--ink)">Prévia das perguntas:</div>' +
+    perguntas.map((p,i)=>`<div style="margin-bottom:4px">${i+1}. ${p}</div>`).join('');
+});
+
+function enviarPROM(){
+  var pid = document.getElementById('promPaciente').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var p = state.pacientes.find(x=>x.id==pid);if(!p)return;
+  var tipo = document.getElementById('promTipo').value;
+  var perguntas = PROMS_TIPOS[tipo]||[];
+  var msg = `Olá ${p.nome}! 👋 Dr. Igor aqui da MultiCare Fisioterapia.\n\nPor favor, responda esse questionário rápido sobre como você está:\n\n${perguntas.map((q,i)=>`${i+1}. ${q}`).join('\n\n')}\n\nSua resposta é muito importante para acompanharmos sua evolução! 💚`;
+  waMsg(p.tel, msg);
+  toast('Questionário enviado via WhatsApp!','success');
+}
+
+function salvarRespPROM(){
+  var pid = document.getElementById('promRespPaciente').value;
+  var data = document.getElementById('promRespData').value;
+  var eva = parseInt(document.getElementById('promEvaRange').value);
+  var relato = document.getElementById('promRelato').value.trim();
+  if(!pid||!data){toast('Preencha paciente e data','error');return;}
+  var resp = {id:Date.now(),pacienteId:pid,data,eva,relato};
+  eng2State.proms.push(resp);
+  saveEng2State();
+  renderListaProms();
+  toast('Resposta PROM salva!','success');
+  document.getElementById('promRelato').value='';
+}
+
+function renderListaProms(){
+  var el = document.getElementById('listaProms');
+  var lista = eng2State.proms.slice().reverse().slice(0,15);
+  if(!lista.length){el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma resposta registrada</p>';return;}
+  el.innerHTML = lista.map(r=>{
+    var p = state.pacientes.find(x=>x.id==r.pacienteId);
+    var cor = r.eva<=3?'var(--forest)':r.eva<=6?'var(--amber)':'var(--red)';
+    return`<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)">
+      <div class="p-avatar">${p?p.nome[0]:'?'}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+          <div style="font-size:13px;font-weight:500">${p?p.nome:'—'}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--ink3)">${r.data?r.data.split('-').reverse().join('/'):'—'}</span>
+            <span style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:${cor}">EVA ${r.eva}</span>
+          </div>
+        </div>
+        ${r.relato?`<div style="font-size:12px;color:var(--ink3);font-style:italic">"${r.relato}"</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EXERCÍCIOS ──
+function salvarExercicio(){
+  var pid = document.getElementById('exPaciente').value;
+  var nome = document.getElementById('exNome').value.trim();
+  if(!pid||!nome){toast('Preencha paciente e nome do exercício','error');return;}
+  var ex = {
+    id:Date.now(),pacienteId:pid,nome,
+    series:document.getElementById('exSeries').value,
+    freq:document.getElementById('exFreq').value,
+    periodo:document.getElementById('exPeriodo').value,
+    descricao:document.getElementById('exDescricao').value,
+    video:document.getElementById('exVideo').value
+  };
+  eng2State.exercicios.push(ex);
+  saveEng2State();
+  closeModal('modalExercicio');
+  renderListaExercicios();
+  toast('Exercício prescrito!','success');
+  ['exNome','exSeries','exDescricao','exVideo'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderListaExercicios(){
+  var el = document.getElementById('listaExercicios');
+  if(!eng2State.exercicios.length){el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum exercício prescrito</p>';return;}
+  el.innerHTML = eng2State.exercicios.slice().reverse().map(ex=>{
+    var p = state.pacientes.find(x=>x.id==ex.pacienteId);
+    return`<div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:4px">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--ink)">${ex.nome}</div>
+          <div style="font-size:11px;color:var(--forest-mid)">${p?p.nome:'—'}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge badge-green">${ex.freq}</span>
+          <div style="font-size:11px;color:var(--ink3);margin-top:3px">${ex.periodo} · ${ex.series}</div>
+        </div>
+      </div>
+      ${ex.descricao?`<div style="font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:8px">${ex.descricao}</div>`:''}
+      ${ex.video?`<a href="${ex.video}" target="_blank" style="font-size:12px;color:var(--forest-mid);font-weight:500">▶ Ver vídeo demonstrativo</a>`:''}
+    </div>`;
+  }).join('');
+}
+
+function enviarExerciciosWa(){
+  var pid = document.getElementById('exPacEnvio').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var p = state.pacientes.find(x=>x.id==pid);if(!p)return;
+  var exs = eng2State.exercicios.filter(e=>e.pacienteId==pid);
+  if(!exs.length){toast('Nenhum exercício prescrito para este paciente','error');return;}
+  var msg = `Olá ${p.nome}! 💪 Aqui estão seus exercícios domiciliares:\n\n${exs.map((e,i)=>`${i+1}. *${e.nome}*\n   ${e.series} — ${e.freq} — ${e.periodo}${e.descricao?'\n   '+e.descricao:''}${e.video?'\n   ▶ '+e.video:''}`).join('\n\n')}\n\nDúvidas? Me chame! Continue firme na sua recuperação 💚\n— Dr. Igor Matheus`;
+  waMsg(p.tel, msg);
+}
+
+// ── ABANDONO ──
+function verificarAbandono(){
+  var el = document.getElementById('listaAbandono');
+  var hoje_str = hoje();
+  var hoje_d = new Date(hoje_str);
+  var em_risco = state.pacientes.filter(p=>{
+    var ags = state.agendamentos.filter(a=>a.paciente_id==p.id).sort((a,b)=>b.data.localeCompare(a.data));
+    if(!ags.length) return false;
+    var ultima = new Date(ags[0].data.replace(/-/g,'/'));
+    var diff = Math.floor((hoje_d - ultima)/(1000*60*60*24));
+    return diff >= 14;
+  });
+  if(!em_risco.length){
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:16px;background:var(--forest-light);border-radius:8px"><span style="font-size:20px">✅</span><span style="font-size:13px;color:var(--forest)">Nenhum paciente em risco de abandono no momento.</span></div>';
+    return;
+  }
+  el.innerHTML = em_risco.map(p=>{
+    var ags = state.agendamentos.filter(a=>a.paciente_id==p.id).sort((a,b)=>b.data.localeCompare(a.data));
+    var ultima = ags[0];
+    var ultima_d = new Date(ultima.data.replace(/-/g,'/'));
+    var dias = Math.floor((hoje_d - ultima_d)/(1000*60*60*24));
+    var msgPersonalizada = document.getElementById('msgAbandono').value.replace('[Nome]',p.nome).replace('[N]',Math.ceil((parseInt(protState.anamnese?.sessoes||12) - ags.length)));
+    return`<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">
+      <div class="p-avatar" style="background:var(--red-light);color:var(--red)">${p.nome[0]}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${p.nome}</div>
+        <div style="font-size:11px;color:var(--red)">Última sessão: ${ultima.data.split('-').reverse().join('/')} — ${dias} dias sem atendimento</div>
+      </div>
+      <button class="btn btn-wa btn-sm" onclick="waMsg('${p.tel}','${msgPersonalizada.replace(/'/g,"\'")}')">Reengajar WA</button>
+    </div>`;
+  }).join('');
+}
+
+function enviarReengajamentoTodos(){
+  var msg = document.getElementById('msgAbandono').value;
+  var hoje_d = new Date(hoje());
+  var em_risco = state.pacientes.filter(p=>{
+    var ags = state.agendamentos.filter(a=>a.paciente_id==p.id).sort((a,b)=>b.data.localeCompare(a.data));
+    if(!ags.length)return false;
+    var diff = Math.floor((hoje_d-new Date(ags[0].data.replace(/-/g,'/')))/(1000*60*60*24));
+    return diff>=14;
+  });
+  if(!em_risco.length){toast('Nenhum paciente em risco','error');return;}
+  em_risco.forEach((p,i)=>setTimeout(()=>waMsg(p.tel,msg.replace('[Nome]',p.nome)),i*1000));
+  toast('Mensagens enviadas para '+em_risco.length+' pacientes','success');
+}
+
+// ── NPS ──
+var npsNotaVal = null;
+function renderNpsNotas(){
+  var wrap = document.getElementById('npsNotaBtns');
+  if(!wrap)return;
+  wrap.innerHTML = [0,1,2,3,4,5,6,7,8,9,10].map(n=>{
+    var cor = n<=6?'#c0392b':n<=8?'#b8760a':'#2a7d48';
+    return`<button onclick="selectNpsnota(${n})" id="npsBtn${n}" style="width:36px;height:36px;border-radius:6px;border:2px solid var(--line);background:white;font-size:13px;font-weight:600;cursor:pointer;color:${cor};transition:all 0.15s">${n}</button>`;
+  }).join('');
+}
+
+function selectNpsnota(n){
+  npsNotaVal = n;
+  [0,1,2,3,4,5,6,7,8,9,10].forEach(i=>{
+    var btn = document.getElementById('npsBtn'+i);
+    if(btn){ btn.style.background = i===n?'var(--ink)':'white'; btn.style.color = i===n?'white':(i<=6?'#c0392b':i<=8?'#b8760a':'#2a7d48'); btn.style.borderColor = i===n?'var(--ink)':'var(--line)'; }
+  });
+}
+
+function enviarNPS(){
+  var pid = document.getElementById('npsPaciente').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var p = state.pacientes.find(x=>x.id==pid);if(!p)return;
+  var msg = `Olá ${p.nome}! Obrigado pela sua presença hoje na MultiCare Fisioterapia 😊\n\nDe 0 a 10, quanto você indicaria o Dr. Igor para um amigo ou familiar?\n\nResponda com apenas um número. Sua opinião é muito importante para nós! 💚`;
+  waMsg(p.tel,msg);
+}
+
+function salvarNPS(){
+  var pid = document.getElementById('npsRespPac').value;
+  if(!pid||npsNotaVal===null){toast('Selecione paciente e nota','error');return;}
+  var resp = {id:Date.now(),pacienteId:pid,nota:npsNotaVal,comentario:document.getElementById('npsComentario').value,data:hoje()};
+  eng2State.npsRespostas.push(resp);
+  saveEng2State();
+  renderNpsScore();
+  renderListaNPS();
+  npsNotaVal=null;
+  selectNpsnota(-1);
+  document.getElementById('npsComentario').value='';
+  closeModal && null;
+  toast('NPS registrado!','success');
+}
+
+function renderNpsScore(){
+  var resps = eng2State.npsRespostas;
+  if(!resps.length) return;
+  var promotores = resps.filter(r=>r.nota>=9).length;
+  var detratores = resps.filter(r=>r.nota<=6).length;
+  var nps = Math.round((promotores-detratores)/resps.length*100);
+  document.getElementById('npsValor').textContent = nps;
+  document.getElementById('npsBar').style.width = Math.max(0,(nps+100)/2)+'%';
+  var cat, cor;
+  if(nps>=75){cat='Excelente 🏆';cor='var(--forest)';}
+  else if(nps>=50){cat='Muito Bom 😊';cor='var(--forest-mid)';}
+  else if(nps>=0){cat='Bom — Pode melhorar 👍';cor='var(--amber)';}
+  else{cat='Atenção necessária ⚠️';cor='var(--red)';}
+  document.getElementById('npsCategoria').textContent = `${cat} · ${resps.length} avaliações`;
+  document.getElementById('npsCategoria').style.color = cor;
+  document.getElementById('npsValor').style.color = cor;
+}
+
+function renderListaNPS(){
+  var el = document.getElementById('listaNPS');
+  if(!eng2State.npsRespostas.length){el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma avaliação registrada</p>';return;}
+  el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Data</th><th>Nota</th><th>Categoria</th><th>Comentário</th></tr></thead><tbody>'+
+    eng2State.npsRespostas.slice().reverse().map(r=>{
+      var p = state.pacientes.find(x=>x.id==r.pacienteId);
+      var cat = r.nota>=9?'Promotor':r.nota<=6?'Detrator':'Neutro';
+      var bc = r.nota>=9?'badge-green':r.nota<=6?'badge-red':'badge-amber';
+      return`<tr><td>${p?p.nome:'—'}</td><td>${r.data?r.data.split('-').reverse().join('/'):'—'}</td><td style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:${r.nota>=9?'var(--forest)':r.nota<=6?'var(--red)':'var(--amber)'}">${r.nota}</td><td><span class="badge ${bc}">${cat}</span></td><td style="font-size:12px;color:var(--ink3)">${r.comentario||'—'}</td></tr>`;
+    }).join('')+'</tbody></table></div>';
+}
+
+// ── RENDER ENGAJAMENTO ──
+function renderEngajamento(){
+  populateSelects();
+  ['promPaciente','promRespPaciente','npsPaciente','npsRespPac','exPaciente','exPacEnvio'].forEach(id=>{
+    var el = document.getElementById(id);if(!el)return;
+    el.innerHTML = '<option value="">— Selecione —</option>'+state.pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  });
+  renderListaProms();
+  renderListaExercicios();
+  verificarAbandono();
+  renderNpsNotas();
+  renderNpsScore();
+  renderListaNPS();
+  document.getElementById('promRespData').value = hoje();
+}
+
+// ════════════════════════════════════════════
+// FASE 3 — AUTORIDADE
+// ════════════════════════════════════════════
+
+// ── ASSINATURA DIGITAL ──
+function initAssinaturaCanvas(){
+  var canvas = document.getElementById('canvasAssinatura');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 460;
+  canvas.height = 140;
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#1c5c34';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  eng2State.assigCanvas = canvas;
+  eng2State.assigCtx = ctx;
+  var drawing = false, lx=0, ly=0;
+  function getPos(e){ var r=canvas.getBoundingClientRect(); var t=e.touches?e.touches[0]:e; return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)}; }
+  canvas.addEventListener('mousedown',e=>{drawing=true;var p=getPos(e);lx=p.x;ly=p.y;});
+  canvas.addEventListener('mousemove',e=>{if(!drawing)return;var p=getPos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;});
+  canvas.addEventListener('mouseup',()=>drawing=false);
+  canvas.addEventListener('mouseleave',()=>drawing=false);
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;var p=getPos(e);lx=p.x;ly=p.y;},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;var p=getPos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;},{passive:false});
+  canvas.addEventListener('touchend',()=>drawing=false);
+}
+
+function limparAssinatura(){ if(eng2State.assigCtx&&eng2State.assigCanvas){eng2State.assigCtx.clearRect(0,0,eng2State.assigCanvas.width,eng2State.assigCanvas.height);eng2State.assigCtx.fillStyle='white';eng2State.assigCtx.fillRect(0,0,eng2State.assigCanvas.width,eng2State.assigCanvas.height);} }
+
+function salvarAssinatura(){
+  var pid = document.getElementById('assigPaciente').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var canvas = document.getElementById('canvasAssinatura');
+  var imgData = canvas.toDataURL('image/png');
+  var p = state.pacientes.find(x=>x.id==pid);
+  var assinatura = {id:Date.now(),pacienteId:pid,pacienteNome:p?p.nome:'—',data:hoje(),imgData,tipo:'Termo de Consentimento'};
+  eng2State.assinaturas.push(assinatura);
+  saveEng2State();
+  renderListaAssinaturas();
+  toast('Assinatura registrada com sucesso!','success');
+}
+
+function renderListaAssinaturas(){
+  var el = document.getElementById('listaAssinaturas');
+  if(!eng2State.assinaturas.length){el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum termo assinado ainda</p>';return;}
+  el.innerHTML = eng2State.assinaturas.slice().reverse().map(a=>`
+    <div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:4px">
+        <div><div style="font-size:13px;font-weight:500">${a.pacienteNome}</div><div style="font-size:11px;color:var(--ink3)">${a.tipo} · ${a.data?a.data.split('-').reverse().join('/'):'—'}</div></div>
+        <span class="badge badge-green">✅ Assinado</span>
+      </div>
+      <img src="${a.imgData}" style="width:100%;height:60px;object-fit:contain;background:white;border:1px solid var(--line);border-radius:6px"/>
+    </div>
+  `).join('');
+}
+
+function imprimirTermo(){
+  var pid = document.getElementById('assigPaciente').value;
+  var p = state.pacientes.find(x=>x.id==pid);
+  var canvas = document.getElementById('canvasAssinatura');
+  var imgData = canvas ? canvas.toDataURL('image/png') : '';
+  var win = window.open('','_blank','width=700,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Termo de Consentimento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;padding:40px;color:#0f1410;max-width:680px;margin:0 auto}h1{font-family:'Playfair Display',serif;color:#1c5c34;font-size:20px;margin-bottom:6px}.sub{font-size:12px;color:#7a8077;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:32px}.divider{height:2px;background:#1c5c34;margin-bottom:24px}.section{margin-bottom:20px}.label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#7a8077;margin-bottom:6px}.body-text{font-size:13px;line-height:1.8;color:#3a4038}.sig-area{margin-top:40px;padding-top:20px;border-top:1px solid #e4e6e0}.sig-img{border:1px solid #e4e6e0;border-radius:6px;width:300px;height:80px;object-fit:contain}.footer{margin-top:40px;font-size:11px;color:#7a8077;text-align:center;border-top:1px solid #e4e6e0;padding-top:16px}</style>
+  </head><body>
+    <h1>MultiCare Fisioterapia</h1><div class="sub">Dr. Igor Matheus · CREFITO · Garanhuns, PE</div>
+    <div class="divider"></div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:20px">Termo de Consentimento Livre e Esclarecido</h2>
+    <div class="section"><div class="label">Paciente</div><div class="body-text">${p?p.nome:'___________________________'}</div></div>
+    <div class="section"><div class="label">Data</div><div class="body-text">${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+    <div class="section"><div class="body-text">Eu, <strong>${p?p.nome:'___________________________'}</strong>, declaro ter sido informado(a) sobre o protocolo de fisioterapia proposto pelo Dr. Igor Matheus (CREFITO), compreendendo os objetivos, métodos, riscos e benefícios do tratamento.<br><br>Autorizo a realização das condutas fisioterapêuticas descritas no protocolo personalizado, bem como o registro fotográfico para fins de evolução clínica exclusivamente.<br><br>Comprometo-me a seguir as orientações domiciliares prescritas e a comunicar qualquer alteração no meu quadro clínico ao profissional responsável.</div></div>
+    <div class="sig-area">
+      <div class="label" style="margin-bottom:10px">Assinatura do Paciente</div>
+      ${imgData?`<img src="${imgData}" class="sig-img"/>`:'<div style="border:1px solid #e4e6e0;border-radius:6px;width:300px;height:80px;display:flex;align-items:flex-end;padding:8px;font-size:11px;color:#7a8077">Assinatura</div>'}
+    </div>
+    <div class="footer">MultiCare Fisioterapia · Dr. Igor Matheus · (87) 9.9922-1295 · Garanhuns, PE</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),600);
+}
+
+// ── BASELINE ──
+function salvarBaseline(){
+  var pid = document.getElementById('blPaciente').value;
+  var data = document.getElementById('blData').value;
+  if(!pid||!data){toast('Preencha paciente e data','error');return;}
+  var bl = {
+    id:Date.now(),pacienteId:pid,data,
+    sessao:parseInt(document.getElementById('blSessao').value)||1,
+    eva:parseInt(document.getElementById('blEva').value)||0,
+    flexao:document.getElementById('blFlexao').value,
+    forca:parseInt(document.getElementById('blForca').value)||0,
+    amplitude:document.getElementById('blAmplitude').value,
+    marcha:parseInt(document.getElementById('blMarcha').value)||0,
+    teste:document.getElementById('blTeste').value,
+    obs:document.getElementById('blObs').value
+  };
+  eng2State.baselines.push(bl);
+  saveEng2State();
+  closeModal('modalBaseline');
+  renderBaselines();
+  toast('Avaliação funcional salva!','success');
+  ['blFlexao','blForca','blAmplitude','blMarcha','blTeste','blObs','blSessao','blEva'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderBaselines(){
+  var el = document.getElementById('listaBaselines');
+  var comp = document.getElementById('baselineComparativo');
+  if(!eng2State.baselines.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma avaliação registrada</p>';
+    comp.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Registre pelo menos 2 avaliações para ver o comparativo</p>';
+    return;
+  }
+  el.innerHTML = eng2State.baselines.slice().reverse().map(bl=>{
+    var p = state.pacientes.find(x=>x.id==bl.pacienteId);
+    return`<div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:4px">
+        <div><div style="font-size:13px;font-weight:500">${p?p.nome:'—'}</div><div style="font-size:11px;color:var(--ink3)">Sessão ${bl.sessao} · ${bl.data?bl.data.split('-').reverse().join('/'):'—'}</div></div>
+        <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:${bl.eva<=3?'var(--forest)':bl.eva<=6?'var(--amber)':'var(--red)'}">EVA ${bl.eva}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        ${bl.flexao?`<div><span style="color:var(--ink3)">Flexão:</span> ${bl.flexao}cm</div>`:''}
+        ${bl.forca?`<div><span style="color:var(--ink3)">Força MRC:</span> ${bl.forca}/5</div>`:''}
+        ${bl.amplitude?`<div><span style="color:var(--ink3)">Amplitude:</span> ${bl.amplitude}</div>`:''}
+        ${bl.marcha?`<div><span style="color:var(--ink3)">Marcha:</span> ${bl.marcha}/5</div>`:''}
+        ${bl.teste?`<div style="grid-column:1/-1"><span style="color:var(--ink3)">Teste:</span> ${bl.teste}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Comparativo
+  var grupos = {};
+  eng2State.baselines.forEach(bl=>{grupos[bl.pacienteId]=(grupos[bl.pacienteId]||[]);grupos[bl.pacienteId].push(bl);});
+  var html = '';
+  Object.entries(grupos).forEach(([pid,bls])=>{
+    if(bls.length<2)return;
+    var p = state.pacientes.find(x=>x.id==pid);
+    var primeiro = bls.sort((a,b)=>a.sessao-b.sessao)[0];
+    var ultimo = bls[bls.length-1];
+    var evaReduz = primeiro.eva - ultimo.eva;
+    html += `<div style="border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:14px">${p?p.nome:'—'}</div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center">
+        <div style="background:var(--red-light);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:4px">Sessão ${primeiro.sessao} (Início)</div>
+          <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--red)">EVA ${primeiro.eva}</div>
+          ${primeiro.flexao?`<div style="font-size:11px;color:var(--ink3);margin-top:4px">Flex: ${primeiro.flexao}cm</div>`:''}
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px">→</div>
+          ${evaReduz>0?`<div style="font-size:11px;color:var(--forest);font-weight:600;margin-top:4px">-${evaReduz} EVA 🎯</div>`:''}
+        </div>
+        <div style="background:var(--forest-light);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:4px">Sessão ${ultimo.sessao} (Atual)</div>
+          <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest)">EVA ${ultimo.eva}</div>
+          ${ultimo.flexao?`<div style="font-size:11px;color:var(--ink3);margin-top:4px">Flex: ${ultimo.flexao}cm</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  });
+  comp.innerHTML = html || '<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Registre pelo menos 2 avaliações do mesmo paciente</p>';
+}
+
+// ── LAUDOS ──
+function salvarLaudo(){
+  var pid = document.getElementById('laudoPaciente').value;
+  var resumo = document.getElementById('laudoResumo').value.trim();
+  if(!pid||!resumo){toast('Preencha paciente e resumo','error');return;}
+  var laudo = {
+    id:Date.now(),pacienteId:pid,tipo:document.getElementById('laudoTipo').value,
+    data:document.getElementById('laudoData').value,medico:document.getElementById('laudoMedico').value,resumo
+  };
+  eng2State.laudos.push(laudo);
+  saveEng2State();
+  closeModal('modalLaudo');
+  renderLaudos();
+  toast('Documento anexado!','success');
+  ['laudoMedico','laudoResumo'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderLaudos(){
+  var el = document.getElementById('listaLaudos');
+  if(!eng2State.laudos.length){el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum documento anexado</p>';return;}
+  el.innerHTML = eng2State.laudos.slice().reverse().map(l=>{
+    var p = state.pacientes.find(x=>x.id==l.pacienteId);
+    var icons = {'Laudo Médico':'📋','Raio-X':'🦴','Ressonância Magnética':'🧲','Ultrassonografia':'🔊','Encaminhamento':'📨','Relatório de Alta':'✅','Outro':'📄'};
+    return`<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start">
+      <div style="font-size:24px;flex-shrink:0">${icons[l.tipo]||'📄'}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+          <div style="font-size:13px;font-weight:500">${l.tipo}</div>
+          <span style="font-size:11px;color:var(--ink3)">${l.data?l.data.split('-').reverse().join('/'):'—'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--forest-mid);margin-bottom:3px">${p?p.nome:'—'}${l.medico?' · '+l.medico:''}</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.5">${l.resumo}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── INTERCONSULTA ──
+function imprimirInterconsulta(){
+  var pid = document.getElementById('intercPaciente').value;
+  var medico = document.getElementById('intercMedico').value;
+  var motivo = document.getElementById('intercMotivo').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var p = state.pacientes.find(x=>x.id==pid);
+  var evs = protState.evolucoes||[];
+  var evaAtual = evs.length?evs[evs.length-1].eva:'—';
+  var evaInicio = protState.anamnese?protState.anamnese.eva:'—';
+  var win = window.open('','_blank','width=700,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Interconsulta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;padding:40px;color:#0f1410;max-width:680px;margin:0 auto}h1{font-family:'Playfair Display',serif;color:#1c5c34;font-size:20px;margin-bottom:6px}.sub{font-size:12px;color:#7a8077;margin-bottom:24px}.section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #e4e6e0}.label{font-size:11px;font-weight:600;text-transform:uppercase;color:#7a8077;margin-bottom:6px}.value{font-size:14px;line-height:1.7;color:#3a4038}.footer{margin-top:32px;font-size:11px;color:#7a8077;text-align:center}</style>
+  </head><body>
+    <h1>MultiCare Fisioterapia</h1><div class="sub">Dr. Igor Matheus · CREFITO · Garanhuns, PE · (87) 9.9922-1295</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #1c5c34">Relatório de Interconsulta</h2>
+    <div class="section"><div class="label">Para</div><div class="value"><strong>${medico||'_____'}</strong></div><div class="label" style="margin-top:12px">Data</div><div class="value">${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+    <div class="section"><div class="label">Paciente</div><div class="value"><strong>${p?p.nome:'—'}</strong></div></div>
+    ${protState.anamnese?`<div class="section"><div class="label">Queixa Principal & Diagnóstico</div><div class="value">${protState.anamnese.queixa} · ${protState.anamnese.diagnostico||'—'}</div></div>`:''}
+    <div class="section"><div class="label">Evolução do Tratamento</div><div class="value">Total de sessões realizadas: <strong>${evs.length}</strong><br>EVA inicial: <strong>${evaInicio}/10</strong> · EVA atual: <strong>${evaAtual}/10</strong>${protState.protocolo?'<br>'+protState.protocolo.resumo:''}</div></div>
+    <div class="section"><div class="label">Motivo da Interconsulta</div><div class="value">${motivo||'—'}</div></div>
+    <div style="margin-top:40px"><div class="label">Assinatura do Profissional</div><div style="margin-top:40px;border-top:1px solid #0f1410;width:240px;padding-top:6px;font-size:12px">Dr. Igor Matheus · CREFITO</div></div>
+    <div class="footer">MultiCare Fisioterapia · Garanhuns, PE</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),600);
+}
+
+function enviarInterconsultaWa(){
+  var pid = document.getElementById('intercPaciente').value;
+  if(!pid){toast('Selecione um paciente','error');return;}
+  var p = state.pacientes.find(x=>x.id==pid);if(!p)return;
+  var motivo = document.getElementById('intercMotivo').value;
+  var medico = document.getElementById('intercMedico').value;
+  var msg = `Relatório de Interconsulta — Dr. Igor Matheus | MultiCare Fisioterapia\n\nPaciente: ${p.nome}\nMotivo: ${motivo||'Ver relatório impresso'}\n\nEstou à disposição para mais informações.\n(87) 9.9922-1295`;
+  waMsg(p.tel, msg);
+}
+
+// ── RENDER AUTORIDADE ──
+function renderAutoridade(){
+  populateSelects();
+  ['assigPaciente','blPaciente','laudoPaciente','intercPaciente'].forEach(id=>{
+    var el = document.getElementById(id);if(!el)return;
+    el.innerHTML='<option value="">— Selecione —</option>'+state.pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  });
+  renderListaAssinaturas();
+  renderBaselines();
+  renderLaudos();
+  setTimeout(initAssinaturaCanvas, 200);
+}
+
+// ── PERSIST STATE ──
+function saveEng2State(){
+  localStorage.setItem('mc_eng2', JSON.stringify({
+    exercicios:eng2State.exercicios,
+    proms:eng2State.proms,
+    npsRespostas:eng2State.npsRespostas,
+    assinaturas:eng2State.assinaturas.map(a=>({...a,imgData:''})), // Don't store large base64
+    baselines:eng2State.baselines,
+    laudos:eng2State.laudos
+  }));
+}
+
+function loadEng2State(){
+  var saved = localStorage.getItem('mc_eng2');
+  if(saved){
+    var data = JSON.parse(saved);
+    eng2State.exercicios = data.exercicios||[];
+    eng2State.proms = data.proms||[];
+    eng2State.npsRespostas = data.npsRespostas||[];
+    eng2State.assinaturas = data.assinaturas||[];
+    eng2State.baselines = data.baselines||[];
+    eng2State.laudos = data.laudos||[];
+  }
+}
+
+// Load on init
+loadEng2State();
+
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
 // ══════════════════════════════════════
