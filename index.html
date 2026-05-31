@@ -255,6 +255,10 @@ textarea.form-control{resize:vertical;min-height:80px}
 .hor-sel{background:var(--forest-mid);border:2px solid var(--forest-mid);color:white}
 .hor-avail{background:var(--white);border:2px solid var(--line);color:var(--ink)}
 .hor-avail:hover{border-color:var(--forest-mid);color:var(--forest-mid);background:var(--forest-light)}
+
+.dia-btn{padding:8px 14px;border-radius:6px;border:1.5px solid var(--line);background:var(--white);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink2);transition:all 0.15s}
+.dia-btn:hover{border-color:var(--forest-mid);color:var(--forest-mid)}
+.dia-btn.ativo{background:var(--forest-mid);border-color:var(--forest-mid);color:white}
 </style>
 <script>
 if(window.location.search.indexOf('agendar=1')>=0){
@@ -436,7 +440,7 @@ if(window.location.search.indexOf('agendar=1')>=0){
         </div>
         <div class="grid-2">
           <div class="card">
-            <div class="sec-head"><div class="sec-title">Lançamentos</div><button class="btn btn-green btn-sm" onclick="openModal('modalLancamento')">+ Lançar</button></div>
+            <div class="sec-head"><div class="sec-title">Lançamentos</div><button class="btn btn-green btn-sm" onclick="openModal('modalLancamento')">+ Lançar</button><button class="btn btn-blue btn-sm" onclick="abrirPlano()">+ Plano de Tratamento</button></div>
             <div id="listaLancamentos"><div class="loading"><div class="spin"></div>Carregando...</div></div>
           </div>
           <div class="card">
@@ -589,7 +593,7 @@ if(window.location.search.indexOf('agendar=1')>=0){
           <div class="card">
             <div class="sec-title" style="margin-bottom:8px">Link de Agendamento + Anamnese</div>
             <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:20px">Envie ao paciente no primeiro contato para ele escolher o horário e preencher a ficha de anamnese.</p>
-            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-sistema/?agendar=1</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
+            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda" style="font-size:12px">fisioterapiagaranhuns.github.io/multicare-sistema/agendar.html</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
             <button class="btn btn-wa" onclick="enviarLink()">Enviar via WhatsApp</button>
           </div>
           <div class="card"><div class="sec-title" style="margin-bottom:16px">Fichas Recebidas</div><div id="listaAnamnese"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma ficha recebida ainda</p></div></div>
@@ -1016,12 +1020,72 @@ Vamos retomar? Aguardo você!
   <div class="modal" style="max-width:420px">
     <div class="modal-head"><span class="modal-title">Novo Lançamento</span><button class="modal-close" onclick="closeModal('modalLancamento')">×</button></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="lanPac"><option value="">— Selecione —</option></select></div>
+      <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="lanPac" onchange="autoPreencherDataLancamento()"><option value="">— Selecione —</option></select></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Tipo</label><select class="form-control" id="lanTipo"><option>Recebido</option><option>A Receber</option><option>Falta Cobrada</option></select></div><div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" id="lanValor" type="number" placeholder="150"/></div></div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-control" id="lanData" type="date"/></div>
       <div class="form-group"><label class="form-label">Descrição</label><input class="form-control" id="lanObs" placeholder="Sessão, avaliação..."/></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('modalLancamento')">Cancelar</button><button class="btn btn-green" onclick="salvarLancamento()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal Plano de Tratamento -->
+<div class="modal-overlay" id="modalPlano">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-head">
+      <span class="modal-title">Plano de Tratamento</span>
+      <button class="modal-close" onclick="closeModal('modalPlano')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Paciente</label><select class="form-control" id="plPaciente"><option value="">— Selecione —</option></select></div>
+      <div style="background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--ink2);line-height:1.6">
+        💡 Preencha após a avaliação inicial para registrar o protocolo financeiro e já agendar todas as sessões do tratamento.
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nº de Sessões Previstas *</label><input class="form-control" id="plSessoes" type="number" min="1" placeholder="Ex: 12" oninput="calcPlano()"/></div>
+        <div class="form-group"><label class="form-label">Valor por Sessão (R$) *</label><input class="form-control" id="plValorSessao" type="number" min="0" placeholder="Ex: 150" oninput="calcPlano()"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Forma de Pagamento</label>
+          <select class="form-control" id="plPagamento" onchange="calcPlano()">
+            <option value="avista">À Vista</option>
+            <option value="parcelado">Parcelado no Cartão</option>
+            <option value="mensal">Pagamento Mensal</option>
+            <option value="sessao">Por Sessão</option>
+          </select>
+        </div>
+        <div class="form-group" id="plParcelasGrp" style="display:none"><label class="form-label">Nº de Parcelas</label><input class="form-control" id="plParcelas" type="number" min="1" max="24" placeholder="Ex: 3" oninput="calcPlano()"/></div>
+      </div>
+      <!-- Resumo financeiro -->
+      <div id="plResumo" style="background:var(--paper);border-radius:8px;padding:14px;margin-bottom:16px;display:none">
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">Resumo Financeiro</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+          <div style="padding:10px;background:var(--white);border-radius:6px;border:1px solid var(--line)"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--forest)" id="plTotalVal">—</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Total</div></div>
+          <div style="padding:10px;background:var(--white);border-radius:6px;border:1px solid var(--line)"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--blue)" id="plParcelaVal">—</div><div style="font-size:11px;color:var(--ink3);margin-top:3px" id="plParcelaLabel">Por sessão</div></div>
+          <div style="padding:10px;background:var(--white);border-radius:6px;border:1px solid var(--line)"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--amber)" id="plSessoesVal">—</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Sessões</div></div>
+        </div>
+      </div>
+      <!-- Agendamento em série -->
+      <div style="font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:12px;padding-top:4px;border-top:1px solid var(--line);padding-top:14px">📅 Agendar todas as sessões agora</div>
+      <div class="form-group"><label class="form-label">Data da 1ª sessão *</label><input class="form-control" id="plDataInicio" type="date"/></div>
+      <div class="form-group">
+        <label class="form-label">Dias da semana</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="plDiasSemana">
+          <button type="button" class="dia-btn" data-dia="1" onclick="toggleDia(this)">Seg</button>
+          <button type="button" class="dia-btn" data-dia="2" onclick="toggleDia(this)">Ter</button>
+          <button type="button" class="dia-btn" data-dia="3" onclick="toggleDia(this)">Qua</button>
+          <button type="button" class="dia-btn" data-dia="4" onclick="toggleDia(this)">Qui</button>
+          <button type="button" class="dia-btn" data-dia="5" onclick="toggleDia(this)">Sex</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Horário fixo das sessões *</label><input class="form-control" id="plHorario" type="time"/></div>
+      <div class="form-group"><label class="form-label">Observações do plano</label><input class="form-control" id="plObs" placeholder="Ex: Paciente prefere sessões rápidas de 45min, paga por sessão..."/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalPlano')">Cancelar</button>
+      <button class="btn btn-wa" onclick="salvarPlanoWA()">Salvar + Enviar WA</button>
+      <button class="btn btn-green" onclick="salvarPlano()">Salvar Plano</button>
+    </div>
   </div>
 </div>
 
@@ -1626,7 +1690,7 @@ function renderAniversariantes(){
 function enviarParaTodos(tipo){if(!state.pacientes.length){toast('Nenhum paciente','error');return;}var msg=tipo==='natal'?document.getElementById('msgNatal').value:document.getElementById('msgAnoNovo').value;state.pacientes.forEach((p,i)=>setTimeout(()=>waMsg(p.tel,msg),i*1000));toast('Abrindo WhatsApp...','success');}
 function enviarFalta(){var pid=document.getElementById('selFalta').value;if(!pid){toast('Selecione um paciente','error');return;}var p=state.pacientes.find(x=>x.id==pid);if(p)waMsg(p.tel,document.getElementById('msgFalta').value);}
 function enviarLink(){
-  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema/?agendar=1\n\nQualquer dúvida estou à disposição!';
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema/agendar.html\n\nQualquer dúvida estou à disposição!';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -2777,12 +2841,12 @@ async function confirmarFicha(agId){
 }
 
 function copiarLinkAgendar(){
-  var link = 'https://fisioterapiagaranhuns.github.io/multicare-sistema/?agendar=1';
+  var link = 'https://fisioterapiagaranhuns.github.io/multicare-sistema/agendar.html';
   navigator.clipboard.writeText(link).then(function(){toast('Link copiado!','success');});
 }
 
 function enviarLinkAgendar(){
-  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema/?agendar=1\n\nQualquer dúvida estou à disposição!';
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema/agendar.html\n\nQualquer dúvida estou à disposição!';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -3000,6 +3064,177 @@ function copiarMsgLink(){
     document.getElementById('modalMsgLink').classList.remove('open');
     toast('Mensagem copiada! Agora cole no WhatsApp para enviar.','success');
   });
+}
+
+
+// ════════════════════════════════
+// PLANO DE TRATAMENTO
+// ════════════════════════════════
+
+function abrirPlano(pacId){
+  populateSelects();
+  if(pacId) setTimeout(function(){ document.getElementById('plPaciente').value=pacId; },50);
+  // Set default date to today
+  document.getElementById('plDataInicio').value = hoje();
+  openModal('modalPlano');
+}
+
+function toggleDia(btn){
+  btn.classList.toggle('ativo');
+}
+
+function getDiasSelecionados(){
+  var dias = [];
+  document.querySelectorAll('.dia-btn.ativo').forEach(function(b){
+    dias.push(parseInt(b.getAttribute('data-dia')));
+  });
+  return dias;
+}
+
+function calcPlano(){
+  var n = parseInt(document.getElementById('plSessoes').value)||0;
+  var v = parseFloat(document.getElementById('plValorSessao').value)||0;
+  var forma = document.getElementById('plPagamento').value;
+  var parcelas = parseInt(document.getElementById('plParcelas').value)||1;
+  document.getElementById('plParcelasGrp').style.display = forma==='parcelado'?'block':'none';
+  if(!n||!v){ document.getElementById('plResumo').style.display='none'; return; }
+  var total = n * v;
+  document.getElementById('plResumo').style.display='block';
+  document.getElementById('plTotalVal').textContent = 'R$'+total.toFixed(0);
+  document.getElementById('plSessoesVal').textContent = n;
+  if(forma==='avista'){
+    document.getElementById('plParcelaVal').textContent = 'R$'+total.toFixed(0);
+    document.getElementById('plParcelaLabel').textContent = 'À vista';
+  } else if(forma==='parcelado'){
+    var vlParcela = total/parcelas;
+    document.getElementById('plParcelaVal').textContent = parcelas+'x R$'+vlParcela.toFixed(0);
+    document.getElementById('plParcelaLabel').textContent = 'No cartão';
+  } else if(forma==='mensal'){
+    document.getElementById('plParcelaVal').textContent = 'R$'+(v*4).toFixed(0)+'/mês';
+    document.getElementById('plParcelaLabel').textContent = 'Mensal (4 sess)';
+  } else {
+    document.getElementById('plParcelaVal').textContent = 'R$'+v.toFixed(0);
+    document.getElementById('plParcelaLabel').textContent = 'Por sessão';
+  }
+}
+
+function gerarDatasPlano(){
+  var pid = document.getElementById('plPaciente').value;
+  var n = parseInt(document.getElementById('plSessoes').value)||0;
+  var dataInicio = document.getElementById('plDataInicio').value;
+  var horario = document.getElementById('plHorario').value;
+  var dias = getDiasSelecionados();
+  if(!pid||!n||!dataInicio||!horario||!dias.length) return null;
+  var datas = [];
+  var cursor = new Date(dataInicio+'T12:00:00');
+  var count = 0;
+  var maxTries = 365;
+  while(count < n && maxTries-- > 0){
+    var dow = cursor.getDay();
+    if(dias.indexOf(dow) >= 0){
+      var ds = cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0');
+      datas.push({data:ds, hora:horario});
+      count++;
+    }
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return datas;
+}
+
+async function salvarPlano(){
+  var pid = document.getElementById('plPaciente').value;
+  var n = parseInt(document.getElementById('plSessoes').value)||0;
+  var v = parseFloat(document.getElementById('plValorSessao').value)||0;
+  var forma = document.getElementById('plPagamento').value;
+  var horario = document.getElementById('plHorario').value;
+  var dias = getDiasSelecionados();
+
+  if(!pid||!n||!v){ toast('Preencha paciente, sessões e valor','error'); return; }
+  if(!horario||!dias.length){ toast('Defina horário e dias da semana','error'); return; }
+
+  var datas = gerarDatasPlano();
+  if(!datas||!datas.length){ toast('Erro ao gerar datas','error'); return; }
+
+  var p = state.pacientes.find(function(x){return x.id==pid;});
+  var btnSalvar = document.querySelector('#modalPlano .btn-green');
+  btnSalvar.disabled=true; btnSalvar.textContent='Salvando...';
+
+  try{
+    // Criar agendamentos em série
+    for(var i=0;i<datas.length;i++){
+      await apiPost('agendamentos',{
+        paciente_id:parseInt(pid),
+        tipo: i===0?'Avaliação':'Sessão',
+        data:datas[i].data,
+        hora:datas[i].hora,
+        valor:v,
+        status:'Confirmado',
+        obs:'Plano de tratamento · '+forma+' · Sessão '+(i+1)+' de '+n
+      });
+    }
+    // Registrar lançamento financeiro
+    var total = n * v;
+    var formaLabel = {avista:'À Vista',parcelado:'Parcelado no Cartão',mensal:'Mensal',sessao:'Por Sessão'}[forma]||forma;
+    await apiPost('lancamentos',{
+      paciente_id:parseInt(pid),
+      tipo:'A Receber',
+      valor:total,
+      data:datas[0].data,
+      obs:'Plano '+n+' sessões · '+formaLabel+' · R$'+v+'/sessão'
+    });
+
+    await loadAll();
+    closeModal('modalPlano');
+    renderFinanceiro();
+    renderDashboard();
+    renderAgenda();
+    toast(n+' sessões agendadas e plano financeiro criado!','success');
+
+    // Reset form
+    ['plSessoes','plValorSessao','plParcelas','plDataInicio','plHorario','plObs'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    document.querySelectorAll('.dia-btn.ativo').forEach(function(b){b.classList.remove('ativo');});
+    document.getElementById('plResumo').style.display='none';
+
+  } catch(e){
+    toast('Erro ao salvar: '+e.message,'error');
+  }
+  btnSalvar.disabled=false; btnSalvar.textContent='Salvar Plano';
+}
+
+async function salvarPlanoWA(){
+  var pid = document.getElementById('plPaciente').value;
+  var n = parseInt(document.getElementById('plSessoes').value)||0;
+  var v = parseFloat(document.getElementById('plValorSessao').value)||0;
+  var forma = document.getElementById('plPagamento').value;
+  var dias = getDiasSelecionados();
+  var horario = document.getElementById('plHorario').value;
+  if(!pid||!n||!v||!horario||!dias.length){ toast('Preencha todos os campos','error'); return; }
+  await salvarPlano();
+  var p = state.pacientes.find(function(x){return x.id==pid;});
+  if(!p) return;
+  var total = n * v;
+  var formaLabel = {avista:'à vista (R$'+total.toFixed(0)+')',parcelado:'parcelado em '+document.getElementById('plParcelas').value+'x de R$'+(total/parseInt(document.getElementById('plParcelas').value||1)).toFixed(0),mensal:'mensal',sessao:'por sessão (R$'+v+' cada)'}[forma]||forma;
+  var nomeDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var diasNomes = dias.map(function(d){return nomeDias[d];}).join(' e ');
+  var msg = 'Olá '+p.nome+'! Aqui está o resumo do seu plano de tratamento na MultiCare Fisioterapia:\n\n'
+    +'📋 *Plano de Tratamento*\n'
+    +'• '+n+' sessões previstas\n'
+    +'• Valor: R$'+v.toFixed(0)+' por sessão · Total: R$'+total.toFixed(0)+'\n'
+    +'• Pagamento: '+formaLabel+'\n'
+    +'• Sessões: '+diasNomes+' às '+horario+'h\n\n'
+    +'Dados para pagamento:\nChave PIX: (87) 9.9922-1295 — Dr. Igor Matheus\n\n'
+    +'Continuamos firmes rumo à sua recuperação! 💚';
+  waMsg(p.tel, msg);
+}
+
+// Auto-preencher data no lançamento com data do próximo agendamento do paciente
+function autoPreencherDataLancamento(){
+  var pid = document.getElementById('lanPac').value;
+  if(!pid){ document.getElementById('lanData').value=hoje(); return; }
+  var prox = state.agendamentos.filter(function(a){return a.paciente_id==pid && a.data>=hoje();}).sort(function(a,b){return a.data.localeCompare(b.data);})[0];
+  document.getElementById('lanData').value = prox ? prox.data : hoje();
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
