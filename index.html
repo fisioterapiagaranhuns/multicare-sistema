@@ -2005,7 +2005,169 @@ function imprimirTermo(){
       ${imgData?`<img src="${imgData}" class="sig-img"/>`:'<div style="border:1px solid #e4e6e0;border-radius:6px;width:300px;height:80px;display:flex;align-items:flex-end;padding:8px;font-size:11px;color:#7a8077">Assinatura</div>'}
     </div>
     <div class="footer">MultiCare Fisioterapia · Dr. Igor Matheus · (87) 9.9922-1295 · Garanhuns, PE</div>
-  </body></html>`);
+  
+<!-- PUBLIC BOOKING PAGE (shown when #agendar hash is present) -->
+<div id="publicBooking" style="display:none;min-height:100vh;background:var(--paper)">
+  <!-- HEADER -->
+  <div style="background:var(--forest);padding:28px 24px;text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04)"></div>
+    <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04)"></div>
+    <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;position:relative;z-index:2">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div style="font-family:'Playfair Display',serif;font-size:22px;color:white;font-weight:700;position:relative;z-index:2">Dr. Igor Matheus</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;position:relative;z-index:2">Fisioterapia &amp; Reabilitação · Garanhuns, PE</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.6;position:relative;z-index:2;max-width:400px;margin-left:auto;margin-right:auto">Agende sua consulta e preencha uma breve ficha.<br>Isso nos ajuda a preparar o melhor atendimento para você.</div>
+  </div>
+
+  <!-- STEPS NAV -->
+  <div style="display:flex;background:white;border-bottom:1px solid var(--line)">
+    <div id="pb_nav1" style="flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--forest-mid);border-bottom:2px solid var(--forest-mid);letter-spacing:0.05em;text-transform:uppercase">1 · Horário</div>
+    <div id="pb_nav2" style="flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);border-bottom:2px solid transparent;letter-spacing:0.05em;text-transform:uppercase">2 · Dados</div>
+    <div id="pb_nav3" style="flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);border-bottom:2px solid transparent;letter-spacing:0.05em;text-transform:uppercase">3 · Saúde</div>
+    <div id="pb_nav4" style="flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);border-bottom:2px solid transparent;letter-spacing:0.05em;text-transform:uppercase">4 · Confirmar</div>
+  </div>
+
+  <div style="max-width:520px;margin:0 auto;padding:24px 20px 60px">
+
+    <!-- STEP 1: CALENDÁRIO -->
+    <div id="pb_step1">
+      <div class="card">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:4px">Escolha o dia</div>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;line-height:1.5">Atendimentos de segunda a sexta, das 14h às 18h. Cada sessão tem 1 hora de duração.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <button class="btn btn-outline btn-sm" onclick="pb_calNav(-1)">‹</button>
+          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700" id="pb_calTitle"></div>
+          <button class="btn btn-outline btn-sm" onclick="pb_calNav(1)">›</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px" id="pb_calGrid"></div>
+        <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)"><div style="width:10px;height:10px;border-radius:50%;background:var(--forest-mid)"></div>Selecionado</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)"><div style="width:10px;height:10px;border-radius:50%;background:var(--paper);border:1px solid var(--line)"></div>Disponível</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)"><div style="width:10px;height:10px;border-radius:50%;background:var(--line)"></div>Indisponível</div>
+        </div>
+      </div>
+      <div class="card" id="pb_horariosCard" style="display:none">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:4px">Escolha o horário</div>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:16px" id="pb_horarioSub"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="pb_horariosGrid"></div>
+      </div>
+      <button class="btn btn-green" id="pb_btnStep1" onclick="pb_goStep(2)" style="display:none;margin-top:4px">Continuar →</button>
+    </div>
+
+    <!-- STEP 2: DADOS -->
+    <div id="pb_step2" style="display:none">
+      <div class="card">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:4px">Seus dados pessoais</div>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:20px">Informações para confirmar seu agendamento.</div>
+        <div class="form-group"><label class="form-label">Nome completo *</label><input class="form-control" id="pb_nome" placeholder="Seu nome completo"/></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Data de nascimento *</label><input class="form-control" id="pb_nasc" type="date"/></div>
+          <div class="form-group"><label class="form-label">Sexo *</label>
+            <select class="form-control" id="pb_sexo"><option value="">— Selecione —</option><option value="M">Masculino</option><option value="F">Feminino</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">WhatsApp *</label><input class="form-control" id="pb_tel" placeholder="(87) 99999-9999" oninput="this.value=maskTel(this.value)"/></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">CPF</label><input class="form-control" id="pb_cpf" placeholder="000.000.000-00" oninput="this.value=maskCPF(this.value)"/></div>
+          <div class="form-group"><label class="form-label">Convênio</label><input class="form-control" id="pb_convenio" placeholder="Particular ou plano"/></div>
+        </div>
+        <div id="pb_errDados" style="display:none;background:var(--red-light);border-radius:6px;padding:10px;font-size:13px;color:var(--red);margin-top:8px">Preencha todos os campos obrigatórios (*)</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="pb_goStep(1)" style="flex:0 0 auto;width:auto;padding:14px 20px">‹</button>
+        <button class="btn btn-green" onclick="pb_validarStep2()" style="flex:1">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: SAÚDE -->
+    <div id="pb_step3" style="display:none">
+      <div class="card">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:4px">Sobre sua saúde</div>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;line-height:1.5">Informações confidenciais que ajudam o Dr. Igor a preparar seu atendimento.</div>
+        <div class="form-group"><label class="form-label">Queixa principal * — O que está sentindo e desde quando?</label><textarea class="form-control" id="pb_queixa" placeholder="Descreva onde dói, o que sente, desde quando..." rows="3"></textarea></div>
+        <div class="form-group">
+          <label class="form-label">Nível de dor atual (0 = sem dor · 10 = dor máxima)</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+            <input type="range" id="pb_eva" min="0" max="10" value="0" oninput="pb_updateEva(this.value)" style="flex:1;accent-color:var(--forest-mid)"/>
+            <div id="pb_evaVal" style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--forest);min-width:28px;text-align:center">0</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:3px"><span>Sem dor</span><span>Dor máxima</span></div>
+        </div>
+        <div class="form-group"><label class="form-label">Há quanto tempo sente esse problema?</label>
+          <select class="form-control" id="pb_tempo"><option value="">— Selecione —</option><option>Menos de 1 semana</option><option>1 a 4 semanas</option><option>1 a 3 meses</option><option>3 a 6 meses</option><option>Mais de 6 meses</option><option>Mais de 1 ano</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Profissão e rotina diária</label><input class="form-control" id="pb_profissao" placeholder="Ex: Motorista, trabalho sentado no computador..."/></div>
+        <div class="form-group"><label class="form-label">Condições de saúde, cirurgias ou medicamentos em uso</label><textarea class="form-control" id="pb_historico" placeholder="Ex: Hipertensão, cirurgia no joelho em 2020, tomo losartana..." rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Pratica atividade física?</label><input class="form-control" id="pb_atividade" placeholder="Ex: Caminhada 3x por semana, não pratico..."/></div>
+        <div class="form-group"><label class="form-label">Objetivo principal com o tratamento *</label><input class="form-control" id="pb_objetivo" placeholder='Ex: "Quero voltar a caminhar sem dor"'/></div>
+        <div id="pb_errSaude" style="display:none;background:var(--red-light);border-radius:6px;padding:10px;font-size:13px;color:var(--red);margin-top:8px">Preencha a queixa principal e o objetivo</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="pb_goStep(2)" style="flex:0 0 auto;width:auto;padding:14px 20px">‹</button>
+        <button class="btn btn-green" onclick="pb_validarStep3()" style="flex:1">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: CONFIRMAÇÃO -->
+    <div id="pb_step4" style="display:none">
+      <div style="background:var(--forest-light);border:1px solid #b8d9c0;border-radius:10px;padding:20px;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--forest);margin-bottom:14px">Confirme seu agendamento</div>
+        <div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px">📅</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Data e Horário</div><div style="font-size:14px;font-weight:500;margin-top:2px" id="pb_resDataHora">—</div></div></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px">👤</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Paciente</div><div style="font-size:14px;font-weight:500;margin-top:2px" id="pb_resNome">—</div></div></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px">🩺</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Queixa</div><div style="font-size:14px;font-weight:500;margin-top:2px" id="pb_resQueixa">—</div></div></div>
+        <div style="display:flex;gap:10px"><span style="font-size:16px">🎯</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Objetivo</div><div style="font-size:14px;font-weight:500;margin-top:2px" id="pb_resObjetivo">—</div></div></div>
+      </div>
+      <div style="background:#fef6e7;border:1px solid #f0c97a;border-radius:8px;padding:14px;font-size:13px;color:#7a4f00;line-height:1.6;margin-bottom:16px">
+        ⏰ <strong>Política de cancelamento:</strong> Avise com pelo menos 24h de antecedência. Faltas sem aviso implicam cobrança da sessão.
+      </div>
+      <button class="btn btn-green" id="pb_btnConfirmar" onclick="pb_confirmar()" style="margin-bottom:10px">✅ Confirmar Agendamento</button>
+      <button class="btn btn-outline" onclick="pb_goStep(3)">‹ Voltar e editar</button>
+    </div>
+
+    <!-- STEP 5: SUCESSO -->
+    <div id="pb_step5" style="display:none;text-align:center;padding:40px 0">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--forest-light);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px">🎉</div>
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin-bottom:8px">Agendamento confirmado!</div>
+      <div style="font-size:14px;color:var(--ink3);line-height:1.65;margin-bottom:28px">Seu agendamento foi registrado com sucesso.<br>Em breve o Dr. Igor entrará em contato para confirmar.</div>
+      <div style="background:var(--forest-light);border-radius:10px;padding:18px;margin-bottom:24px;text-align:left">
+        <div style="display:flex;gap:10px;margin-bottom:8px"><span>📅</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Consulta agendada</div><div style="font-size:14px;font-weight:500;margin-top:2px" id="pb_succDataHora">—</div></div></div>
+        <div style="display:flex;gap:10px"><span>📍</span><div><div style="font-size:11px;color:var(--forest);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Local</div><div style="font-size:14px;font-weight:500;margin-top:2px">MultiCare Fisioterapia · Garanhuns, PE</div></div></div>
+      </div>
+      <button class="btn btn-wa" onclick="pb_abrirWA()" style="margin-bottom:12px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar com Dr. Igor no WhatsApp
+      </button>
+      <div style="font-size:12px;color:var(--ink3)">Uma confirmação será enviada para o seu WhatsApp em breve.</div>
+    </div>
+
+  </div><!-- /container -->
+
+  <div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);border-top:1px solid var(--line)">
+    <strong>MultiCare Fisioterapia</strong> · Dr. Igor Matheus · Garanhuns, PE<br>
+    <a href="https://wa.me/5587999221295" style="color:var(--forest-mid);text-decoration:none">📱 (87) 9.9922-1295</a>
+  </div>
+</div>
+
+<!-- Modal mensagem para copiar e enviar -->
+<div class="modal-overlay" id="modalMsgLink">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <span class="modal-title">Mensagem pronta para enviar</span>
+      <button class="modal-close" onclick="closeModal('modalMsgLink')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.6">Copie a mensagem abaixo e envie manualmente pelo WhatsApp para o paciente:</p>
+      <textarea class="form-control" id="msgLinkPreview" rows="7" readonly style="background:var(--paper);font-size:13px;line-height:1.6"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalMsgLink')">Fechar</button>
+      <button class="btn btn-green" onclick="copiarMsgLink()">📋 Copiar mensagem</button>
+    </div>
+  </div>
+</div>
+
+</body></html>`);
   win.document.close();
   setTimeout(()=>win.print(),600);
 }
@@ -2612,9 +2774,10 @@ function copiarLinkAgendar(){
 }
 
 function enviarLinkAgendar(){
-  var link = window.location.href.split('#')[0];
-  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nfisioterapiagaranhuns.github.io/multicare-sistema\n\nEm caso de dúvidas, estou à disposição!';
-  window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nhttps://fisioterapiagaranhuns.github.io/multicare-sistema#agendar\n\nEm caso de dúvidas, estou à disposição!';
+  // Show message in a modal for Dr. Igor to copy and send manually
+  document.getElementById('msgLinkPreview').value = msg;
+  document.getElementById('modalMsgLink').classList.add('open');
 }
 
 // Override renderLinkPaciente
@@ -2622,6 +2785,215 @@ function renderLinkPaciente(){
   carregarFichas();
   // Also reload appointments to have fresh data
   pubState.agendamentosOcupados = state.agendamentos.map(function(a){return {data:a.data,hora:a.hora};});
+}
+
+
+// ════════════════════════════════
+// PÁGINA PÚBLICA DE AGENDAMENTO
+// ════════════════════════════════
+var pb = {
+  calYear:0, calMonth:0,
+  diaSelecionado:null,
+  horarioSelecionado:null,
+  ocupados:[],
+  step:1,
+  dados:{}
+};
+var PB_HORARIOS = ['14:00','15:00','16:00','17:00','18:00'];
+var PB_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var PB_MESES_L = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+var PB_DIAS_L = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+function initPublicBooking(){
+  var hoje = new Date();
+  pb.calYear = hoje.getFullYear();
+  pb.calMonth = hoje.getMonth();
+  pb_carregarOcupados();
+  pb_renderCal();
+}
+
+function pb_toDateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function pb_carregarOcupados(){
+  var hojeStr = pb_toDateStr(new Date());
+  fetch(SB_URL+'/rest/v1/agendamentos?data=gte.'+hojeStr+'&select=data,hora',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(data){
+    pb.ocupados = data||[];
+    pb_renderCal();
+  }).catch(function(){ pb.ocupados = []; });
+}
+
+function pb_calNav(dir){
+  pb.calMonth += dir;
+  if(pb.calMonth>11){pb.calMonth=0;pb.calYear++;}
+  if(pb.calMonth<0){pb.calMonth=11;pb.calYear--;}
+  pb_renderCal();
+}
+
+function pb_renderCal(){
+  var el = document.getElementById('pb_calTitle');
+  if(!el) return;
+  el.textContent = PB_MESES[pb.calMonth]+' '+pb.calYear;
+  var grid = document.getElementById('pb_calGrid');
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+  var nomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+  var h2 = '';
+  nomes.forEach(function(n){ h2+='<div class="cal-dname">'+n+'</div>'; });
+  var primeiro = new Date(pb.calYear,pb.calMonth,1);
+  var total = new Date(pb.calYear,pb.calMonth+1,0).getDate();
+  for(var i=0;i<primeiro.getDay();i++) h2+='<div></div>';
+  for(var d=1;d<=total;d++){
+    var dt = new Date(pb.calYear,pb.calMonth,d); dt.setHours(0,0,0,0);
+    var dow = dt.getDay();
+    var ds = pb_toDateStr(dt);
+    var isWe = dow===0||dow===6;
+    var isPast = dt<amanha;
+    var isSel = ds===pb.diaSelecionado;
+    var ocup = pb.ocupados.filter(function(a){return a.data===ds;}).length;
+    var isFull = ocup>=PB_HORARIOS.length;
+    if(isSel){
+      h2+='<div class="cal-d cal-d-sel" data-date="'+ds+'" onclick="pb_selecionarDia(this.dataset.date)">'+d+'</div>';
+    } else if(isWe||isPast||isFull){
+      h2+='<div class="cal-d cal-d-off">'+d+'</div>';
+    } else {
+      h2+='<div class="cal-d cal-d-avail" data-date="'+ds+'" onclick="pb_selecionarDia(this.dataset.date)">'+d+'</div>';
+    }
+  }
+  grid.innerHTML = h2;
+}
+
+function pb_selecionarDia(ds){
+  pb.diaSelecionado=ds; pb.horarioSelecionado=null;
+  pb_renderCal(); pb_renderHorarios(ds);
+  document.getElementById('pb_horariosCard').style.display='block';
+  document.getElementById('pb_btnStep1').style.display='none';
+}
+
+function pb_renderHorarios(ds){
+  var d = new Date(ds+'T12:00:00');
+  document.getElementById('pb_horarioSub').textContent = PB_DIAS_L[d.getDay()]+', '+d.getDate()+' de '+PB_MESES_L[d.getMonth()];
+  var ocup = pb.ocupados.filter(function(a){return a.data===ds;}).map(function(a){return a.hora;});
+  var h2='';
+  PB_HORARIOS.forEach(function(h){
+    var isOcup = ocup.indexOf(h)>=0;
+    var isSel = h===pb.horarioSelecionado;
+    if(isOcup){
+      h2+='<button class="hor-btn hor-ocupado" disabled>'+h+'h — Ocupado</button>';
+    } else if(isSel){
+      h2+='<button class="hor-btn hor-sel" data-hora="'+h+'" onclick="pb_selecionarHorario(this.dataset.hora)">'+h+'h</button>';
+    } else {
+      h2+='<button class="hor-btn hor-avail" data-hora="'+h+'" onclick="pb_selecionarHorario(this.dataset.hora)">'+h+'h</button>';
+    }
+  });
+  document.getElementById('pb_horariosGrid').innerHTML = h2;
+}
+
+function pb_selecionarHorario(h){
+  pb.horarioSelecionado=h;
+  pb_renderHorarios(pb.diaSelecionado);
+  document.getElementById('pb_btnStep1').style.display='block';
+}
+
+function pb_setNav(n){
+  for(var i=1;i<=4;i++){
+    var el=document.getElementById('pb_nav'+i); if(!el)continue;
+    el.style.color = i===n?'var(--forest-mid)':'var(--ink3)';
+    el.style.borderBottom = i===n?'2px solid var(--forest-mid)':'2px solid transparent';
+  }
+}
+
+function pb_goStep(n){
+  document.getElementById('pb_step'+pb.step).style.display='none';
+  pb.step=n;
+  document.getElementById('pb_step'+n).style.display='block';
+  pb_setNav(n);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function pb_validarStep2(){
+  var nome=document.getElementById('pb_nome').value.trim();
+  var nasc=document.getElementById('pb_nasc').value;
+  var sexo=document.getElementById('pb_sexo').value;
+  var tel=document.getElementById('pb_tel').value.replace(/\D/g,'');
+  var ok = nome.length>=3&&nasc&&sexo&&tel.length>=10;
+  document.getElementById('pb_errDados').style.display=ok?'none':'block';
+  if(ok) pb_goStep(3);
+}
+
+function pb_validarStep3(){
+  var q=document.getElementById('pb_queixa').value.trim();
+  var o=document.getElementById('pb_objetivo').value.trim();
+  var ok=q.length>=5&&o.length>=3;
+  document.getElementById('pb_errSaude').style.display=ok?'none':'block';
+  if(ok){ pb_preencherResumo(); pb_goStep(4); }
+}
+
+function pb_updateEva(v){
+  document.getElementById('pb_evaVal').textContent=v;
+  var cor=v<=3?'var(--forest)':v<=6?'#b8760a':'var(--red)';
+  document.getElementById('pb_evaVal').style.color=cor;
+}
+
+function pb_preencherResumo(){
+  var d = new Date(pb.diaSelecionado+'T12:00:00');
+  var fmt = PB_DIAS_L[d.getDay()]+', '+d.getDate()+' de '+PB_MESES_L[d.getMonth()]+' de '+d.getFullYear();
+  document.getElementById('pb_resDataHora').textContent = fmt+' às '+pb.horarioSelecionado+'h';
+  document.getElementById('pb_resNome').textContent = document.getElementById('pb_nome').value;
+  document.getElementById('pb_resQueixa').textContent = document.getElementById('pb_queixa').value;
+  document.getElementById('pb_resObjetivo').textContent = document.getElementById('pb_objetivo').value;
+}
+
+async function pb_confirmar(){
+  var btn=document.getElementById('pb_btnConfirmar');
+  btn.disabled=true; btn.textContent='Salvando...';
+  var dados={
+    nome:document.getElementById('pb_nome').value.trim(),
+    nasc:document.getElementById('pb_nasc').value,
+    tel:document.getElementById('pb_tel').value,
+    cpf:document.getElementById('pb_cpf').value,
+    convenio:document.getElementById('pb_convenio').value,
+    queixa:document.getElementById('pb_queixa').value,
+    eva:parseInt(document.getElementById('pb_eva').value),
+    tempo:document.getElementById('pb_tempo').value,
+    profissao:document.getElementById('pb_profissao').value,
+    historico:document.getElementById('pb_historico').value,
+    atividade:document.getElementById('pb_atividade').value,
+    objetivo:document.getElementById('pb_objetivo').value,
+    data:pb.diaSelecionado, hora:pb.horarioSelecionado
+  };
+  pb.dados=dados;
+  try{
+    var rP=await fetch(SB_URL+'/rest/v1/pacientes',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({nome:dados.nome,nasc:dados.nasc,tel:dados.tel,cpf:dados.cpf,convenio:dados.convenio,obs:'Queixa: '+dados.queixa+' | Objetivo: '+dados.objetivo+(dados.profissao?' | Profissão: '+dados.profissao:'')+(dados.historico?' | Histórico: '+dados.historico:'')})});
+    var pacRes=await rP.json();
+    var pacId=pacRes[0]&&pacRes[0].id;
+    if(pacId){
+      await fetch(SB_URL+'/rest/v1/agendamentos',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({paciente_id:pacId,tipo:'Avaliação',data:dados.data,hora:dados.hora,valor:0,status:'Pendente',obs:'Agendado pelo paciente · EVA '+dados.eva+'/10 · '+dados.tempo})});
+      pb.ocupados.push({data:dados.data,hora:dados.hora});
+    }
+  } catch(e){ console.log('Erro ao salvar:',e); }
+  var d2=new Date(dados.data+'T12:00:00');
+  var fmt=PB_DIAS_L[d2.getDay()]+', '+d2.getDate()+' de '+PB_MESES_L[d2.getMonth()];
+  document.getElementById('pb_succDataHora').textContent=fmt+' às '+dados.hora+'h';
+  pb_goStep(5);
+}
+
+function pb_abrirWA(){
+  var d=pb.dados;
+  var fmt=d.data?d.data.split('-').reverse().join('/'):'';
+  var msg='Olá Dr. Igor! Acabei de agendar minha consulta para '+fmt+' às '+d.hora+'h. Fico no aguardo da confirmação!';
+  window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
+}
+
+function copiarMsgLink(){
+  var txt=document.getElementById('msgLinkPreview').value;
+  navigator.clipboard.writeText(txt).then(function(){
+    document.getElementById('modalMsgLink').classList.remove('open');
+    toast('Mensagem copiada! Agora cole no WhatsApp para enviar.','success');
+  });
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
