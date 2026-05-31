@@ -1212,7 +1212,22 @@ function quickLogin(e,s){
   document.getElementById('loginEmail').value=e;
   document.getElementById('loginSenha').value=s;
   document.getElementById('loginError').classList.remove('show');
-  setTimeout(doLogin, 150);
+  document.getElementById('loginBtnTxt').textContent='Verificando...';
+  document.getElementById('btnLogin').disabled=true;
+  document.getElementById('loginSpin').style.display='block';
+  var user=USERS.find(function(u){return u.email===e&&u.senha===s;});
+  if(user){
+    state.user=user;
+    document.getElementById('loginBtnTxt').textContent='✓ Acesso confirmado!';
+    loadAll().then(function(){
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('appScreen').style.display='flex';
+      document.getElementById('sbAvatar').textContent=user.initials;
+      document.getElementById('sbName').textContent=user.nome;
+      document.getElementById('sbRole').textContent=user.role;
+      initApp();
+    });
+  }
 }
 function showForgot(){document.getElementById('loginMainPanel').classList.add('hide');document.getElementById('forgotPanel').classList.add('show');}
 function hideForgot(){document.getElementById('loginMainPanel').classList.remove('hide');document.getElementById('forgotPanel').classList.remove('show');}
@@ -1224,8 +1239,8 @@ async function doLogin(){
   err.classList.remove('show');
   if(!email||!senha){document.getElementById('loginErrorTxt').textContent='Preencha e-mail e senha.';err.classList.add('show');return;}
   btn.disabled=true;spin.style.display='block';txt.textContent='Verificando...';
-  await new Promise(r=>setTimeout(r,800));
-  var user=USERS.find(u=>u.email===email&&u.senha===senha);
+  await new Promise(function(r){setTimeout(r,400);});
+  var user=USERS.find(function(u){return u.email===email&&u.senha===senha;});
   if(user){
     state.user=user;txt.textContent='✓ Acesso confirmado!';
     await loadAll();
@@ -1761,10 +1776,9 @@ function enviarExerciciosWa(){
 // ── ABANDONO ──
 function verificarAbandono(){
   var el = document.getElementById('listaAbandono');
-  var hoje_str = hoje();
-  var hoje_d = new Date(hoje_str);
-  var em_risco = state.pacientes.filter(p=>{
-    var ags = state.agendamentos.filter(a=>a.paciente_id==p.id).sort((a,b)=>b.data.localeCompare(a.data));
+  var hoje_d = new Date(hoje());
+  var em_risco = state.pacientes.filter(function(p){
+    var ags = state.agendamentos.filter(function(a){return a.paciente_id==p.id;}).sort(function(a,b){return b.data.localeCompare(a.data);});
     if(!ags.length) return false;
     var ultima = new Date(ags[0].data.replace(/-/g,'/'));
     var diff = Math.floor((hoje_d - ultima)/(1000*60*60*24));
@@ -1774,21 +1788,23 @@ function verificarAbandono(){
     el.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:16px;background:var(--forest-light);border-radius:8px"><span style="font-size:20px">✅</span><span style="font-size:13px;color:var(--forest)">Nenhum paciente em risco de abandono no momento.</span></div>';
     return;
   }
-  el.innerHTML = em_risco.map(p=>{
-    var ags = state.agendamentos.filter(a=>a.paciente_id==p.id).sort((a,b)=>b.data.localeCompare(a.data));
+  var html2 = '';
+  em_risco.forEach(function(p){
+    var ags = state.agendamentos.filter(function(a){return a.paciente_id==p.id;}).sort(function(a,b){return b.data.localeCompare(a.data);});
     var ultima = ags[0];
     var ultima_d = new Date(ultima.data.replace(/-/g,'/'));
     var dias = Math.floor((hoje_d - ultima_d)/(1000*60*60*24));
-    var msgPersonalizada = document.getElementById('msgAbandono').value.replace('[Nome]',p.nome).replace('[N]',Math.ceil((parseInt((protState.anamnese&&protState.anamnese.sessoes)||12) - ags.length)));
-    return`<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">
-      <div class="p-avatar" style="background:var(--red-light);color:var(--red)">${p.nome[0]}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:500">${p.nome}</div>
-        <div style="font-size:11px;color:var(--red)">Última sessão: ${ultima.data.split('-').reverse().join('/')} — ${dias} dias sem atendimento</div>
-      </div>
-      <button class="btn btn-wa btn-sm" onclick="waMsg('${p.tel}','${msgPersonalizada.replace(/'/g,"\'")}')">Reengajar WA</button>
-    </div>`;
-  }).join('');
+    var ultimaFmt = ultima.data.split('-').reverse().join('/');
+    html2 += '<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">'
+      +'<div class="p-avatar" style="background:var(--red-light);color:var(--red)">'+p.nome[0]+'</div>'
+      +'<div style="flex:1">'
+      +'<div style="font-size:13px;font-weight:500">'+p.nome+'</div>'
+      +'<div style="font-size:11px;color:var(--red)">Última sessão: '+ultimaFmt+' — '+dias+' dias</div>'
+      +'</div>'
+      +'<button class="btn btn-wa btn-sm" onclick="waMsg(''+p.tel+'',document.getElementById('msgAbandono').value.replace('[Nome]',''+p.nome+''))">Reengajar WA</button>'
+      +'</div>';
+  });
+  el.innerHTML = html2;
 }
 
 function enviarReengajamentoTodos(){
@@ -2155,7 +2171,7 @@ function saveEng2State(){
     exercicios:eng2State.exercicios,
     proms:eng2State.proms,
     npsRespostas:eng2State.npsRespostas,
-    assinaturas:eng2State.assinaturas.map(a=>({...a,imgData:''})), // Don't store large base64
+    assinaturas:eng2State.assinaturas.map(function(a){return {id:a.id,pacienteId:a.pacienteId,pacienteNome:a.pacienteNome,data:a.data,tipo:a.tipo,imgData:''};}), // Don't store large base64
     baselines:eng2State.baselines,
     laudos:eng2State.laudos
   }));
@@ -2311,7 +2327,9 @@ function pubRenderCal(){
   var hoje = new Date(); hoje.setHours(0,0,0,0);
   var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
   var diasNomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  var html = diasNomes.map(function(d){return '<div style="text-align:center;font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase;padding:4px 0">'+d+'</div>';}).join('');
+  var html = diasNomes.map(function(d){
+    return '<div style="text-align:center;font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase;padding:4px 0">'+d+'</div>';
+  }).join('');
   var primeiro = new Date(pubState.calYear, pubState.calMonth, 1);
   var diasNoMes = new Date(pubState.calYear, pubState.calMonth+1, 0).getDate();
   var inicioDia = primeiro.getDay();
@@ -2326,18 +2344,16 @@ function pubRenderCal(){
     var isSelected = dataStr===pubState.diaSelecionado;
     var ocupados = pubState.agendamentosOcupados.filter(function(a){return a.data===dataStr;}).length;
     var isFull = ocupados>=PUB_HORARIOS.length;
-    var baseStyle = 'aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:500;border:2px solid transparent;transition:all 0.15s;';
-    var style,onclick='';
+    var base = 'aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:500;border:2px solid transparent;transition:all 0.15s;';
+    var divHtml;
     if(isSelected){
-      style=baseStyle+'background:var(--forest-mid);color:white;cursor:pointer;';
+      divHtml = '<div style="'+base+'background:var(--forest-mid);color:white;cursor:pointer;" onclick="pubSelecionarDia(''+dataStr+'')">'+d+'</div>';
     } else if(isWeekend||isPast||isFull){
-      style=baseStyle+'color:var(--line);cursor:not-allowed;';
+      divHtml = '<div style="'+base+'color:var(--line);cursor:not-allowed;opacity:0.5;">'+d+'</div>';
     } else {
-      style=baseStyle+'background:var(--paper);color:var(--ink);cursor:pointer;';
-      onclick='onclick="pubSelecionarDia(''+dataStr+'')"';
-      style+='" onmouseover="this.style.background='var(--forest-light)';this.style.borderColor='var(--forest-mid)'" onmouseout="this.style.background='var(--paper)';this.style.borderColor='transparent'"';
+      divHtml = '<div style="'+base+'background:var(--paper);color:var(--ink);cursor:pointer;" onclick="pubSelecionarDia(''+dataStr+'')" onmouseover="this.style.background='var(--forest-light)';this.style.borderColor='var(--forest-mid)'" onmouseout="this.style.background='var(--paper)';this.style.borderColor='transparent'">'+d+'</div>';
     }
-    html+='<div style="'+style+'" '+onclick+'>'+d+'</div>';
+    html+=divHtml;
   }
   grid.innerHTML=html;
 }
@@ -2504,35 +2520,23 @@ async function pubConfirmar(){
   pubGoStep(5);
   document.getElementById('pnav4').style.color='var(--forest)';
 
-  // Notificar Dr. Igor
-  setTimeout(pubNotificarDrIgor, 1200);
+  // Notificação registrada no sistema
 }
 
 function pubNotificarDrIgor(){
   var d = pubState.dadosConfirmados;
   if(!d.nome)return;
   var dataFmt = d.data?d.data.split('-').reverse().join('/'):'';
-  var msg = '🔔 Novo agendamento via sistema!
-
-'
-    +'👤 Paciente: '+d.nome+'
-'
-    +'📱 WhatsApp: '+d.tel+'
-'
-    +'📅 Data: '+dataFmt+' às '+d.hora+'h
-'
-    +'📊 EVA: '+d.eva+'/10
-'
-    +'🩺 Queixa: '+d.queixa+'
-'
-    +'🎯 Objetivo: '+d.objetivo+'
-'
-    +(d.profissao?'💼 Profissão: '+d.profissao+'
-':'')
-    +(d.historico?'📋 Histórico: '+d.historico+'
-':'')
-    +'
-MultiCare Fisioterapia — Agendamento automático';
+  var msg = '🔔 Novo agendamento via sistema!\n\n'
+    +'👤 Paciente: '+d.nome+'\n'
+    +'📱 WhatsApp: '+d.tel+'\n'
+    +'📅 Data: '+dataFmt+' às '+d.hora+'h\n'
+    +'📊 EVA: '+d.eva+'/10\n'
+    +'🩺 Queixa: '+d.queixa+'\n'
+    +'🎯 Objetivo: '+d.objetivo+'\n'
+    +(d.profissao?'💼 Profissão: '+d.profissao+'\n':'')
+    +(d.historico?'📋 Histórico: '+d.historico+'\n':'')
+    +'\nMultiCare Fisioterapia — Agendamento automático';
   window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
 }
 
