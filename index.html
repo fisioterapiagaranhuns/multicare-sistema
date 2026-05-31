@@ -584,7 +584,7 @@ textarea.form-control{resize:vertical;min-height:80px}
           <div class="card">
             <div class="sec-title" style="margin-bottom:8px">Link de Agendamento + Anamnese</div>
             <p style="font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:20px">Envie ao paciente no primeiro contato para ele escolher o horário e preencher a ficha de anamnese.</p>
-            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-agendar</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
+            <div class="link-box" style="margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-mid)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkAgenda">fisioterapiagaranhuns.github.io/multicare-sistema</span><button class="btn btn-outline btn-sm" onclick="copiarLink()">Copiar</button></div>
             <button class="btn btn-wa" onclick="enviarLink()">Enviar via WhatsApp</button>
           </div>
           <div class="card"><div class="sec-title" style="margin-bottom:16px">Fichas Recebidas</div><div id="listaAnamnese"><p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma ficha recebida ainda</p></div></div>
@@ -2607,13 +2607,13 @@ async function confirmarFicha(agId){
 }
 
 function copiarLinkAgendar(){
-  var link = window.location.href.split('#')[0]+'#agendar';
+  var link = 'fisioterapiagaranhuns.github.io/multicare-sistema';
   navigator.clipboard.writeText(link).then(function(){toast('Link copiado!','success');});
 }
 
 function enviarLinkAgendar(){
   var link = window.location.href.split('#')[0];
-  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\n'+link+'\n\nEm caso de dúvidas, estou à disposição!';
+  var msg = 'Olá! Dr. Igor Matheus aqui da MultiCare Fisioterapia 😊\n\nAcesse o link abaixo para agendar sua consulta e preencher uma breve ficha que nos ajuda a preparar seu atendimento:\n\nfisioterapiagaranhuns.github.io/multicare-sistema\n\nEm caso de dúvidas, estou à disposição!';
   window.open('https://wa.me/5587999221295?text='+encodeURIComponent(msg),'_blank');
 }
 
