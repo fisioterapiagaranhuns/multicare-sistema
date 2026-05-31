@@ -256,11 +256,17 @@ textarea.form-control{resize:vertical;min-height:80px}
 .hor-avail{background:var(--white);border:2px solid var(--line);color:var(--ink)}
 .hor-avail:hover{border-color:var(--forest-mid);color:var(--forest-mid);background:var(--forest-light)}
 </style>
+<script>
+// Runs BEFORE body renders
+if(window.location.search.indexOf('agendar=1')>=0){
+  document.write('<style>#loginScreen{display:none!important}#appScreen{display:none!important}</style>');
+}
+</script>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:flex">
   <div class="login-bg-c login-c1"></div>
   <div class="login-bg-c login-c2"></div>
   <div class="login-card" id="loginCard">
