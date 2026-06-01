@@ -1474,6 +1474,7 @@ function buildPerfilFoot(id, tel, nome){
     el=document.getElementById('pfWa');     if(el) el.onclick=function(){ waMsg(_perfilAtivo.tel,'Olá '+_perfilAtivo.nome+'! Dr. Igor aqui, da MultiCare Fisioterapia.'); };
     el=document.getElementById('pfPlano');  if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
     el=document.getElementById('pfAgendar');if(el) el.onclick=function(){ closeModal('modalDrill'); populateSelects(); setTimeout(function(){ document.getElementById('agPaciente').value=_perfilAtivo.id; },80); openModal('modalAgendar'); };
+    el=document.getElementById('pfBtnPlano2');if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
   },10);
   return h;
 }
@@ -1523,6 +1524,16 @@ function verPerfil(id){
       }).join('')
     : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhum lançamento financeiro</p>';
 
+  // Plano de tratamento existente
+  var planLan = lans.find(function(l){ return l.obs && l.obs.indexOf('Plano') >= 0; });
+  var totalSessoes = ags.length;
+  var htmlPlano = planLan
+    ? '<div style="background:var(--forest-light);border-radius:8px;padding:12px;font-size:13px">'
+        +'<div style="font-weight:600;color:var(--forest);margin-bottom:6px">'+planLan.obs+'</div>'
+        +'<div style="color:var(--ink3)">Total sessões registradas: '+totalSessoes+' · Valor total: R$'+parseFloat(planLan.valor||0).toFixed(2).replace('.',',')+'</div>'
+      +'</div>'
+    : '<div style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhum plano criado ainda. Clique em <strong>Plano</strong> abaixo para criar.</div>';
+
   // Build card helper - uses data-sec attribute to avoid nested quotes
   function quadrante(cor,acento,num,label,sec){
     return '<div class="card '+acento+'" style="padding:14px;text-align:center;cursor:pointer" data-sec="'+sec+'" onclick="togglePerfilSec(this.dataset.sec)">'
@@ -1571,7 +1582,16 @@ function verPerfil(id){
     // Extrato financeiro
     +'<div id="sec-fin" style="display:none;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px">'
       +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Extrato Financeiro</div>'
-      +htmlFin+'</div>';
+      +htmlFin+'</div>'
+
+    // Plano de tratamento
+    +'<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:0.06em">Plano de Tratamento</div>'
+        +'<button class="btn btn-green btn-sm" id="pfBtnPlano2">+ Criar / Ver Plano</button>'
+      +'</div>'
+      +htmlPlano
+    +'</div>';
 
   document.getElementById('drillFoot').innerHTML = buildPerfilFoot(id, p.tel, p.nome);
   openModal('modalDrill');
@@ -3180,9 +3200,15 @@ function copiarMsgLink(){
 // ════════════════════════════════
 
 function abrirPlano(pacId){
-  populateSelects();
-  if(pacId) setTimeout(function(){ document.getElementById('plPaciente').value=pacId; },50);
-  // Set default date to today
+  // Populate plano select manually (populateSelects only fills generic selects)
+  var sel = document.getElementById('plPaciente');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione —</option>'
+      + state.pacientes.map(function(p){
+          return '<option value="'+p.id+'">'+p.nome+'</option>';
+        }).join('');
+    if(pacId) sel.value = pacId;
+  }
   document.getElementById('plDataInicio').value = hoje();
   openModal('modalPlano');
 }
