@@ -913,14 +913,20 @@ Vamos retomar? Aguardo você!
               <div onclick="setDorCor('aguda')" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;border-radius:100px;transition:background 0.15s" id="legAguda"><div style="width:13px;height:13px;border-radius:50%;background:#e63946;flex-shrink:0"></div>Aguda / Trigger</div>
               <div style="margin-left:auto;font-size:11px;font-weight:600;color:var(--forest-mid)" id="dorCorLabel">● Leve</div>
             </div>
-            <!-- CANVAS CORPO -->
-            <div id="mapaNormal" style="display:flex;gap:12px;justify-content:center">
+            <!-- MAPA SVG CORPO -->
+            <div id="mapaNormal" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
               <div style="text-align:center">
-                <canvas id="canvasFrenteNorm" width="160" height="300" style="cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                <div id="svgFrenteWrap" style="position:relative;display:inline-block;cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line);overflow:hidden" onclick="svgAdicionarPonto(event,'frente')">
+                  <svg id="svgFrente" viewBox="0 0 120 280" width="150" height="300" xmlns="http://www.w3.org/2000/svg"></svg>
+                  <svg id="svgFrentePontos" viewBox="0 0 120 280" width="150" height="300" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;pointer-events:none"></svg>
+                </div>
                 <div style="font-size:11px;color:var(--ink3);margin-top:4px">Frente</div>
               </div>
               <div id="mapaVersoWrap" style="text-align:center;display:none">
-                <canvas id="canvasVersoNorm" width="160" height="300" style="cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                <div id="svgVersoWrap" style="position:relative;display:inline-block;cursor:crosshair;border-radius:8px;background:#f8f9f6;border:1px solid var(--line);overflow:hidden" onclick="svgAdicionarPonto(event,'verso')">
+                  <svg id="svgVerso" viewBox="0 0 120 280" width="150" height="300" xmlns="http://www.w3.org/2000/svg"></svg>
+                  <svg id="svgVersoPontos" viewBox="0 0 120 280" width="150" height="300" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;pointer-events:none"></svg>
+                </div>
                 <div style="font-size:11px;color:var(--ink3);margin-top:4px">Verso</div>
               </div>
             </div>
@@ -929,11 +935,17 @@ Vamos retomar? Aguardo você!
               <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px;text-align:center">Comparativo — Início vs Sessão Atual</div>
               <div style="display:flex;gap:16px;justify-content:center">
                 <div style="text-align:center">
-                  <canvas id="canvasCompInicio" width="130" height="240" style="border-radius:6px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                  <div id="svgCompInicioWrap" style="position:relative;display:inline-block;border-radius:6px;background:#f8f9f6;border:1px solid var(--line);overflow:hidden">
+                    <svg id="svgCompInicio" viewBox="0 0 120 280" width="110" height="240" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <svg id="svgCompInicioPts" viewBox="0 0 120 280" width="110" height="240" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;pointer-events:none"></svg>
+                  </div>
                   <div style="font-size:11px;color:var(--ink3);margin-top:4px">1ª Sessão</div>
                 </div>
                 <div style="text-align:center">
-                  <canvas id="canvasCompAtual" width="130" height="240" style="border-radius:6px;background:#f8f9f6;border:1px solid var(--line)"></canvas>
+                  <div id="svgCompAtualWrap" style="position:relative;display:inline-block;border-radius:6px;background:#f8f9f6;border:1px solid var(--line);overflow:hidden">
+                    <svg id="svgCompAtual" viewBox="0 0 120 280" width="110" height="240" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <svg id="svgCompAtualPts" viewBox="0 0 120 280" width="110" height="240" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;pointer-events:none"></svg>
+                  </div>
                   <div style="font-size:11px;color:var(--ink3);margin-top:4px">Atual</div>
                 </div>
               </div>
@@ -3598,19 +3610,41 @@ function updateProgressao(){
 }
 
 // ── MAPA DE DOR ──
+var SVG_BODY_FRONT = '<g fill="#e8f2e4" stroke="#7a9e7a" stroke-width="1.2" stroke-linejoin="round">  <!-- HEAD -->  <ellipse cx="60" cy="16" rx="12" ry="14"/>  <!-- NECK -->  <rect x="55" y="29" width="10" height="9" rx="3"/>  <!-- CLAVICLES + SHOULDER BLOCK -->  <path d="M38 38 Q60 34 82 38 Q86 45 80 49 Q60 46 40 49 Q34 45 38 38Z"/>  <!-- TORSO -->  <path d="M40 48 Q35 65 35 88 Q36 102 38 108 Q50 112 62 108 Q64 102 65 88 Q65 65 60 48Z"/>  <!-- WAIST/PELVIS -->  <path d="M38 108 Q36 118 38 124 Q50 130 62 124 Q64 118 62 108Z"/>  <!-- LEFT UPPER ARM -->  <path d="M40 48 Q30 52 26 68 Q24 80 26 90 Q30 93 34 90 Q36 76 38 60 Q40 54 42 49Z"/>  <!-- LEFT FOREARM -->  <path d="M26 90 Q22 104 22 116 Q23 123 27 124 Q31 123 33 116 Q35 104 34 90Z"/>  <!-- LEFT HAND -->  <ellipse cx="25" cy="129" rx="5" ry="7"/>  <!-- RIGHT UPPER ARM -->  <path d="M80 48 Q90 52 94 68 Q96 80 94 90 Q90 93 86 90 Q84 76 82 60 Q80 54 78 49Z"/>  <!-- RIGHT FOREARM -->  <path d="M94 90 Q98 104 98 116 Q97 123 93 124 Q89 123 87 116 Q85 104 86 90Z"/>  <!-- RIGHT HAND -->  <ellipse cx="95" cy="129" rx="5" ry="7"/>  <!-- LEFT THIGH -->  <path d="M40 122 Q34 138 32 158 Q31 170 33 178 Q38 181 44 178 Q47 168 48 152 Q49 138 48 122Z"/>  <!-- LEFT KNEE -->  <ellipse cx="38" cy="181" rx="7" ry="5" fill="#ddecd8"/>  <!-- LEFT SHIN -->  <path d="M31 182 Q29 198 30 216 Q31 224 35 226 Q41 224 43 216 Q44 198 45 182Z"/>  <!-- LEFT FOOT -->  <path d="M28 228 Q22 232 22 240 Q24 246 34 247 Q44 246 46 242 Q47 236 44 230Z"/>  <!-- RIGHT THIGH -->  <path d="M72 122 Q74 138 73 152 Q72 168 75 178 Q80 181 85 178 Q87 170 88 158 Q88 138 82 122Z"/>  <!-- RIGHT KNEE -->  <ellipse cx="81" cy="181" rx="7" ry="5" fill="#ddecd8"/>  <!-- RIGHT SHIN -->  <path d="M75 182 Q74 198 74 216 Q75 224 79 226 Q85 224 89 216 Q90 198 89 182Z"/>  <!-- RIGHT FOOT -->  <path d="M73 230 Q70 236 74 242 Q76 246 86 247 Q96 246 98 240 Q98 232 92 228Z"/></g><!-- FACE --><g fill="#5a7a5a" stroke="none">  <circle cx="55" cy="13" r="1.5"/>  <circle cx="65" cy="13" r="1.5"/></g><g fill="none" stroke="#5a7a5a" stroke-width="0.8" stroke-linecap="round">  <path d="M52 10 Q55 8.5 58 10"/>  <path d="M62 10 Q65 8.5 68 10"/>  <path d="M60 17 L58 21 L62 21"/>  <path d="M55 24 Q60 27 65 24"/></g><!-- TORSO DETAILS --><g fill="none" stroke="#a8c8a4" stroke-width="0.6">  <line x1="40" y1="70" x2="60" y2="70"/>  <line x1="40" y1="84" x2="60" y2="84"/>  <line x1="40" y1="97" x2="60" y2="97"/>  <line x1="50" y1="66" x2="50" y2="108"/></g>';
+var SVG_BODY_BACK = '<g fill="#e8f2e4" stroke="#7a9e7a" stroke-width="1.2" stroke-linejoin="round">  <!-- HEAD -->  <ellipse cx="60" cy="16" rx="12" ry="14"/>  <!-- NECK -->  <rect x="55" y="29" width="10" height="9" rx="3"/>  <!-- TRAPEZIUS + SHOULDERS -->  <path d="M38 38 Q60 34 82 38 Q86 45 80 49 Q60 46 40 49 Q34 45 38 38Z"/>  <!-- UPPER BACK -->  <path d="M40 48 Q35 65 35 88 Q36 102 38 108 Q50 112 62 108 Q64 102 65 88 Q65 65 60 48Z"/>  <!-- LOWER BACK / LUMBAR -->  <path d="M38 108 Q36 118 38 124 Q50 130 62 124 Q64 118 62 108Z"/>  <!-- LEFT UPPER ARM -->  <path d="M40 48 Q30 52 26 68 Q24 80 26 90 Q30 93 34 90 Q36 76 38 60 Q40 54 42 49Z"/>  <!-- LEFT FOREARM -->  <path d="M26 90 Q22 104 22 116 Q23 123 27 124 Q31 123 33 116 Q35 104 34 90Z"/>  <!-- LEFT HAND -->  <ellipse cx="25" cy="129" rx="5" ry="7"/>  <!-- RIGHT UPPER ARM -->  <path d="M80 48 Q90 52 94 68 Q96 80 94 90 Q90 93 86 90 Q84 76 82 60 Q80 54 78 49Z"/>  <!-- RIGHT FOREARM -->  <path d="M94 90 Q98 104 98 116 Q97 123 93 124 Q89 123 87 116 Q85 104 86 90Z"/>  <!-- RIGHT HAND -->  <ellipse cx="95" cy="129" rx="5" ry="7"/>  <!-- GLUTEUS -->  <path d="M38 122 Q34 128 36 136 Q44 142 60 140 Q76 142 84 136 Q86 128 82 122Z"/>  <!-- LEFT THIGH BACK -->  <path d="M40 138 Q34 154 32 170 Q32 178 37 181 Q44 181 46 175 Q48 160 48 140Z"/>  <!-- LEFT KNEE -->  <ellipse cx="38" cy="183" rx="7" ry="5" fill="#ddecd8"/>  <!-- LEFT CALF -->  <path d="M31 184 Q28 200 30 218 Q32 226 37 227 Q43 226 45 218 Q46 200 45 184Z"/>  <!-- LEFT FOOT -->  <path d="M28 228 Q22 232 22 240 Q24 246 34 247 Q44 246 46 242 Q47 236 44 230Z"/>  <!-- RIGHT THIGH BACK -->  <path d="M72 138 Q72 160 74 175 Q76 181 83 181 Q88 178 88 170 Q86 154 80 138Z"/>  <!-- RIGHT KNEE -->  <ellipse cx="81" cy="183" rx="7" ry="5" fill="#ddecd8"/>  <!-- RIGHT CALF -->  <path d="M75 184 Q74 200 75 218 Q77 226 82 227 Q87 226 90 218 Q92 200 89 184Z"/>  <!-- RIGHT FOOT -->  <path d="M73 230 Q70 236 74 242 Q76 246 86 247 Q96 246 98 240 Q98 232 92 228Z"/></g><!-- SPINE LINE --><g fill="none" stroke="#a8c8a4" stroke-width="0.8">  <line x1="60" y1="38" x2="60" y2="122"/>  <line x1="40" y1="58" x2="80" y2="58"/>  <line x1="38" y1="72" x2="82" y2="72"/>  <line x1="38" y1="86" x2="82" y2="86"/>  <line x1="38" y1="100" x2="82" y2="100"/></g>';
+
 function initCanvases(){
-  var ids = ['canvasFrenteNorm','canvasVersoNorm','canvasCompInicio','canvasCompAtual'];
-  ids.forEach(id => {
-    var c = document.getElementById(id); if(!c) return;
-    var ctx = c.getContext('2d');
-    ctx.clearRect(0,0,c.width,c.height);
-    desenharSilhueta(ctx, c.width, c.height, protState.genero);
-    c.onclick = null;
+  ['svgFrente','svgVerso','svgCompInicio','svgCompAtual'].forEach(function(id){
+    var el = document.getElementById(id); if(!el) return;
+    el.innerHTML = (id==='svgVerso'||id==='svgCompAtual') ? SVG_BODY_BACK : SVG_BODY_FRONT;
   });
-  var cf = document.getElementById('canvasFrenteNorm');
-  var cv = document.getElementById('canvasVersoNorm');
-  if(cf) cf.onclick = e => adicionarPonto(e,'frente');
-  if(cv) cv.onclick = e => adicionarPonto(e,'verso');
+}
+
+function svgAdicionarPonto(e, lado){
+  var wrap = document.getElementById(lado==='frente'?'svgFrenteWrap':'svgVersoWrap');
+  if(!wrap) return;
+  var rect = wrap.getBoundingClientRect();
+  var svgW = 120, svgH = 280;
+  var dispW = rect.width, dispH = rect.height;
+  var x = ((e.clientX - rect.left) / dispW) * svgW;
+  var y = ((e.clientY - rect.top) / dispH) * svgH;
+  var ponto = {x:Math.round(x*10)/10, y:Math.round(y*10)/10, cor:protState.dorCor};
+  if(lado==='frente') protState.pontosFrente.push(ponto);
+  else protState.pontosVerso.push(ponto);
+  renderSvgPontos(lado==='frente'?'svgFrentePontos':'svgVersoPontos',
+    lado==='frente'?protState.pontosFrente:protState.pontosVerso);
+}
+
+function renderSvgPontos(svgId, pontos){
+  var el = document.getElementById(svgId); if(!el) return;
+  var cores = {leve:'#f9c74f', moderada:'#f77f00', aguda:'#e63946'};
+  el.innerHTML = pontos.map(function(p){
+    var c = cores[p.cor]||'#f9c74f';
+    return '<g>'
+      +'<circle cx="'+p.x+'" cy="'+p.y+'" r="8" fill="'+c+'22"/>'
+      +'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+c+'" stroke="white" stroke-width="1"/>'
+      +'</g>';
+  }).join('');
 }
 
 function desenharSilhueta(ctx, w, h, genero){
@@ -3930,9 +3964,13 @@ function setDorCor(cor){
 }
 
 function limparMapaAtual(){
-  if(protState.mapView==='frente') protState.pontosFrente=[];
-  else protState.pontosVerso=[];
-  redesenharMapa(protState.mapView==='frente'?'canvasFrenteNorm':'canvasVersoNorm', []);
+  if(protState.mapView==='frente'){
+    protState.pontosFrente=[];
+    renderSvgPontos('svgFrentePontos',[]);
+  } else {
+    protState.pontosVerso=[];
+    renderSvgPontos('svgVersoPontos',[]);
+  }
 }
 
 function salvarMapaDor(){
@@ -3952,9 +3990,14 @@ function toggleComparativo(){
   wrap.style.display = protState.comparativo ? 'block' : 'none';
   norm.style.display = protState.comparativo ? 'none' : 'flex';
   if(protState.comparativo){
-    setTimeout(()=>{
-      desenharMapa('canvasCompInicio', protState.pontosInicioFrente);
-      desenharMapa('canvasCompAtual', protState.pontosFrente);
+    // Init SVG bodies for comparativo
+    var ci = document.getElementById('svgCompInicio');
+    var ca = document.getElementById('svgCompAtual');
+    if(ci) ci.innerHTML = SVG_BODY_FRONT;
+    if(ca) ca.innerHTML = SVG_BODY_FRONT;
+    setTimeout(function(){
+      renderSvgPontos('svgCompInicioPts', protState.pontosInicioFrente);
+      renderSvgPontos('svgCompAtualPts', protState.pontosFrente);
     }, 50);
   }
 }
