@@ -387,6 +387,18 @@ if(window.location.search.indexOf('agendar=1')>=0){
           <div class="sec-head"><div class="sec-title">Aniversariantes do Mês</div></div>
           <div id="dAniversariantes"><div class="loading"><div class="spin"></div>Carregando...</div></div>
         </div>
+
+        <!-- COBRANÇAS PENDENTES -->
+        <div class="card" id="cardCobrancas" style="display:none">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">💰 Cobranças Pendentes</div>
+              <div class="sec-sub" id="cobrancasSub">Pacientes com valores a receber</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="renderCobrancas()">🔄 Atualizar</button>
+          </div>
+          <div id="listaCobrancas"></div>
+        </div>
       </div>
 
       <!-- AGENDA -->
@@ -1703,6 +1715,7 @@ function renderDashboard(){
   var mesN=new Date().getMonth()+1;
   var anivs=state.pacientes.filter(p=>p.nasc&&parseInt(p.nasc.split('-')[1])===mesN);
   document.getElementById('dAniversariantes').innerHTML=anivs.length?`<div style="display:flex;flex-wrap:wrap;gap:10px">${anivs.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--paper);border-radius:8px;flex:1;min-width:200px;cursor:pointer" onclick="verPerfil(${p.id})"><span style="font-size:20px">🎂</span><div style="flex:1"><div style="font-size:13px;font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--ink3)">Dia ${p.nasc.split('-')[2]}</div></div><button class="btn btn-wa btn-sm" onclick="event.stopPropagation();waMsg('${p.tel}','🎉 Feliz Aniversário, ${p.nome}! Dr. Igor e a equipe MultiCare desejam um dia incrível e muita saúde! 💚')">WA</button></div>`).join('')}</div>`:'<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px 0">Nenhum aniversariante este mês</p>';
+  renderCobrancas();
 }
 
 // ── RELATÓRIOS ──
@@ -3376,6 +3389,55 @@ function autoPreencherDataLancamento(){
   if(!pid){ document.getElementById('lanData').value=hoje(); return; }
   var prox = state.agendamentos.filter(function(a){return a.paciente_id==pid && a.data>=hoje();}).sort(function(a,b){return a.data.localeCompare(b.data);})[0];
   document.getElementById('lanData').value = prox ? prox.data : hoje();
+}
+
+
+// ── COBRANÇAS PENDENTES NO DASHBOARD ──
+function renderCobrancas(){
+  var pendentes = state.lancamentos.filter(function(l){ return l.tipo === 'A Receber'; });
+  var card = document.getElementById('cardCobrancas');
+  var lista = document.getElementById('listaCobrancas');
+  var sub = document.getElementById('cobrancasSub');
+  if(!card || !lista) return;
+
+  if(!pendentes.length){
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  var total = pendentes.reduce(function(s,l){ return s + parseFloat(l.valor||0); }, 0);
+  sub.textContent = pendentes.length + ' paciente'+(pendentes.length>1?'s':'')+' · Total: R$ '+total.toFixed(2).replace('.',',');
+
+  var html = '';
+  pendentes.forEach(function(l){
+    var p = state.pacientes.find(function(x){ return x.id == l.paciente_id; });
+    if(!p) return;
+    var dataFmt = l.data ? l.data.split('-').reverse().join('/') : '—';
+    var valor = 'R$ '+parseFloat(l.valor||0).toFixed(2).replace('.',',');
+    var msgCobranca = 'Olá '+p.nome+'! Passando para lembrar do pagamento pendente da sua sessão de fisioterapia.'
+      +' Valor: '+valor+'.'
+      +' Chave PIX: (87) 9.9922-1295 — Dr. Igor Matheus | MultiCare Fisioterapia.'
+      +' Qualquer dúvida estou à disposição! 💚';
+
+    html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap">';
+    html += '<div class="p-avatar" style="cursor:pointer" onclick="verPerfil('+p.id+')" title="Ver perfil">'+p.nome.charAt(0)+'</div>';
+    html += '<div style="flex:1;min-width:120px;cursor:pointer" onclick="verPerfil('+p.id+')">';
+    html += '<div style="font-size:13px;font-weight:600">'+p.nome+'</div>';
+    html += '<div style="font-size:11px;color:var(--ink3)">'+dataFmt+' · '+(l.obs||'Sessão')+'</div>';
+    html += '</div>';
+    html += '<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:700;color:var(--red);min-width:80px;text-align:right">'+valor+'</div>';
+    html += '<button class="btn btn-wa btn-sm" data-tel="'+p.tel+'" data-msg="'+encodeURIComponent(msgCobranca)+'" onclick="cobrarWA(this)">💬 Cobrar WA</button>';
+    html += '</div>';
+  });
+
+  lista.innerHTML = html;
+}
+
+function cobrarWA(btn){
+  var tel = btn.getAttribute('data-tel');
+  var msg = decodeURIComponent(btn.getAttribute('data-msg'));
+  waMsg(tel, msg);
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
