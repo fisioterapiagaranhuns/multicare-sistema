@@ -1451,36 +1451,144 @@ function editarPaciente(id){
   document.getElementById('pNome').value=p.nome||'';document.getElementById('pNasc').value=p.nasc||'';document.getElementById('pTel').value=p.tel||'';document.getElementById('pEmail').value=p.email||'';document.getElementById('pCpf').value=p.cpf||'';document.getElementById('pConvenio').value=p.convenio||'';document.getElementById('pObs').value=p.obs||'';
   document.getElementById('modalPacTitulo').textContent='Editar Paciente';openModal('modalPaciente');
 }
+var _perfilAtivo = null;
+function perfilAcao(acao){
+  if(!_perfilAtivo) return;
+  var id=_perfilAtivo.id, tel=_perfilAtivo.tel, nome=_perfilAtivo.nome;
+  if(acao==='editar'){ perfilFechar(); editarPaciente(id); }
+  else if(acao==='wa'){ waMsg(tel,'Olá '+nome+'! Dr. Igor aqui, da MultiCare Fisioterapia.'); }
+  else if(acao==='plano'){ perfilFechar(); abrirPlano(id); }
+  else if(acao==='agendar'){ perfilFechar(); populateSelects(); setTimeout(function(){ document.getElementById('agPaciente').value=id; },80); openModal('modalAgendar'); }
+}
+function buildPerfilFoot(id, tel, nome){
+  _perfilAtivo = {id:id, tel:tel, nome:nome};
+  var h = '<button class="btn btn-outline" id="pfFechar">Fechar</button>';
+  h += '<button class="btn btn-outline" id="pfEditar">Editar</button>';
+  h += '<button class="btn btn-wa" id="pfWa">WhatsApp</button>';
+  h += '<button class="btn btn-blue" id="pfPlano">Plano</button>';
+  h += '<button class="btn btn-green" id="pfAgendar">Agendar</button>';
+  setTimeout(function(){
+    var el;
+    el=document.getElementById('pfFechar'); if(el) el.onclick=function(){ closeModal('modalDrill'); };
+    el=document.getElementById('pfEditar'); if(el) el.onclick=function(){ closeModal('modalDrill'); editarPaciente(_perfilAtivo.id); };
+    el=document.getElementById('pfWa');     if(el) el.onclick=function(){ waMsg(_perfilAtivo.tel,'Olá '+_perfilAtivo.nome+'! Dr. Igor aqui, da MultiCare Fisioterapia.'); };
+    el=document.getElementById('pfPlano');  if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
+    el=document.getElementById('pfAgendar');if(el) el.onclick=function(){ closeModal('modalDrill'); populateSelects(); setTimeout(function(){ document.getElementById('agPaciente').value=_perfilAtivo.id; },80); openModal('modalAgendar'); };
+  },10);
+  return h;
+}
+
+
 function verPerfil(id){
-  var p=state.pacientes.find(x=>x.id==id);if(!p)return;
-  var ags=state.agendamentos.filter(a=>a.paciente_id==id);
-  document.getElementById('drillTitle').textContent=p.nome;
-  document.getElementById('drillBody').innerHTML=`
-    <div class="grid-2" style="margin-bottom:16px">
-      <div><div class="form-label">WhatsApp</div><div style="font-size:14px;margin-top:2px">${p.tel}</div></div>
-      <div><div class="form-label">Nascimento</div><div style="font-size:14px;margin-top:2px">${p.nasc?p.nasc.split('-').reverse().join('/'):'—'}</div></div>
-    </div>
-    <div class="grid-2" style="margin-bottom:16px">
-      <div><div class="form-label">CPF</div><div style="font-size:14px;margin-top:2px">${p.cpf||'—'}</div></div>
-      <div><div class="form-label">Convênio</div><div style="font-size:14px;margin-top:2px">${p.convenio||'Particular'}</div></div>
-    </div>
-    ${p.obs?`<div style="margin-bottom:16px"><div class="form-label">Observações</div><div style="font-size:13px;color:var(--ink2);line-height:1.6;background:var(--paper);padding:10px;border-radius:6px;margin-top:4px">${p.obs}</div></div>`:''}
-    <div style="display:flex;gap:12px;margin-bottom:16px">
-      <div class="card card-accent" style="flex:1;padding:14px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest)">${ags.length}</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">Total Sessões</div></div>
-      <div class="card card-accent-blue" style="flex:1;padding:14px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--blue)">${ags.filter(a=>a.status==='Confirmado').length}</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">Confirmadas</div></div>
-      <div class="card card-accent-red" style="flex:1;padding:14px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--red)">${ags.filter(a=>a.status==='Cancelado').length}</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">Canceladas</div></div>
-    </div>
-    <div class="form-label" style="margin-bottom:8px">Histórico de Sessões</div>
-    ${ags.length?ags.sort((a,b)=>b.data.localeCompare(a.data)).slice(0,10).map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px"><span>${a.data?a.data.split('-').reverse().join('/'):'—'} ${a.hora||''} — ${a.tipo||''}</span><span class="badge ${a.status==='Confirmado'?'badge-green':a.status==='Cancelado'?'badge-red':a.status==='Remarcado'?'badge-blue':'badge-amber'}">${a.status||''}</span></div>`).join(''):'<p style="font-size:13px;color:var(--ink3);padding:12px 0">Nenhuma sessão registrada</p>'}
-  `;
-  document.getElementById('drillFoot').innerHTML=`
-    <button class="btn btn-outline" onclick="closeModal('modalDrill')">Fechar</button>
-    <button class="btn btn-outline" onclick="closeModal('modalDrill');editarPaciente(${id})">Editar</button>
-    <button class="btn btn-wa" onclick="waMsg('${p.tel}','Olá ${p.nome}! Dr. Igor aqui, da MultiCare Fisioterapia.')">WhatsApp</button>
-    <button class="btn btn-green" onclick="closeModal('modalDrill');document.getElementById('agPaciente').value=${id};populateSelects();setTimeout(()=>document.getElementById('agPaciente').value=${id},100);openModal('modalAgendar')">Agendar Sessão</button>
-  `;
+  var p = state.pacientes.find(function(x){return x.id==id;});
+  if(!p) return;
+  var ags = state.agendamentos.filter(function(a){return a.paciente_id==id;});
+  var hj = hoje();
+  var realizadas  = ags.filter(function(a){return a.data<hj && a.status!=='Cancelado';});
+  var proximas    = ags.filter(function(a){return a.data>=hj && a.status!=='Cancelado';}).sort(function(a,b){return a.data.localeCompare(b.data);});
+  var canceladas  = ags.filter(function(a){return a.status==='Cancelado';});
+  var lans        = state.lancamentos.filter(function(l){return l.paciente_id==id;});
+  var recebido    = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+  var aReceber    = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+
+  function fd(d){return d?d.split('-').reverse().join('/'):'—';}
+  function rowAg(a,badgeCls,badgeTxt){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">'
+      +'<span>'+fd(a.data)+' '+a.hora+' — '+a.tipo+'</span>'
+      +'<span class="badge '+badgeCls+'">'+badgeTxt+'</span></div>';
+  }
+
+  var htmlRealiz = realizadas.length
+    ? realizadas.sort(function(a,b){return b.data.localeCompare(a.data);}).map(function(a){return rowAg(a,'badge-green','Realizada');}).join('')
+    : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhuma sessão realizada ainda</p>';
+
+  var htmlProx = proximas.length
+    ? proximas.map(function(a){
+        var bc = a.status==='Confirmado'?'badge-green':a.status==='Pendente'?'badge-amber':'badge-gray';
+        return rowAg(a,bc,a.status);
+      }).join('')
+    : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhuma sessão agendada</p>';
+
+  var htmlCanc = canceladas.length
+    ? canceladas.map(function(a){return rowAg(a,'badge-red','Cancelada');}).join('')
+    : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhum cancelamento</p>';
+
+  var htmlFin = lans.length
+    ? lans.sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(l){
+        var cor=l.tipo==='Recebido'?'var(--forest)':l.tipo==='Falta Cobrada'?'var(--red)':'var(--amber)';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">'
+          +'<div><div style="font-weight:500">'+(l.obs||l.tipo)+'</div><div style="font-size:11px;color:var(--ink3)">'+fd(l.data)+'</div></div>'
+          +'<div style="font-family:Playfair Display,serif;font-size:15px;font-weight:700;color:'+cor+'">R$ '+parseFloat(l.valor||0).toFixed(2).replace('.',',')+'</div>'
+          +'</div>';
+      }).join('')
+    : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhum lançamento financeiro</p>';
+
+  // Build card helper - uses data-sec attribute to avoid nested quotes
+  function quadrante(cor,acento,num,label,sec){
+    return '<div class="card '+acento+'" style="padding:14px;text-align:center;cursor:pointer" data-sec="'+sec+'" onclick="togglePerfilSec(this.dataset.sec)">'
+      +'<div style="font-family:Playfair Display,serif;font-size:24px;color:'+cor+'">'+num+'</div>'
+      +'<div style="font-size:11px;color:var(--ink3);margin-top:3px">'+label+'</div>'
+      +'<div style="font-size:10px;color:'+cor+';margin-top:4px;opacity:0.7">▼ ver detalhes</div>'
+    +'</div>';
+  }
+
+  document.getElementById('drillTitle').textContent = p.nome;
+  document.getElementById('drillBody').innerHTML =
+    '<div class="form-row" style="margin-bottom:12px">'
+      +'<div><div class="form-label">WhatsApp</div><div style="font-size:14px;margin-top:2px">'+p.tel+'</div></div>'
+      +'<div><div class="form-label">Nascimento</div><div style="font-size:14px;margin-top:2px">'+fd(p.nasc)+'</div></div>'
+    +'</div>'
+    +'<div class="form-row" style="margin-bottom:'+(p.obs?'8':'16')+'px">'
+      +'<div><div class="form-label">CPF</div><div style="font-size:14px;margin-top:2px">'+(p.cpf||'—')+'</div></div>'
+      +'<div><div class="form-label">Convênio</div><div style="font-size:14px;margin-top:2px">'+(p.convenio||'Particular')+'</div></div>'
+    +'</div>'
+    +(p.obs?'<div style="margin-bottom:14px"><div class="form-label">Observações</div><div style="font-size:13px;color:var(--ink2);line-height:1.6;background:var(--paper);padding:10px;border-radius:6px;margin-top:4px">'+p.obs+'</div></div>':'')
+
+    // Quadrantes sessões
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">'
+      +quadrante('var(--forest)','card-accent',realizadas.length,'Realizadas','sec-realiz')
+      +quadrante('var(--blue)','card-accent-blue',proximas.length,'Agendadas','sec-prox')
+      +quadrante('var(--red)','card-accent-red',canceladas.length,'Canceladas','sec-canc')
+    +'</div>'
+
+    // Seções expansíveis sessões
+    +'<div id="sec-realiz" style="display:none;background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:8px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Sessões Realizadas</div>'
+      +htmlRealiz+'</div>'
+    +'<div id="sec-prox" style="display:none;background:var(--blue-light);border-radius:8px;padding:14px;margin-bottom:8px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Próximas Sessões</div>'
+      +htmlProx+'</div>'
+    +'<div id="sec-canc" style="display:none;background:var(--red-light);border-radius:8px;padding:14px;margin-bottom:8px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Canceladas</div>'
+      +htmlCanc+'</div>'
+
+    // Quadrantes financeiros
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;margin-top:6px">'
+      +quadrante('var(--forest)','card-accent','R$'+recebido.toFixed(0),'Recebido','sec-fin')
+      +quadrante('var(--red)','card-accent-red','R$'+aReceber.toFixed(0),'A Receber','sec-fin')
+    +'</div>'
+
+    // Extrato financeiro
+    +'<div id="sec-fin" style="display:none;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Extrato Financeiro</div>'
+      +htmlFin+'</div>';
+
+  document.getElementById('drillFoot').innerHTML = buildPerfilFoot(id, p.tel, p.nome);
   openModal('modalDrill');
 }
+
+function togglePerfilSec(sec){
+  var secs = ['sec-realiz','sec-prox','sec-canc','sec-fin'];
+  var el = document.getElementById(sec);
+  if(!el) return;
+  var isOpen = el.style.display !== 'none';
+  secs.forEach(function(s){ var x=document.getElementById(s); if(x) x.style.display='none'; });
+  if(!isOpen) el.style.display = 'block';
+}
+
+
+
+
 async function excluirPaciente(id){
   if(!confirm('Excluir este paciente?'))return;
   try{await apiDel('pacientes',id);await loadAll();renderPacientes();renderDashboard();toast('Paciente excluído','success');}
