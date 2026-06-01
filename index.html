@@ -3200,16 +3200,23 @@ function copiarMsgLink(){
 // ════════════════════════════════
 
 function abrirPlano(pacId){
-  // Populate plano select manually (populateSelects only fills generic selects)
+  // Always reload patients from state at the moment of opening
   var sel = document.getElementById('plPaciente');
   if(sel){
-    sel.innerHTML = '<option value="">— Selecione —</option>'
-      + state.pacientes.map(function(p){
-          return '<option value="'+p.id+'">'+p.nome+'</option>';
-        }).join('');
-    if(pacId) sel.value = pacId;
+    var opts = '<option value="">— Selecione —</option>';
+    state.pacientes.forEach(function(p){
+      opts += '<option value="'+p.id+'"'+(pacId==p.id?' selected':'')+'>'+p.nome+'</option>';
+    });
+    sel.innerHTML = opts;
   }
   document.getElementById('plDataInicio').value = hoje();
+  // Reset form fields
+  ['plSessoes','plValorSessao','plParcelas','plHorario','plObs'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  document.querySelectorAll('.dia-btn.ativo').forEach(function(b){b.classList.remove('ativo');});
+  var resumo = document.getElementById('plResumo');
+  if(resumo) resumo.style.display='none';
   openModal('modalPlano');
 }
 
