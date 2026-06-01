@@ -1478,6 +1478,7 @@ function buildPerfilFoot(id, tel, nome){
   h += '<button class="btn btn-outline" id="pfEditar">Editar</button>';
   h += '<button class="btn btn-wa" id="pfWa">WhatsApp</button>';
   h += '<button class="btn btn-blue" id="pfPlano">Plano</button>';
+  h += '<button class="btn btn-outline" id="pfProtocolo" style="border-color:var(--forest-mid);color:var(--forest-mid)">🩺 Protocolo</button>';
   h += '<button class="btn btn-green" id="pfAgendar">Agendar</button>';
   setTimeout(function(){
     var el;
@@ -1487,6 +1488,7 @@ function buildPerfilFoot(id, tel, nome){
     el=document.getElementById('pfPlano');  if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
     el=document.getElementById('pfAgendar');if(el) el.onclick=function(){ closeModal('modalDrill'); populateSelects(); setTimeout(function(){ document.getElementById('agPaciente').value=_perfilAtivo.id; },80); openModal('modalAgendar'); };
     el=document.getElementById('pfBtnPlano2');if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
+    el=document.getElementById('pfProtocolo');if(el) el.onclick=function(){ closeModal('modalDrill'); irParaProtocolo(_perfilAtivo.id); };
   },10);
   return h;
 }
@@ -3440,6 +3442,18 @@ function cobrarWA(btn){
   waMsg(tel, msg);
 }
 
+
+function irParaProtocolo(pacId){
+  goTo('protocolo');
+  setTimeout(function(){
+    var sel = document.getElementById('protPacienteSelect');
+    if(sel){
+      sel.value = pacId;
+      carregarProtocolo(pacId);
+    }
+  }, 200);
+}
+
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
 // ══════════════════════════════════════
@@ -3601,63 +3615,187 @@ function initCanvases(){
 
 function desenharSilhueta(ctx, w, h, genero){
   ctx.clearRect(0,0,w,h);
-  ctx.strokeStyle = '#c8d4c0';
-  ctx.lineWidth = 1.5;
-  ctx.fillStyle = '#f0f4ee';
-
-  var cx = w/2, escala = h/340;
-  // Cabeça
-  ctx.beginPath();
-  ctx.arc(cx, 38*escala, 22*escala, 0, Math.PI*2);
-  ctx.fill(); ctx.stroke();
-  // Pescoço
-  ctx.beginPath();
-  ctx.rect(cx-8*escala, 58*escala, 16*escala, 18*escala);
-  ctx.fill(); ctx.stroke();
-  // Tronco
-  var tw = genero==='F' ? 44 : 48;
-  ctx.beginPath();
-  ctx.roundRect(cx-tw*escala/2, 76*escala, tw*escala, 90*escala, 8*escala);
-  ctx.fill(); ctx.stroke();
-  if(genero==='F'){
-    // Curvas femininas
+  var s = Math.min(w,h)/160; // scale factor
+  var cx = w/2;
+  var fill = '#e8f0e4';
+  var stroke = '#9ab89a';
+  ctx.lineWidth = 1.2;
+  function shape(path, f, st){
     ctx.beginPath();
-    ctx.ellipse(cx-16*escala, 130*escala, 12*escala, 10*escala, 0, 0, Math.PI*2);
-    ctx.fillStyle='#e0e8dc'; ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(cx+16*escala, 130*escala, 12*escala, 10*escala, 0, 0, Math.PI*2);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f0f4ee';
+    var p = new Path2D(path);
+    ctx.fillStyle = f||fill;
+    ctx.strokeStyle = st||stroke;
+    ctx.fill(p); ctx.stroke(p);
   }
-  // Pelve/Quadril
-  var pw = genero==='F' ? 52 : 44;
+  function scale(v){ return v*s; }
+  function tx(x){ return cx + scale(x - 80); }
+  function ty(y){ return scale(y); }
+
+  // HEAD
   ctx.beginPath();
-  ctx.roundRect(cx-pw*escala/2, 165*escala, pw*escala, 50*escala, 6*escala);
-  ctx.fill(); ctx.stroke();
-  // Braço esquerdo
+  ctx.ellipse(tx(80), ty(18), scale(14), scale(17), 0, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // NECK
   ctx.beginPath();
-  ctx.roundRect(cx-(tw/2+14)*escala, 76*escala, 14*escala, 80*escala, 7*escala);
-  ctx.fill(); ctx.stroke();
-  // Braço direito
+  ctx.roundRect(tx(73), ty(34), scale(14), scale(12), scale(3));
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // SHOULDERS
   ctx.beginPath();
-  ctx.roundRect(cx+(tw/2)*escala, 76*escala, 14*escala, 80*escala, 7*escala);
-  ctx.fill(); ctx.stroke();
-  // Coxa esquerda
+  ctx.ellipse(tx(50), ty(52), scale(10), scale(7), -0.3, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
   ctx.beginPath();
-  ctx.roundRect(cx-24*escala, 215*escala, 20*escala, 60*escala, 7*escala);
-  ctx.fill(); ctx.stroke();
-  // Coxa direita
+  ctx.ellipse(tx(110), ty(52), scale(10), scale(7), 0.3, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // TORSO
+  if(genero==='F'){
+    ctx.beginPath();
+    ctx.moveTo(tx(58), ty(45));
+    ctx.bezierCurveTo(tx(55),ty(60), tx(52),ty(80), tx(55),ty(100));
+    ctx.lineTo(tx(105),ty(100));
+    ctx.bezierCurveTo(tx(108),ty(80), tx(105),ty(60), tx(102),ty(45));
+    ctx.closePath();
+    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+    // Bust
+    ctx.beginPath();
+    ctx.ellipse(tx(68), ty(68), scale(9), scale(7), 0.2, 0, Math.PI*2);
+    ctx.fillStyle='#dde8d8'; ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(tx(92), ty(68), scale(9), scale(7), -0.2, 0, Math.PI*2);
+    ctx.fillStyle='#dde8d8'; ctx.fill(); ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(tx(56), ty(45));
+    ctx.bezierCurveTo(tx(52),ty(65), tx(54),ty(85), tx(57),ty(102));
+    ctx.lineTo(tx(103),ty(102));
+    ctx.bezierCurveTo(tx(106),ty(85), tx(108),ty(65), tx(104),ty(45));
+    ctx.closePath();
+    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+    // Pecs line
+    ctx.beginPath();
+    ctx.moveTo(tx(60),ty(62)); ctx.lineTo(tx(100),ty(62));
+    ctx.strokeStyle='#b8ccb4'; ctx.lineWidth=0.8; ctx.stroke();
+    ctx.lineWidth=1.2;
+  }
+
+  // ABDOMEN
   ctx.beginPath();
-  ctx.roundRect(cx+4*escala, 215*escala, 20*escala, 60*escala, 7*escala);
-  ctx.fill(); ctx.stroke();
-  // Perna esquerda
+  ctx.moveTo(tx(57),ty(100));
+  var hw = genero==='F' ? 28 : 24;
+  ctx.bezierCurveTo(tx(57-2),ty(112), tx(80-hw),ty(122), tx(80-hw),ty(128));
+  ctx.lineTo(tx(80+hw),ty(128));
+  ctx.bezierCurveTo(tx(80+hw),ty(122), tx(103+2),ty(112), tx(103),ty(100));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // PELVIS
+  var pw2 = genero==='F' ? 32 : 26;
   ctx.beginPath();
-  ctx.roundRect(cx-23*escala, 275*escala, 18*escala, 50*escala, 6*escala);
-  ctx.fill(); ctx.stroke();
-  // Perna direita
+  ctx.ellipse(tx(80), ty(136), scale(pw2), scale(10), 0, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT ARM (upper)
   ctx.beginPath();
-  ctx.roundRect(cx+5*escala, 275*escala, 18*escala, 50*escala, 6*escala);
-  ctx.fill(); ctx.stroke();
+  ctx.moveTo(tx(57),ty(46));
+  ctx.bezierCurveTo(tx(42),ty(50), tx(36),ty(68), tx(38),ty(90));
+  ctx.bezierCurveTo(tx(40),ty(98), tx(48),ty(100), tx(52),ty(98));
+  ctx.bezierCurveTo(tx(54),ty(80), tx(56),ty(60), tx(58),ty(46));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT FOREARM
+  ctx.beginPath();
+  ctx.moveTo(tx(38),ty(90));
+  ctx.bezierCurveTo(tx(33),ty(102), tx(30),ty(116), tx(32),ty(128));
+  ctx.bezierCurveTo(tx(34),ty(133), tx(42),ty(133), tx(44),ty(128));
+  ctx.bezierCurveTo(tx(46),ty(116), tx(50),ty(102), tx(52),ty(98));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT HAND
+  ctx.beginPath();
+  ctx.ellipse(tx(37), ty(134), scale(7), scale(5), -0.3, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT ARM (upper)
+  ctx.beginPath();
+  ctx.moveTo(tx(103),ty(46));
+  ctx.bezierCurveTo(tx(118),ty(50), tx(124),ty(68), tx(122),ty(90));
+  ctx.bezierCurveTo(tx(120),ty(98), tx(112),ty(100), tx(108),ty(98));
+  ctx.bezierCurveTo(tx(106),ty(80), tx(104),ty(60), tx(102),ty(46));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT FOREARM
+  ctx.beginPath();
+  ctx.moveTo(tx(122),ty(90));
+  ctx.bezierCurveTo(tx(127),ty(102), tx(130),ty(116), tx(128),ty(128));
+  ctx.bezierCurveTo(tx(126),ty(133), tx(118),ty(133), tx(116),ty(128));
+  ctx.bezierCurveTo(tx(114),ty(116), tx(110),ty(102), tx(108),ty(98));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT HAND
+  ctx.beginPath();
+  ctx.ellipse(tx(123), ty(134), scale(7), scale(5), 0.3, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT THIGH
+  ctx.beginPath();
+  ctx.moveTo(tx(52),ty(126));
+  ctx.bezierCurveTo(tx(48),ty(140), tx(46),ty(162), tx(48),ty(182));
+  ctx.bezierCurveTo(tx(50),ty(188), tx(62),ty(188), tx(64),ty(182));
+  ctx.bezierCurveTo(tx(66),ty(162), tx(66),ty(140), tx(64),ty(126));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT SHIN
+  ctx.beginPath();
+  ctx.moveTo(tx(48),ty(182));
+  ctx.bezierCurveTo(tx(46),ty(196), tx(46),ty(216), tx(48),ty(232));
+  ctx.bezierCurveTo(tx(50),ty(237), tx(62),ty(237), tx(64),ty(232));
+  ctx.bezierCurveTo(tx(66),ty(216), tx(66),ty(196), tx(64),ty(182));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // LEFT FOOT
+  ctx.beginPath();
+  ctx.ellipse(tx(54), ty(240), scale(9), scale(5), 0.1, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT THIGH
+  ctx.beginPath();
+  ctx.moveTo(tx(96),ty(126));
+  ctx.bezierCurveTo(tx(100),ty(140), tx(102),ty(162), tx(100),ty(182));
+  ctx.bezierCurveTo(tx(98),ty(188), tx(86),ty(188), tx(84),ty(182));
+  ctx.bezierCurveTo(tx(82),ty(162), tx(82),ty(140), tx(84),ty(126));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT SHIN
+  ctx.beginPath();
+  ctx.moveTo(tx(100),ty(182));
+  ctx.bezierCurveTo(tx(102),ty(196), tx(102),ty(216), tx(100),ty(232));
+  ctx.bezierCurveTo(tx(98),ty(237), tx(86),ty(237), tx(84),ty(232));
+  ctx.bezierCurveTo(tx(82),ty(216), tx(82),ty(196), tx(84),ty(182));
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // RIGHT FOOT
+  ctx.beginPath();
+  ctx.ellipse(tx(94), ty(240), scale(9), scale(5), -0.1, 0, Math.PI*2);
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+
+  // Face details
+  ctx.strokeStyle='#8aaa88'; ctx.lineWidth=0.8;
+  // Eyes
+  ctx.beginPath(); ctx.arc(tx(74),ty(15),scale(2),0,Math.PI*2); ctx.fillStyle='#6a8868'; ctx.fill();
+  ctx.beginPath(); ctx.arc(tx(86),ty(15),scale(2),0,Math.PI*2); ctx.fill();
+  // Mouth
+  ctx.beginPath(); ctx.arc(tx(80),ty(22),scale(4),0.2,Math.PI-0.2); ctx.strokeStyle='#6a8868'; ctx.stroke();
+  ctx.lineWidth=1.2; ctx.strokeStyle=stroke;
 }
 
 function adicionarPonto(e, lado){
