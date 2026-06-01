@@ -3615,188 +3615,235 @@ function initCanvases(){
 
 function desenharSilhueta(ctx, w, h, genero){
   ctx.clearRect(0,0,w,h);
-  var s = Math.min(w,h)/160; // scale factor
-  var cx = w/2;
-  var fill = '#e8f0e4';
-  var stroke = '#9ab89a';
-  ctx.lineWidth = 1.2;
-  function shape(path, f, st){
-    ctx.beginPath();
+  // Scale everything to fit canvas
+  var scaleX = w / 100;
+  var scaleY = h / 280;
+  function x(v){ return v * scaleX; }
+  function y(v){ return v * scaleY; }
+
+  ctx.fillStyle = '#eaf2e7';
+  ctx.strokeStyle = '#7a9e7a';
+  ctx.lineWidth = 1.0;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  function fill(path){
     var p = new Path2D(path);
-    ctx.fillStyle = f||fill;
-    ctx.strokeStyle = st||stroke;
     ctx.fill(p); ctx.stroke(p);
   }
-  function scale(v){ return v*s; }
-  function tx(x){ return cx + scale(x - 80); }
-  function ty(y){ return scale(y); }
 
-  // HEAD
-  ctx.beginPath();
-  ctx.ellipse(tx(80), ty(18), scale(14), scale(17), 0, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  var isFemale = genero === 'F';
 
-  // NECK
+  // === HEAD ===
   ctx.beginPath();
-  ctx.roundRect(tx(73), ty(34), scale(14), scale(12), scale(3));
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.ellipse(x(50), y(14), x(10), y(13), 0, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
 
-  // SHOULDERS
+  // === NECK ===
   ctx.beginPath();
-  ctx.ellipse(tx(50), ty(52), scale(10), scale(7), -0.3, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(tx(110), ty(52), scale(10), scale(7), 0.3, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.roundRect(x(44), y(26), x(12), y(9), x(3));
+  ctx.fill(); ctx.stroke();
 
-  // TORSO
-  if(genero==='F'){
+  // === TRAPEZIUS / SHOULDERS ===
+  ctx.beginPath();
+  ctx.moveTo(x(26), y(42));
+  ctx.bezierCurveTo(x(26),y(36), x(38),y(34), x(44),y(34));
+  ctx.lineTo(x(56), y(34));
+  ctx.bezierCurveTo(x(62),y(34), x(74),y(36), x(74),y(42));
+  ctx.bezierCurveTo(x(74),y(47), x(68),y(49), x(62),y(48));
+  ctx.lineTo(x(38), y(48));
+  ctx.bezierCurveTo(x(32),y(49), x(26),y(47), x(26),y(42));
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // === TORSO ===
+  if(isFemale){
     ctx.beginPath();
-    ctx.moveTo(tx(58), ty(45));
-    ctx.bezierCurveTo(tx(55),ty(60), tx(52),ty(80), tx(55),ty(100));
-    ctx.lineTo(tx(105),ty(100));
-    ctx.bezierCurveTo(tx(108),ty(80), tx(105),ty(60), tx(102),ty(45));
+    ctx.moveTo(x(36), y(47));
+    ctx.bezierCurveTo(x(33),y(60), x(32),y(80), x(34),y(100));
+    ctx.bezierCurveTo(x(35),y(105), x(38),y(108), x(42),y(108));
+    ctx.lineTo(x(58), y(108));
+    ctx.bezierCurveTo(x(62),y(108), x(65),y(105), x(66),y(100));
+    ctx.bezierCurveTo(x(68),y(80), x(67),y(60), x(64),y(47));
     ctx.closePath();
-    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+    ctx.fill(); ctx.stroke();
     // Bust
     ctx.beginPath();
-    ctx.ellipse(tx(68), ty(68), scale(9), scale(7), 0.2, 0, Math.PI*2);
-    ctx.fillStyle='#dde8d8'; ctx.fill(); ctx.stroke();
+    ctx.ellipse(x(41), y(65), x(7), y(6), -0.1, 0, Math.PI*2);
+    ctx.fillStyle='#dcebd7'; ctx.fill(); ctx.stroke();
     ctx.beginPath();
-    ctx.ellipse(tx(92), ty(68), scale(9), scale(7), -0.2, 0, Math.PI*2);
-    ctx.fillStyle='#dde8d8'; ctx.fill(); ctx.stroke();
+    ctx.ellipse(x(59), y(65), x(7), y(6), 0.1, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#eaf2e7';
   } else {
     ctx.beginPath();
-    ctx.moveTo(tx(56), ty(45));
-    ctx.bezierCurveTo(tx(52),ty(65), tx(54),ty(85), tx(57),ty(102));
-    ctx.lineTo(tx(103),ty(102));
-    ctx.bezierCurveTo(tx(106),ty(85), tx(108),ty(65), tx(104),ty(45));
+    ctx.moveTo(x(36), y(47));
+    ctx.bezierCurveTo(x(32),y(60), x(32),y(82), x(35),y(102));
+    ctx.bezierCurveTo(x(36),y(107), x(40),y(110), x(44),y(110));
+    ctx.lineTo(x(56), y(110));
+    ctx.bezierCurveTo(x(60),y(110), x(64),y(107), x(65),y(102));
+    ctx.bezierCurveTo(x(68),y(82), x(68),y(60), x(64),y(47));
     ctx.closePath();
-    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
-    // Pecs line
+    ctx.fill(); ctx.stroke();
+    // Chest line
     ctx.beginPath();
-    ctx.moveTo(tx(60),ty(62)); ctx.lineTo(tx(100),ty(62));
-    ctx.strokeStyle='#b8ccb4'; ctx.lineWidth=0.8; ctx.stroke();
-    ctx.lineWidth=1.2;
+    ctx.moveTo(x(38),y(68)); ctx.lineTo(x(62),y(68));
+    ctx.strokeStyle='#a8c4a4'; ctx.lineWidth=0.7; ctx.stroke();
+    ctx.strokeStyle='#7a9e7a'; ctx.lineWidth=1.0;
+    // Abs lines
+    ctx.beginPath(); ctx.moveTo(x(50),y(68)); ctx.lineTo(x(50),y(105));
+    ctx.strokeStyle='#a8c4a4'; ctx.lineWidth=0.7; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(38),y(82)); ctx.lineTo(x(62),y(82));
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(38),y(95)); ctx.lineTo(x(62),y(95));
+    ctx.stroke();
+    ctx.strokeStyle='#7a9e7a'; ctx.lineWidth=1.0;
   }
 
-  // ABDOMEN
+  // === PELVIS ===
+  var pw = isFemale ? 18 : 15;
   ctx.beginPath();
-  ctx.moveTo(tx(57),ty(100));
-  var hw = genero==='F' ? 28 : 24;
-  ctx.bezierCurveTo(tx(57-2),ty(112), tx(80-hw),ty(122), tx(80-hw),ty(128));
-  ctx.lineTo(tx(80+hw),ty(128));
-  ctx.bezierCurveTo(tx(80+hw),ty(122), tx(103+2),ty(112), tx(103),ty(100));
+  ctx.ellipse(x(50), y(116), x(pw), y(9), 0, 0, Math.PI*2);
+  ctx.fillStyle='#eaf2e7'; ctx.fill(); ctx.stroke();
+
+  // === LEFT UPPER ARM ===
+  ctx.beginPath();
+  ctx.moveTo(x(36), y(47));
+  ctx.bezierCurveTo(x(28),y(50), x(22),y(64), x(22),y(82));
+  ctx.bezierCurveTo(x(22),y(88), x(27),y(90), x(31),y(88));
+  ctx.bezierCurveTo(x(34),y(74), x(36),y(58), x(38),y(48));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // PELVIS
-  var pw2 = genero==='F' ? 32 : 26;
+  // === LEFT FOREARM ===
   ctx.beginPath();
-  ctx.ellipse(tx(80), ty(136), scale(pw2), scale(10), 0, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
-
-  // LEFT ARM (upper)
-  ctx.beginPath();
-  ctx.moveTo(tx(57),ty(46));
-  ctx.bezierCurveTo(tx(42),ty(50), tx(36),ty(68), tx(38),ty(90));
-  ctx.bezierCurveTo(tx(40),ty(98), tx(48),ty(100), tx(52),ty(98));
-  ctx.bezierCurveTo(tx(54),ty(80), tx(56),ty(60), tx(58),ty(46));
+  ctx.moveTo(x(22), y(82));
+  ctx.bezierCurveTo(x(20),y(96), x(20),y(112), x(22),y(124));
+  ctx.bezierCurveTo(x(24),y(129), x(30),y(129), x(32),y(124));
+  ctx.bezierCurveTo(x(34),y(112), x(33),y(96), x(31),y(88));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // LEFT FOREARM
+  // === LEFT HAND ===
   ctx.beginPath();
-  ctx.moveTo(tx(38),ty(90));
-  ctx.bezierCurveTo(tx(33),ty(102), tx(30),ty(116), tx(32),ty(128));
-  ctx.bezierCurveTo(tx(34),ty(133), tx(42),ty(133), tx(44),ty(128));
-  ctx.bezierCurveTo(tx(46),ty(116), tx(50),ty(102), tx(52),ty(98));
+  ctx.ellipse(x(25), y(131), x(6), y(8), -0.1, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+
+  // === RIGHT UPPER ARM ===
+  ctx.beginPath();
+  ctx.moveTo(x(64), y(47));
+  ctx.bezierCurveTo(x(72),y(50), x(78),y(64), x(78),y(82));
+  ctx.bezierCurveTo(x(78),y(88), x(73),y(90), x(69),y(88));
+  ctx.bezierCurveTo(x(66),y(74), x(64),y(58), x(62),y(48));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // LEFT HAND
+  // === RIGHT FOREARM ===
   ctx.beginPath();
-  ctx.ellipse(tx(37), ty(134), scale(7), scale(5), -0.3, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
-
-  // RIGHT ARM (upper)
-  ctx.beginPath();
-  ctx.moveTo(tx(103),ty(46));
-  ctx.bezierCurveTo(tx(118),ty(50), tx(124),ty(68), tx(122),ty(90));
-  ctx.bezierCurveTo(tx(120),ty(98), tx(112),ty(100), tx(108),ty(98));
-  ctx.bezierCurveTo(tx(106),ty(80), tx(104),ty(60), tx(102),ty(46));
+  ctx.moveTo(x(78), y(82));
+  ctx.bezierCurveTo(x(80),y(96), x(80),y(112), x(78),y(124));
+  ctx.bezierCurveTo(x(76),y(129), x(70),y(129), x(68),y(124));
+  ctx.bezierCurveTo(x(66),y(112), x(67),y(96), x(69),y(88));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // RIGHT FOREARM
+  // === RIGHT HAND ===
   ctx.beginPath();
-  ctx.moveTo(tx(122),ty(90));
-  ctx.bezierCurveTo(tx(127),ty(102), tx(130),ty(116), tx(128),ty(128));
-  ctx.bezierCurveTo(tx(126),ty(133), tx(118),ty(133), tx(116),ty(128));
-  ctx.bezierCurveTo(tx(114),ty(116), tx(110),ty(102), tx(108),ty(98));
+  ctx.ellipse(x(75), y(131), x(6), y(8), 0.1, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+
+  // === LEFT THIGH ===
+  ctx.beginPath();
+  ctx.moveTo(x(34), y(112));
+  ctx.bezierCurveTo(x(30),y(126), x(28),y(150), x(30),y(172));
+  ctx.bezierCurveTo(x(32),y(178), x(40),y(179), x(43),y(172));
+  ctx.bezierCurveTo(x(46),y(150), x(46),y(126), x(44),y(110));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // RIGHT HAND
+  // === LEFT KNEE ===
   ctx.beginPath();
-  ctx.ellipse(tx(123), ty(134), scale(7), scale(5), 0.3, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.ellipse(x(36), y(178), x(7), y(5), 0, 0, Math.PI*2);
+  ctx.fillStyle='#dcebd7'; ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#eaf2e7';
 
-  // LEFT THIGH
+  // === LEFT SHIN ===
   ctx.beginPath();
-  ctx.moveTo(tx(52),ty(126));
-  ctx.bezierCurveTo(tx(48),ty(140), tx(46),ty(162), tx(48),ty(182));
-  ctx.bezierCurveTo(tx(50),ty(188), tx(62),ty(188), tx(64),ty(182));
-  ctx.bezierCurveTo(tx(66),ty(162), tx(66),ty(140), tx(64),ty(126));
+  ctx.moveTo(x(29), y(178));
+  ctx.bezierCurveTo(x(27),y(194), x(27),y(216), x(29),y(232));
+  ctx.bezierCurveTo(x(31),y(237), x(41),y(237), x(43),y(232));
+  ctx.bezierCurveTo(x(45),y(216), x(45),y(194), x(43),y(178));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // LEFT SHIN
+  // === LEFT FOOT ===
   ctx.beginPath();
-  ctx.moveTo(tx(48),ty(182));
-  ctx.bezierCurveTo(tx(46),ty(196), tx(46),ty(216), tx(48),ty(232));
-  ctx.bezierCurveTo(tx(50),ty(237), tx(62),ty(237), tx(64),ty(232));
-  ctx.bezierCurveTo(tx(66),ty(216), tx(66),ty(196), tx(64),ty(182));
+  ctx.moveTo(x(27), y(238));
+  ctx.bezierCurveTo(x(22),y(240), x(20),y(248), x(24),y(252));
+  ctx.bezierCurveTo(x(28),y(255), x(44),y(254), x(46),y(250));
+  ctx.bezierCurveTo(x(47),y(246), x(45),y(240), x(43),y(238));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // LEFT FOOT
+  // === RIGHT THIGH ===
   ctx.beginPath();
-  ctx.ellipse(tx(54), ty(240), scale(9), scale(5), 0.1, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
-
-  // RIGHT THIGH
-  ctx.beginPath();
-  ctx.moveTo(tx(96),ty(126));
-  ctx.bezierCurveTo(tx(100),ty(140), tx(102),ty(162), tx(100),ty(182));
-  ctx.bezierCurveTo(tx(98),ty(188), tx(86),ty(188), tx(84),ty(182));
-  ctx.bezierCurveTo(tx(82),ty(162), tx(82),ty(140), tx(84),ty(126));
+  ctx.moveTo(x(56), y(110));
+  ctx.bezierCurveTo(x(60),y(126), x(62),y(150), x(60),y(172));
+  ctx.bezierCurveTo(x(58),y(178), x(50),y(179), x(47),y(172));
+  ctx.bezierCurveTo(x(44),y(150), x(44),y(126), x(46),y(110));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // RIGHT SHIN
+  // === RIGHT KNEE ===
   ctx.beginPath();
-  ctx.moveTo(tx(100),ty(182));
-  ctx.bezierCurveTo(tx(102),ty(196), tx(102),ty(216), tx(100),ty(232));
-  ctx.bezierCurveTo(tx(98),ty(237), tx(86),ty(237), tx(84),ty(232));
-  ctx.bezierCurveTo(tx(82),ty(216), tx(82),ty(196), tx(84),ty(182));
+  ctx.ellipse(x(54), y(178), x(7), y(5), 0, 0, Math.PI*2);
+  ctx.fillStyle='#dcebd7'; ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#eaf2e7';
+
+  // === RIGHT SHIN ===
+  ctx.beginPath();
+  ctx.moveTo(x(71), y(178));
+  ctx.bezierCurveTo(x(73),y(194), x(73),y(216), x(71),y(232));
+  ctx.bezierCurveTo(x(69),y(237), x(57),y(237), x(55),y(232));
+  ctx.bezierCurveTo(x(53),y(216), x(53),y(194), x(57),y(178));
   ctx.closePath();
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.fill(); ctx.stroke();
 
-  // RIGHT FOOT
+  // === RIGHT FOOT ===
   ctx.beginPath();
-  ctx.ellipse(tx(94), ty(240), scale(9), scale(5), -0.1, 0, Math.PI*2);
-  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.fill(); ctx.stroke();
+  ctx.moveTo(x(73), y(238));
+  ctx.bezierCurveTo(x(78),y(240), x(80),y(248), x(76),y(252));
+  ctx.bezierCurveTo(x(72),y(255), x(56),y(254), x(54),y(250));
+  ctx.bezierCurveTo(x(53),y(246), x(55),y(240), x(57),y(238));
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
 
-  // Face details
-  ctx.strokeStyle='#8aaa88'; ctx.lineWidth=0.8;
+  // === FACE ===
+  ctx.fillStyle = '#5a8a5a';
+  ctx.strokeStyle = '#5a8a5a';
+  ctx.lineWidth = 0.8;
   // Eyes
-  ctx.beginPath(); ctx.arc(tx(74),ty(15),scale(2),0,Math.PI*2); ctx.fillStyle='#6a8868'; ctx.fill();
-  ctx.beginPath(); ctx.arc(tx(86),ty(15),scale(2),0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x(45), y(12), x(1.5), 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x(55), y(12), x(1.5), 0, Math.PI*2); ctx.fill();
+  // Eyebrows
+  ctx.beginPath(); ctx.moveTo(x(42),y(9)); ctx.quadraticCurveTo(x(45),y(7.5),x(48),y(9)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x(52),y(9)); ctx.quadraticCurveTo(x(55),y(7.5),x(58),y(9)); ctx.stroke();
+  // Nose
+  ctx.beginPath(); ctx.moveTo(x(50),y(14)); ctx.lineTo(x(48),y(18)); ctx.lineTo(x(52),y(18)); ctx.stroke();
   // Mouth
-  ctx.beginPath(); ctx.arc(tx(80),ty(22),scale(4),0.2,Math.PI-0.2); ctx.strokeStyle='#6a8868'; ctx.stroke();
-  ctx.lineWidth=1.2; ctx.strokeStyle=stroke;
+  ctx.beginPath(); ctx.moveTo(x(45),y(21)); ctx.quadraticCurveTo(x(50),y(24),x(55),y(21)); ctx.stroke();
+
+  // Hair suggestion
+  ctx.strokeStyle='#7a9e7a'; ctx.lineWidth=1.0;
+  if(isFemale){
+    ctx.beginPath();
+    ctx.moveTo(x(40),y(4)); ctx.bezierCurveTo(x(38),y(1),x(62),y(1),x(60),y(4));
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(40),y(27)); ctx.bezierCurveTo(x(34),y(22),x(32),y(16),x(36),y(8)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(60),y(27)); ctx.bezierCurveTo(x(66),y(22),x(68),y(16),x(64),y(8)); ctx.stroke();
+  }
 }
+
 
 function adicionarPonto(e, lado){
   var canvas = e.target;
