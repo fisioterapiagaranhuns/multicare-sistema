@@ -124,7 +124,7 @@ textarea.form-control{resize:vertical;min-height:80px}
 .modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 
 /* AGENDA */
-.agenda-grid{display:grid;grid-template-columns:70px repeat(6,1fr);gap:1px;background:var(--line);border-radius:var(--radius);overflow:hidden}
+.agenda-grid{display:grid;grid-template-columns:70px repeat(6,1fr);gap:1px;background:var(--line);border-radius:var(--radius);overflow:hidden;min-width:600px}
 .ag-head{background:var(--white);padding:10px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em}
 .ag-head.today{background:var(--forest-light);color:var(--forest)}
 .ag-time{background:var(--paper);padding:8px;font-size:11px;color:var(--ink3);text-align:right}
@@ -184,7 +184,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   .btn-menu{display:block}
   .content{padding:16px}
   .agenda-grid{grid-template-columns:55px repeat(3,1fr)}
-  .ag-col-hide{display:none}
+  .ag-col-hide{display:block}
   .topbar{padding:0 16px}
   .topbar-date{display:none}
 }
@@ -412,7 +412,7 @@ if(window.location.search.indexOf('agendar=1')>=0){
           </div>
           <button class="btn btn-green btn-sm" onclick="openModal('modalAgendar')">+ Novo Agendamento</button>
         </div>
-        <div class="card" style="padding:0;overflow:hidden"><div id="agendaGrid" class="agenda-grid"></div></div>
+        <div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="agendaGrid" class="agenda-grid"></div></div>
       </div>
 
       <!-- PACIENTES -->
@@ -1673,7 +1673,7 @@ function renderAgenda(){
     days.forEach((d,di)=>{
       var dateStr=ds(d),isToday=dateStr===todayStr;
       var evs=state.agendamentos.filter(a=>a.data===dateStr&&a.hora===h);
-      html+=`<div class="ag-slot${di>=3?' ag-col-hide':''}${isToday?' today-col':''}" onclick="openSlot('${dateStr}','${h}')">`;
+      html+=`<div class="ag-slot${isToday?' today-col':''}" onclick="openSlot('${dateStr}','${h}')">`;
       evs.forEach(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);var ec=a.status==='Cancelado'?'ag-event-red':a.tipo==='Avaliação'?'ag-event-blue':a.tipo==='Remarcado'?'ag-event-amber':'ag-event';html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''}">${p?p.nome.split(' ')[0]:'?'}<br>${a.tipo}</div>`;});
       html+='</div>';
     });
