@@ -1032,9 +1032,10 @@ Vamos retomar? Aguardo você!
       <div class="form-row"><div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" id="agValor" type="number" placeholder="150"/></div><div class="form-group"><label class="form-label">Status</label><select class="form-control" id="agStatus"><option>Confirmado</option><option>Pendente</option><option>Cancelado</option><option>Remarcado</option></select></div></div>
       <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="agObs" placeholder="Notas..."></textarea></div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" style="flex-wrap:wrap;gap:8px">
       <button class="btn btn-outline" onclick="closeModal('modalAgendar')">Cancelar</button>
-      <button class="btn btn-wa" onclick="salvarAgendar(true)">Salvar + Confirmar WA</button>
+      <button class="btn btn-outline btn-sm" onclick="confirmarRapido()" id="btnConfirmarRapido" style="border-color:var(--forest-mid);color:var(--forest-mid);display:none">✓ Confirmar</button>
+      <button class="btn btn-wa" onclick="salvarAgendar(true)">Salvar + WA</button>
       <button class="btn btn-green" onclick="salvarAgendar(false)">Salvar</button>
     </div>
   </div>
@@ -1674,7 +1675,8 @@ function renderAgenda(){
       var dateStr=ds(d),isToday=dateStr===todayStr;
       var evs=state.agendamentos.filter(a=>a.data===dateStr&&a.hora===h);
       html+=`<div class="ag-slot${isToday?' today-col':''}" onclick="openSlot('${dateStr}','${h}')">`;
-      evs.forEach(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);var ec=a.status==='Cancelado'?'ag-event-red':a.tipo==='Avaliação'?'ag-event-blue':a.tipo==='Remarcado'?'ag-event-amber':'ag-event';html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''}">${p?p.nome.split(' ')[0]:'?'}<br>${a.tipo}</div>`;});
+      evs.forEach(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);var ec=a.status==='Cancelado'?'ag-event-red':a.tipo==='Avaliação'?'ag-event-blue':a.tipo==='Remarcado'?'ag-event-amber':'ag-event';var statusDot = a.status==='Pendente'?'🟡':a.status==='Cancelado'?'🔴':'';
+      html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''} — ${a.status}">${statusDot}${p?p.nome.split(' ')[0]:'?'}<br><span style="font-size:9px">${a.hora} ${a.tipo}</span></div>`;});
       html+='</div>';
     });
   });
@@ -1686,8 +1688,16 @@ function editarAgendamento(id){
   var a=state.agendamentos.find(x=>x.id==id);if(!a)return;
   document.getElementById('agId').value=a.id;document.getElementById('modalAgTitulo').textContent='Editar Agendamento';
   populateSelects();
-  setTimeout(()=>{document.getElementById('agPaciente').value=a.paciente_id;},50);
-  document.getElementById('agTipo').value=a.tipo;document.getElementById('agData').value=a.data;document.getElementById('agHora').value=a.hora;document.getElementById('agValor').value=a.valor;document.getElementById('agStatus').value=a.status;document.getElementById('agObs').value=a.obs||'';
+  setTimeout(function(){document.getElementById('agPaciente').value=a.paciente_id;},50);
+  document.getElementById('agTipo').value=a.tipo;
+  document.getElementById('agData').value=a.data;
+  document.getElementById('agHora').value=a.hora;
+  document.getElementById('agValor').value=a.valor;
+  document.getElementById('agStatus').value=a.status;
+  document.getElementById('agObs').value=a.obs||'';
+  // Show quick confirm button if status is Pendente
+  var btnConf = document.getElementById('btnConfirmarRapido');
+  if(btnConf) btnConf.style.display = a.status==='Pendente'?'inline-flex':'none';
   openModal('modalAgendar');
 }
 
@@ -3336,7 +3346,7 @@ async function salvarPlano(){
         data:datas[i].data,
         hora:datas[i].hora,
         valor:v,
-        status:'Confirmado',
+        status:'Pendente',
         obs:'Plano de tratamento · '+forma+' · Sessão '+(i+1)+' de '+n
       });
     }
@@ -3464,6 +3474,12 @@ function irParaProtocolo(pacId){
       carregarProtocolo(pacId);
     }
   }, 200);
+}
+
+
+function confirmarRapido(){
+  document.getElementById('agStatus').value = 'Confirmado';
+  salvarAgendar(true); // save and send WA confirmation
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
