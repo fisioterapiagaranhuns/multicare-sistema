@@ -4003,41 +4003,70 @@ async function gerarProtocoloIA(){
   if(!protState.anamnese){ openModal('modalAnamnese'); return; }
   var an = protState.anamnese;
   var el = document.getElementById('protIABody');
-  el.innerHTML = '<div class="loading"><div class="spin"></div>Gerando protocolo personalizado com IA...</div>';
+  el.innerHTML = '<div class="loading"><div class="spin"></div>Analisando caso clínico e buscando evidências...</div>';
 
-  var prompt = `Você é um fisioterapeuta especialista baseado em evidências. Crie um protocolo clínico personalizado e detalhado para este paciente:
+  var prompt = `Você é um fisioterapeuta especialista com doutorado em reabilitação, baseado em evidências científicas atuais (PubMed, Cochrane, PEDro). 
 
-DADOS DO PACIENTE:
+ATENÇÃO CRÍTICA: Este protocolo deve ser COMPLETAMENTE DIFERENTE de qualquer outro. Leia os dados abaixo com atenção máxima e crie um protocolo EXCLUSIVO para este caso específico. NUNCA repita protocolos genéricos.
+
+DADOS CLÍNICOS DO PACIENTE:
 - Queixa principal: ${an.queixa}
 - Diagnóstico/CID: ${an.diagnostico}
 - Fase clínica: ${an.fase}
 - Profissão/Estilo de vida: ${an.profissao}
 - Nível de atividade: ${an.atividade}
-- Histórico de saúde: ${an.historico}
-- Achados da avaliação: ${an.achados}
+- Histórico de saúde e comorbidades: ${an.historico}
+- Achados da avaliação física: ${an.achados}
 - Objetivo do paciente: ${an.objetivo}
 - EVA inicial: ${an.eva}/10
 - Sessões mínimas estimadas: ${an.sessoes}
 
-Responda APENAS em JSON puro (sem markdown, sem explicações extras) com esta estrutura exata:
+REGRAS OBRIGATÓRIAS:
+1. Cada exercício DEVE ter: nome técnico completo, posição inicial, execução passo a passo, séries x repetições x tempo, progressão
+2. Para exercícios domiciliares: incluir NOME EXATO para busca no YouTube (ex: "fisioterapia alongamento isquiotibial decúbito dorsal")
+3. Condutas devem ser específicas para este diagnóstico com base em evidências (cite guideline ou estudo)
+4. Se houver amputação, trauma grave ou condição especial: ADAPTAR COMPLETAMENTE - nunca sugerir exercício contraindicado
+5. A causa raiz deve ser analítica, não genérica
+
+Responda APENAS em JSON puro (sem markdown) com esta estrutura:
 {
-  "resumo": "Resumo clínico em 2 frases",
-  "causaRaiz": "Análise da causa raiz em 2-3 frases",
+  "resumo": "Resumo clínico específico de 2-3 frases mencionando diagnóstico e particularidades deste paciente",
+  "causaRaiz": "Análise da causa raiz específica baseada nos achados e histórico deste paciente",
+  "alertaClinico": "ALERTA se houver contraindicações ou cuidados especiais (ex: amputado, gestante, osteoporose grave) - null se não houver",
   "sessoesMinimas": número,
   "fases": [
     {
-      "nome": "Nome da fase",
-      "sessoes": "Ex: Sessões 1-4",
-      "objetivo": "Objetivo desta fase",
-      "condutas": ["conduta 1", "conduta 2", "conduta 3"],
-      "exercicios": ["exercicio 1", "exercicio 2"],
-      "alerta": "Sinal de alerta para regressão (pode ser null)"
+      "nome": "Nome da fase específico para este caso",
+      "sessoes": "Sessões X-Y",
+      "objetivo": "Objetivo funcional específico e mensurável",
+      "condutas": [
+        "Conduta específica com parâmetros (ex: TENS 80Hz 200μs 20min região lombar para controle da dor - Evidência: Cochrane 2023)",
+        "Conduta 2 com parâmetros e evidência"
+      ],
+      "exercicios": [
+        {
+          "nome": "Nome técnico completo do exercício",
+          "posicao": "Posição inicial (ex: decúbito dorsal, joelhos semifletidos)",
+          "execucao": "Passo a passo em 1-2 frases",
+          "dose": "X séries x Y repetições / Z segundos - descanso Ws",
+          "progressao": "Como progredir na próxima sessão",
+          "youtube": "Termo exato para buscar vídeo no YouTube"
+        }
+      ],
+      "alerta": "Sinal de alerta para regressão ou null"
     }
   ],
-  "exerciciosDomiciliares": ["exercicio 1", "exercicio 2", "exercicio 3"],
-  "orientacoes": ["orientação 1", "orientação 2", "orientação 3"],
-  "previsaoAlta": "Previsão narrativa de alta",
-  "alertaClinico": "Alerta crítico se houver (pode ser null)"
+  "exerciciosDomiciliares": [
+    {
+      "nome": "Nome técnico do exercício",
+      "posicao": "Posição inicial",
+      "execucao": "Como fazer em 1-2 frases simples para o paciente",
+      "dose": "X vezes ao dia, Y repetições ou Z segundos",
+      "youtube": "Termo exato para buscar vídeo no YouTube"
+    }
+  ],
+  "orientacoes": ["Orientação específica e prática 1", "Orientação 2", "Orientação 3"],
+  "previsaoAlta": "Descrição funcional do que o paciente conseguirá fazer ao receber alta"
 }`;
 
   try{
@@ -4046,28 +4075,24 @@ Responda APENAS em JSON puro (sem markdown, sem explicações extras) com esta e
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
+        max_tokens:2500,
         messages:[{role:'user',content:prompt}]
       })
     });
     var data = await r.json();
-    var txt = data.content[0].text.trim();
-    txt = txt.replace(/```json|```/g,'').trim();
+    var txt = data.content[0].text.trim().replace(/```json|```/g,'').trim();
     var prot = JSON.parse(txt);
     protState.protocolo = prot;
     salvarProtState();
-    renderProtocoloBody(prot);
+    await renderProtocoloBodyComVideos(prot);
     verificarAlertas();
-    toast('Protocolo gerado com sucesso!','success');
+    toast('Protocolo personalizado gerado!','success');
   } catch(e){
-    // Fallback: protocolo baseado nos dados sem IA
-    var prot = gerarProtocoloFallback(an);
-    protState.protocolo = prot;
-    salvarProtState();
-    renderProtocoloBody(prot);
-    toast('Protocolo gerado localmente','success');
+    toast('Erro ao gerar: '+e.message,'error');
+    el.innerHTML = '<div style="padding:16px;color:var(--red);font-size:13px">Erro ao gerar protocolo. Verifique a conexão e tente novamente.</div>';
   }
 }
+
 
 function gerarProtocoloFallback(an){
   var n = parseInt(an.sessoes) || 12;
@@ -4088,44 +4113,98 @@ function gerarProtocoloFallback(an){
 }
 
 function renderProtocoloBody(prot){
-  var el = document.getElementById('protIABody');
-  el.innerHTML = `
-    <div style="background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--forest);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Resumo Clínico</div>
-      <div style="font-size:13px;color:var(--ink2);line-height:1.6">${prot.resumo}</div>
-    </div>
-    <div style="background:var(--blue-light);border-radius:8px;padding:14px;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Causa Raiz Identificada</div>
-      <div style="font-size:13px;color:var(--ink2);line-height:1.6">${prot.causaRaiz}</div>
-    </div>
-    <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">Protocolo por Fases (${prot.sessoesMinimas} sessões mínimas)</div>
-    ${prot.fases.map((f,i)=>`
-      <div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid ${FASE_CORES[i]}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:4px">
-          <div style="font-size:13px;font-weight:600;color:var(--ink)">${f.nome}</div>
-          <span style="font-size:11px;color:var(--ink3);background:var(--paper);padding:2px 8px;border-radius:100px">${f.sessoes}</span>
-        </div>
-        <div style="font-size:12px;color:var(--forest-mid);margin-bottom:8px">🎯 ${f.objetivo}</div>
-        <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">CONDUTAS:</div>
-        ${f.condutas.map(c=>`<div style="font-size:12px;color:var(--ink2);padding:2px 0">• ${c}</div>`).join('')}
-        <div style="font-size:11px;font-weight:600;color:var(--ink3);margin:8px 0 4px">EXERCÍCIOS:</div>
-        ${f.exercicios.map(e=>`<div style="font-size:12px;color:var(--ink2);padding:2px 0">▶ ${e}</div>`).join('')}
-        ${f.alerta?`<div style="margin-top:8px;font-size:11px;color:var(--amber);background:var(--amber-light);padding:6px 10px;border-radius:6px">⚠️ ${f.alerta}</div>`:''}
-      </div>
-    `).join('')}
-    <div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:4px">
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">🏠 Exercícios Domiciliares</div>
-      ${prot.exerciciosDomiciliares.map(e=>`<div style="font-size:13px;color:var(--ink2);padding:3px 0">• ${e}</div>`).join('')}
-    </div>
-    <div style="margin-top:10px;background:var(--forest-light);border-radius:8px;padding:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--forest);margin-bottom:8px">✅ Orientações ao Paciente</div>
-      ${prot.orientacoes.map(o=>`<div style="font-size:13px;color:var(--ink2);padding:3px 0">• ${o}</div>`).join('')}
-    </div>
-    <div style="margin-top:10px;font-size:12px;color:var(--ink3);font-style:italic;padding:10px;background:var(--paper);border-radius:6px">
-      🏁 ${prot.previsaoAlta}
-    </div>
-  `;
+  renderProtocoloBodyComVideos(prot);
 }
+
+async function buscarVideoYoutube(termo){
+  // Returns a YouTube search URL - opens search for therapist/patient to pick best video
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(termo + ' fisioterapia exercício');
+}
+
+function renderExercicio(ex, idx){
+  if(typeof ex === 'string'){
+    // Legacy string format
+    return '<div style="padding:6px 0;font-size:13px;color:var(--ink2)">▶ '+ex+'</div>';
+  }
+  var youtubeUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent((ex.youtube||ex.nome)+' fisioterapia');
+  return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:var(--white)">
+    <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">▶ ${ex.nome}</div>
+    ${ex.posicao ? '<div style="font-size:12px;color:var(--ink3);margin-bottom:3px">📍 <strong>Posição:</strong> '+ex.posicao+'</div>' : ''}
+    ${ex.execucao ? '<div style="font-size:12px;color:var(--ink2);margin-bottom:3px;line-height:1.5">📋 '+ex.execucao+'</div>' : ''}
+    ${ex.dose ? '<div style="font-size:12px;color:var(--forest);font-weight:500;margin-bottom:3px">⚡ '+ex.dose+'</div>' : ''}
+    ${ex.progressao ? '<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">📈 Progressão: '+ex.progressao+'</div>' : ''}
+    <a href="${youtubeUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#cc0000;font-weight:600;text-decoration:none;background:#fff0f0;padding:4px 8px;border-radius:4px;border:1px solid #ffcccc">
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:#cc0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      Ver vídeo no YouTube
+    </a>
+  </div>`;
+}
+
+function renderExercicioDomiciliar(ex, idx){
+  if(typeof ex === 'string'){
+    return '<div style="font-size:13px;color:var(--ink2);padding:3px 0">• '+ex+'</div>';
+  }
+  var youtubeUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent((ex.youtube||ex.nome)+' exercício casa fisioterapia');
+  return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:var(--white)">
+    <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">🏠 ${ex.nome}</div>
+    ${ex.posicao ? '<div style="font-size:12px;color:var(--ink3);margin-bottom:3px">📍 '+ex.posicao+'</div>' : ''}
+    ${ex.execucao ? '<div style="font-size:12px;color:var(--ink2);margin-bottom:3px;line-height:1.5">'+ex.execucao+'</div>' : ''}
+    ${ex.dose ? '<div style="font-size:12px;color:var(--forest);font-weight:500;margin-bottom:6px">⚡ '+ex.dose+'</div>' : ''}
+    <a href="${youtubeUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#cc0000;font-weight:600;text-decoration:none;background:#fff0f0;padding:4px 8px;border-radius:4px;border:1px solid #ffcccc">
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:#cc0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      Ver vídeo no YouTube
+    </a>
+  </div>`;
+}
+
+async function renderProtocoloBodyComVideos(prot){
+  var el = document.getElementById('protIABody');
+  if(!el) return;
+
+  var fasesHtml = (prot.fases||[]).map(function(f,i){
+    var cor = ['#e63946','#f77f00','#f9c74f','#2a7d48','#1a5f8a'][i]||'#7a8077';
+    var exercHtml = (f.exercicios||[]).map(function(ex,j){ return renderExercicio(ex,j); }).join('');
+    return '<div style="border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;border-left:4px solid '+cor+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:4px">'
+        +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+f.nome+'</div>'
+        +'<span style="font-size:11px;color:var(--ink3);background:var(--paper);padding:3px 10px;border-radius:100px">'+f.sessoes+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:'+cor+';font-weight:600;margin-bottom:10px">🎯 '+f.objetivo+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Condutas:</div>'
+      +(f.condutas||[]).map(function(c){ return '<div style="font-size:12px;color:var(--ink2);padding:3px 0;line-height:1.5">• '+c+'</div>'; }).join('')
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin:10px 0 6px;text-transform:uppercase;letter-spacing:0.06em">Exercícios:</div>'
+      +exercHtml
+      +(f.alerta?'<div style="margin-top:8px;font-size:12px;color:var(--amber);background:var(--amber-light);padding:8px 10px;border-radius:6px">⚠️ '+f.alerta+'</div>':'')
+    +'</div>';
+  }).join('');
+
+  var domHtml = (prot.exerciciosDomiciliares||[]).map(function(ex,i){ return renderExercicioDomiciliar(ex,i); }).join('');
+
+  el.innerHTML =
+    '<div style="background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Resumo Clínico</div>'
+      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+prot.resumo+'</div>'
+    +'</div>'
+    +(prot.alertaClinico?'<div style="background:var(--red-light);border:1px solid #f5c6c6;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ALERTA CLÍNICO</div><div style="font-size:13px;color:var(--red);line-height:1.6">'+prot.alertaClinico+'</div></div>':'')
+    +'<div style="background:var(--blue-light);border-radius:8px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Causa Raiz Identificada</div>'
+      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+prot.causaRaiz+'</div>'
+    +'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.06em">Protocolo por Fases ('+prot.sessoesMinimas+' sessões mínimas)</div>'
+    +fasesHtml
+    +'<div style="border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:4px">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">🏠 Exercícios Domiciliares</div>'
+      +domHtml
+    +'</div>'
+    +'<div style="margin-top:12px;background:var(--forest-light);border-radius:8px;padding:14px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">✅ Orientações ao Paciente</div>'
+      +(prot.orientacoes||[]).map(function(o){ return '<div style="font-size:13px;color:var(--ink2);padding:3px 0">• '+o+'</div>'; }).join('')
+    +'</div>'
+    +'<div style="margin-top:10px;font-size:12px;color:var(--ink3);font-style:italic;padding:12px;background:var(--paper);border-radius:6px">'
+      +'🏁 '+prot.previsaoAlta
+    +'</div>';
+}
+
 
 function verificarAlertas(){
   var alerta = document.getElementById('iaAlerta');
