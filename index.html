@@ -3450,13 +3450,25 @@ async function salvarPlano(){
     // Registrar lançamento financeiro
     var total = n * v;
     var formaLabel = {avista:'À Vista',parcelado:'Parcelado no Cartão',mensal:'Mensal',sessao:'Por Sessão'}[forma]||forma;
-    await apiPost('lancamentos',{
-      paciente_id:parseInt(pid),
-      tipo:'A Receber',
-      valor:total,
-      data:datas[0].data,
-      obs:'Plano '+n+' sessões · '+formaLabel+' · R$'+v+'/sessão'
-    });
+    if(forma === 'sessao'){
+      // Por sessão: NÃO lança total. Cada sessão é cobrada individualmente ao confirmar.
+      // Apenas registra o plano como referência
+      await apiPost('lancamentos',{
+        paciente_id:parseInt(pid),
+        tipo:'A Receber',
+        valor:0,
+        data:datas[0].data,
+        obs:'Plano '+n+' sessões · Por Sessão · R$'+v+'/sessão (cobrar por sessão realizada)'
+      });
+    } else {
+      await apiPost('lancamentos',{
+        paciente_id:parseInt(pid),
+        tipo:'A Receber',
+        valor:total,
+        data:datas[0].data,
+        obs:'Plano '+n+' sessões · '+formaLabel+' · R$'+v+'/sessão'
+      });
+    }
 
     await loadAll();
     closeModal('modalPlano');
@@ -3824,16 +3836,19 @@ async function toggleStatusAg(btn){
   try{
     await apiPatch('agendamentos', agId, {status: novoStatus});
     await loadAll();
-    // Update badge
     var badge = document.getElementById('badge-ag-'+agId);
     if(badge){
       badge.textContent = novoStatus;
       badge.className = 'badge '+(novoStatus==='Confirmado'?'badge-green':novoStatus==='Cancelado'?'badge-red':'badge-amber');
     }
-    toast(novoStatus === 'Confirmado' ? '✓ Sessão confirmada!' : novoStatus === 'Cancelado' ? 'Sessão cancelada' : 'Status atualizado', 'success');
+    toast(novoStatus==='Confirmado'?'✓ Sessão confirmada!':novoStatus==='Cancelado'?'Sessão cancelada':'Status atualizado','success');
+    // If confirming a session, offer to register payment
+    if(novoStatus==='Confirmado'){
+      var ag = state.agendamentos.find(function(a){return a.id==agId;});
+      if(ag) ofereceRegistrarPagamento(ag);
+    }
     renderDashboard();
     renderAgenda();
-    // Refresh profile if open
     if(document.getElementById('modalDrill').classList.contains('open')){
       var p = state.pacientes.find(function(x){ return state.agendamentos.find(function(a){return a.id==agId&&a.paciente_id==x.id;}); });
       if(p) verPerfil(p.id);
@@ -3853,14 +3868,65 @@ async function toggleStatusAgPront(btn){
       badge.className = 'badge '+(novoStatus==='Confirmado'?'badge-green':novoStatus==='Cancelado'?'badge-red':'badge-amber');
     }
     toast(novoStatus==='Confirmado'?'✓ Confirmado!':novoStatus==='Cancelado'?'Cancelado':'Atualizado','success');
+    if(novoStatus==='Confirmado'){
+      var ag = state.agendamentos.find(function(a){return a.id==agId;});
+      if(ag) ofereceRegistrarPagamento(ag);
+    }
     renderDashboard();
-    // Refresh sessoes list
     if(prontState.pacienteId){
       var ags2 = state.agendamentos.filter(function(a){return a.paciente_id==prontState.pacienteId;});
       var p2 = state.pacientes.find(function(x){return x.id==prontState.pacienteId;});
       if(p2) prontRenderSessoes(p2, ags2);
     }
   } catch(e){ toast('Erro ao atualizar','error'); }
+}
+
+
+function ofereceRegistrarPagamento(ag){
+  // Find if this patient has a "por sessão" plan
+  var lans = state.lancamentos.filter(function(l){
+    return l.paciente_id==ag.paciente_id && l.obs && l.obs.indexOf('Por Sessão')>=0;
+  });
+  if(!lans.length) return; // no "por sessão" plan, skip
+
+  // Extract value per session from obs: "Plano X sessões · Por Sessão · R$Y/sessão"
+  var obs = lans[0].obs||'';
+  var match = obs.match(/R\\$([0-9]+)/);
+  var valorSessao = match ? parseFloat(match[1]) : 0;
+  if(!valorSessao) return;
+
+  var p = state.pacientes.find(function(x){return x.id==ag.paciente_id;});
+  var dataFmt = ag.data?ag.data.split('-').reverse().join('/'):'';
+
+  // Store pending payment and show toast
+  window._pendingPayment = {pacienteId: ag.paciente_id, valor: valorSessao, data: ag.data};
+  var toastEl = document.getElementById('toast');
+  toastEl.className = 'toast success show';
+  toastEl.innerHTML = 'Sessão confirmada! <button id="btnRegPag" style="margin-left:10px;background:white;color:var(--forest-mid);border:none;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer">💰 Registrar R$'+valorSessao+'</button>';
+  setTimeout(function(){
+    var b = document.getElementById('btnRegPag');
+    if(b) b.onclick = function(){ registrarPagamentoSessaoPending(); };
+  }, 50);
+  setTimeout(function(){ toastEl.classList.remove('show'); toastEl.innerHTML=''; }, 7000);
+}
+
+async function registrarPagamentoSessaoPending(){
+  var pp = window._pendingPayment;
+  if(!pp) return;
+  try{
+    await apiPost('lancamentos',{
+      paciente_id:parseInt(pp.pacienteId),
+      tipo:'Recebido',
+      valor:pp.valor,
+      data:pp.data,
+      obs:'Sessão realizada · Pagamento por sessão'
+    });
+    window._pendingPayment = null;
+    await loadAll();
+    renderFinanceiro();
+    renderDashboard();
+    toast('R$ '+pp.valor+' registrado como recebido!','success');
+  } catch(e){ toast('Erro ao registrar','error'); }
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
