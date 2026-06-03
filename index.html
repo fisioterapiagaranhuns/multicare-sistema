@@ -1619,7 +1619,18 @@ function verPerfil(id){
   var htmlProx = proximas.length
     ? proximas.map(function(a){
         var bc = a.status==='Confirmado'?'badge-green':a.status==='Pendente'?'badge-amber':'badge-gray';
-        return rowAg(a,bc,a.status);
+        var acoes = '<div style="display:flex;gap:4px;flex-shrink:0">'
+          +(a.status!=='Confirmado'?'<button class="btn btn-green" style="padding:3px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Confirmado" onclick="toggleStatusAg(this)">✓</button>':'')
+          +(a.status!=='Cancelado'?'<button class="btn btn-red" style="padding:3px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Cancelado" onclick="toggleStatusAg(this)">✕</button>':'')
+          +(a.status==='Cancelado'?'<button class="btn btn-outline" style="padding:3px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Pendente" onclick="toggleStatusAg(this)">↩</button>':'')
+          +'</div>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap">'
+          +'<div style="font-size:13px;flex:1">'+a.data.split('-').reverse().join('/')+' '+a.hora+'h — '+a.tipo+'</div>'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<span class="badge '+bc+'" id="badge-ag-'+a.id+'">'+a.status+'</span>'
+            +acoes
+          +'</div>'
+        +'</div>';
       }).join('')
     : '<p style="font-size:13px;color:var(--ink3);padding:8px 0">Nenhuma sessão agendada</p>';
 
@@ -3665,7 +3676,14 @@ function prontRenderSessoes(p, ags){
     var isPast = a.data < hoje_str;
     var bc = a.status==='Confirmado'?'badge-green':a.status==='Cancelado'?'badge-red':a.status==='Remarcado'?'badge-blue':'badge-amber';
     var dataFmt = a.data?a.data.split('-').reverse().join('/'):'—';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);'+(isPast?'opacity:0.6':'')+'">'
+    var btns = '';
+    if(!isPast){
+      if(a.status!=='Confirmado') btns += '<button class="btn btn-green" style="padding:4px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Confirmado" onclick="toggleStatusAgPront(this)">✓</button>';
+      if(a.status==='Confirmado') btns += '<button class="btn btn-outline" style="padding:4px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Pendente" onclick="toggleStatusAgPront(this)">⏳</button>';
+      if(a.status!=='Cancelado') btns += '<button class="btn btn-red" style="padding:4px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Cancelado" onclick="toggleStatusAgPront(this)">✕</button>';
+      if(a.status==='Cancelado') btns += '<button class="btn btn-outline" style="padding:4px 10px;font-size:11px" data-agid="'+a.id+'" data-st="Pendente" onclick="toggleStatusAgPront(this)">↩</button>';
+    }
+    return '<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);'+(isPast?'opacity:0.6':'')+';flex-wrap:wrap">'
       +'<div style="width:40px;height:40px;border-radius:8px;background:'+(isPast?'var(--paper)':'var(--forest-light)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">'
         +'<div style="font-size:14px;font-weight:700;color:'+(isPast?'var(--ink3)':'var(--forest)')+'">'+a.data.split('-')[2]+'</div>'
         +'<div style="font-size:9px;color:var(--ink3)">'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(a.data.split('-')[1])-1]+'</div>'
@@ -3674,8 +3692,8 @@ function prontRenderSessoes(p, ags){
         +'<div style="font-size:13px;font-weight:500">'+a.tipo+' — '+a.hora+'h</div>'
         +'<div style="font-size:11px;color:var(--ink3)">'+dataFmt+(a.obs?' · '+a.obs.substring(0,40):'')+'</div>'
       +'</div>'
-      +'<span class="badge '+bc+'">'+a.status+'</span>'
-      +'<button class="btn btn-outline btn-sm" onclick="editarAgendamento('+a.id+')" style="padding:4px 8px;font-size:11px">Editar</button>'
+      +'<span class="badge '+bc+'" id="pront-badge-'+a.id+'">'+a.status+'</span>'
+      +'<div style="display:flex;gap:4px">'+btns+'</div>'
     +'</div>';
   }).join('');
 }
@@ -3797,6 +3815,52 @@ function abrirTabFinanceiro(){
   if(tabs[2]) tabs[2].classList.add('active');
   var fin = document.getElementById('pt-financeiro');
   if(fin) fin.classList.add('active');
+}
+
+
+async function toggleStatusAg(btn){
+  var agId = btn.getAttribute('data-agid');
+  var novoStatus = btn.getAttribute('data-st');
+  try{
+    await apiPatch('agendamentos', agId, {status: novoStatus});
+    await loadAll();
+    // Update badge
+    var badge = document.getElementById('badge-ag-'+agId);
+    if(badge){
+      badge.textContent = novoStatus;
+      badge.className = 'badge '+(novoStatus==='Confirmado'?'badge-green':novoStatus==='Cancelado'?'badge-red':'badge-amber');
+    }
+    toast(novoStatus === 'Confirmado' ? '✓ Sessão confirmada!' : novoStatus === 'Cancelado' ? 'Sessão cancelada' : 'Status atualizado', 'success');
+    renderDashboard();
+    renderAgenda();
+    // Refresh profile if open
+    if(document.getElementById('modalDrill').classList.contains('open')){
+      var p = state.pacientes.find(function(x){ return state.agendamentos.find(function(a){return a.id==agId&&a.paciente_id==x.id;}); });
+      if(p) verPerfil(p.id);
+    }
+  } catch(e){ toast('Erro ao atualizar','error'); }
+}
+
+async function toggleStatusAgPront(btn){
+  var agId = btn.getAttribute('data-agid');
+  var novoStatus = btn.getAttribute('data-st');
+  try{
+    await apiPatch('agendamentos', agId, {status: novoStatus});
+    await loadAll();
+    var badge = document.getElementById('pront-badge-'+agId);
+    if(badge){
+      badge.textContent = novoStatus;
+      badge.className = 'badge '+(novoStatus==='Confirmado'?'badge-green':novoStatus==='Cancelado'?'badge-red':'badge-amber');
+    }
+    toast(novoStatus==='Confirmado'?'✓ Confirmado!':novoStatus==='Cancelado'?'Cancelado':'Atualizado','success');
+    renderDashboard();
+    // Refresh sessoes list
+    if(prontState.pacienteId){
+      var ags2 = state.agendamentos.filter(function(a){return a.paciente_id==prontState.pacienteId;});
+      var p2 = state.pacientes.find(function(x){return x.id==prontState.pacienteId;});
+      if(p2) prontRenderSessoes(p2, ags2);
+    }
+  } catch(e){ toast('Erro ao atualizar','error'); }
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
