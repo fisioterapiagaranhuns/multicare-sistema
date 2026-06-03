@@ -1478,12 +1478,7 @@ Vamos retomar? Aguardo você!
         <div class="form-group"><label class="form-label">Instagram</label><input class="form-control" id="cfgInstagram" placeholder="@multicarefisioterapia"/></div>
         <div class="form-group"><label class="form-label">Chave PIX</label><input class="form-control" id="cfgPix" placeholder="(87) 9.9922-1295"/></div>
       </div>
-      <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 14px">Integrações</div>
-      <div class="form-group">
-        <label class="form-label">Chave API Anthropic (para Protocolo IA)</label>
-        <input class="form-control" id="cfgApiKey" type="password" placeholder="sk-ant-api03-..."/>
-        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Obtenha em console.anthropic.com — necessária para gerar protocolos com IA</div>
-      </div>
+
       <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 14px">Política da Clínica</div>
       <div class="form-group"><label class="form-label">Política de Cancelamento</label><textarea class="form-control" id="cfgPolitica" rows="2" placeholder="Ex: Cancelamentos devem ser feitos com 24h de antecedência..."></textarea></div>
     </div>
@@ -1733,6 +1728,20 @@ function verPerfil(id){
   var proximas    = ags.filter(function(a){return a.data>=hj && a.status!=='Cancelado';}).sort(function(a,b){return a.data.localeCompare(b.data);});
   var canceladas  = ags.filter(function(a){return a.status==='Cancelado';});
   var lans        = state.lancamentos.filter(function(l){return l.paciente_id==id;});
+  // Per-session plan: compute real A Receber
+  var planoRefData = localStorage.getItem('mc_plano_'+id);
+  if(planoRefData){
+    var pr2 = JSON.parse(planoRefData);
+    if(pr2.forma==='sessao'){
+      var sessoesFuturas = ags.filter(function(a){return a.data>=hoje()&&a.status!=='Cancelado';}).length;
+      var pagasCount = lans.filter(function(l){return l.tipo==='Recebido'&&l.obs&&l.obs.indexOf('sessão')>=0;}).length;
+      var recebidoTotal = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+      var aReceberReal = sessoesFuturas * pr2.valorSessao;
+      // Override lans for display to show correct values
+      var _aReceberOverride = aReceberReal;
+      var _recebidoOverride = recebidoTotal;
+    }
+  }
   var recebido    = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
   var aReceber    = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
 
@@ -3589,15 +3598,11 @@ async function salvarPlano(){
     var total = n * v;
     var formaLabel = {avista:'À Vista',parcelado:'Parcelado no Cartão',mensal:'Mensal',sessao:'Por Sessão'}[forma]||forma;
     if(forma === 'sessao'){
-      // Por sessão: NÃO lança total. Cada sessão é cobrada individualmente ao confirmar.
-      // Apenas registra o plano como referência
-      await apiPost('lancamentos',{
-        paciente_id:parseInt(pid),
-        tipo:'A Receber',
-        valor:0,
-        data:datas[0].data,
-        obs:'Plano '+n+' sessões · Por Sessão · R$'+v+'/sessão (cobrar por sessão realizada)'
-      });
+      // Por sessão: NÃO lança nada no financeiro agora.
+      // Cada sessão gera um lançamento individual quando confirmada/realizada.
+      // Salvar referência do valor por sessão no localStorage para uso posterior
+      var planoRef = {valorSessao:v, totalSessoes:n, forma:'sessao'};
+      localStorage.setItem('mc_plano_'+pid, JSON.stringify(planoRef));
     } else {
       await apiPost('lancamentos',{
         paciente_id:parseInt(pid),
@@ -3665,7 +3670,7 @@ function autoPreencherDataLancamento(){
 
 // ── COBRANÇAS PENDENTES NO DASHBOARD ──
 function renderCobrancas(){
-  var pendentes = state.lancamentos.filter(function(l){ return l.tipo === 'A Receber'; });
+  var pendentes = state.lancamentos.filter(function(l){ return l.tipo === 'A Receber' && parseFloat(l.valor||0) > 0; });
   var card = document.getElementById('cardCobrancas');
   var lista = document.getElementById('listaCobrancas');
   var sub = document.getElementById('cobrancasSub');
@@ -3683,7 +3688,7 @@ function renderCobrancas(){
   var html = '';
   pendentes.forEach(function(l){
     var p = state.pacientes.find(function(x){ return x.id == l.paciente_id; });
-    if(!p) return;
+    if(!p || !p.nome) return;
     var dataFmt = l.data ? l.data.split('-').reverse().join('/') : '—';
     var valor = 'R$ '+parseFloat(l.valor||0).toFixed(2).replace('.',',');
     var msgCobranca = 'Olá '+p.nome+'! Passando para lembrar do pagamento pendente da sua sessão de fisioterapia.'
@@ -3790,7 +3795,7 @@ function abrirProntuario(pid){
   var realizadas = ags.filter(function(a){return a.data<hoje()&&a.status!=='Cancelado';}).length;
   var proximas = ags.filter(function(a){return a.data>=hoje()&&a.status!=='Cancelado';}).length;
   var recebido = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
-  var aReceber = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+  var aReceber = lans.filter(function(l){return l.tipo==='A Receber' && parseFloat(l.valor||0)>0;}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
 
   document.getElementById('prontStats').innerHTML =
     '<div style="text-align:center;padding:12px;background:var(--paper);border-radius:8px"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">'+realizadas+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Realizadas</div></div>'
@@ -3856,24 +3861,54 @@ function prontRenderSessoes(p, ags){
 function prontRenderFinanceiro(p, lans){
   var el = document.getElementById('prontFinanceiro');
   var recebido = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
-  var aReceber = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+  var aReceber = lans.filter(function(l){return l.tipo==='A Receber' && parseFloat(l.valor||0)>0;}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
 
   var resumo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
     +'<div style="background:var(--forest-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">R$'+recebido.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Recebido</div></div>'
     +'<div style="background:var(--red-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--red)">R$'+aReceber.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">A Receber</div></div>'
     +'</div>';
 
-  var lista = lans.length
-    ? lans.sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(l){
+  // Per-session: build session-by-session entries from agendamentos
+  var planoRefStr2 = localStorage.getItem('mc_plano_'+p.id);
+  var extraEntries = '';
+  if(planoRefStr2){
+    var pr3 = JSON.parse(planoRefStr2);
+    if(pr3.forma==='sessao'){
+      var sessoesPac = state.agendamentos.filter(function(a){return a.paciente_id==p.id&&a.status!=='Cancelado';})
+        .sort(function(a,b){return a.data.localeCompare(b.data);});
+      var pagasData = lans.filter(function(l){return l.tipo==='Recebido'&&l.obs&&l.obs.indexOf('sessão')>=0;})
+        .map(function(l){return l.data;});
+      extraEntries = '<div style="background:var(--forest-light);border-radius:8px;padding:12px;margin-bottom:14px">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">Pagamento por Sessão — R$'+pr3.valorSessao+'/sessão</div>'
+        +sessoesPac.map(function(a,i){
+          var isPago = pagasData.indexOf(a.data)>=0;
+          var dataFmt = a.data.split('-').reverse().join('/');
+          var cor = isPago?'var(--forest)':'var(--amber)';
+          var badge = isPago?'✅ Pago':'⏳ Pendente';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px">'
+            +'<div><span style="color:var(--ink3)">Sessão '+(i+1)+'</span> — '+dataFmt+' '+a.hora+'h</div>'
+            +'<div style="display:flex;align-items:center;gap:8px">'
+              +'<span style="color:'+cor+';font-weight:600">R$'+pr3.valorSessao+'</span>'
+              +'<span style="font-size:11px;color:'+cor+'">'+badge+'</span>'
+            +'</div>'
+          +'</div>';
+        }).join('')
+      +'</div>';
+    }
+  }
+
+  var lansValidos = lans.filter(function(l){return parseFloat(l.valor||0)>0;});
+  var lista = lansValidos.length
+    ? lansValidos.sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(l){
         var cor = l.tipo==='Recebido'?'var(--forest)':l.tipo==='Falta Cobrada'?'var(--red)':'var(--amber)';
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">'
           +'<div><div style="font-size:13px;font-weight:500">'+(l.obs||l.tipo)+'</div><div style="font-size:11px;color:var(--ink3)">'+(l.data?l.data.split('-').reverse().join('/'):'—')+'</div></div>'
           +'<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:700;color:'+cor+'">R$'+parseFloat(l.valor||0).toFixed(0)+'</div>'
         +'</div>';
       }).join('')
-    : '<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum lançamento</p>';
+    : '';
 
-  el.innerHTML = resumo + lista;
+  el.innerHTML = resumo + extraEntries + lista + ((!lansValidos.length&&!extraEntries)?'<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum lançamento</p>':'');
 }
 
 function prontRenderDados(p){
@@ -4026,16 +4061,22 @@ async function toggleStatusAgPront(btn){
 
 
 function ofereceRegistrarPagamento(ag){
-  // Find if this patient has a "por sessão" plan
-  var lans = state.lancamentos.filter(function(l){
-    return l.paciente_id==ag.paciente_id && l.obs && l.obs.indexOf('Por Sessão')>=0;
-  });
-  if(!lans.length) return; // no "por sessão" plan, skip
-
-  // Extract value per session from obs: "Plano X sessões · Por Sessão · R$Y/sessão"
-  var obs = lans[0].obs||'';
-  var match = obs.match(/R\\$([0-9]+)/);
-  var valorSessao = match ? parseFloat(match[1]) : 0;
+  // Check localStorage for per-session plan
+  var planoRef = localStorage.getItem('mc_plano_'+ag.paciente_id);
+  var valorSessao = 0;
+  if(planoRef){
+    var pr = JSON.parse(planoRef);
+    if(pr.forma==='sessao') valorSessao = pr.valorSessao;
+  }
+  if(!valorSessao){
+    // fallback: check lancamentos
+    var lans2 = state.lancamentos.filter(function(l){
+      return l.paciente_id==ag.paciente_id && l.obs && l.obs.indexOf('Por Sessão')>=0;
+    });
+    if(!lans2.length) return;
+    var match2 = (lans2[0].obs||'').match(/R\$([0-9]+)/);
+    valorSessao = match2 ? parseFloat(match2[1]) : 0;
+  }
   if(!valorSessao) return;
 
   var p = state.pacientes.find(function(x){return x.id==ag.paciente_id;});
@@ -4104,8 +4145,7 @@ function abrirSettings(){
   document.getElementById('cfgInstagram').value = clinicaConfig.instagram||'';
   document.getElementById('cfgPix').value = clinicaConfig.pix||'';
   document.getElementById('cfgPolitica').value = clinicaConfig.politica||'';
-  var savedKey = localStorage.getItem('mc_anthropic_key')||'';
-  document.getElementById('cfgApiKey').value = savedKey ? '••••••••••••••••' : '';
+
   openModal('modalSettings');
 }
 
@@ -4119,8 +4159,7 @@ function salvarConfigs(){
   clinicaConfig.instagram = document.getElementById('cfgInstagram').value.trim();
   clinicaConfig.pix = document.getElementById('cfgPix').value.trim();
   clinicaConfig.politica = document.getElementById('cfgPolitica').value.trim();
-  var apiKey = document.getElementById('cfgApiKey').value.trim();
-  if(apiKey) localStorage.setItem('mc_anthropic_key', apiKey);
+
   localStorage.setItem('mc_config', JSON.stringify(clinicaConfig));
   loadConfigs();
   closeModal('modalSettings');
@@ -4434,13 +4473,20 @@ function registrarPagSessaoPront(btn){
   var data = btn.getAttribute('data-data');
   
   // Find value from plan
-  var lans = state.lancamentos.filter(function(l){
-    return l.paciente_id==pacId && l.obs && l.obs.indexOf('Por Sessão')>=0;
-  });
   var valorSessao = 0;
-  if(lans.length){
-    var match = (lans[0].obs||'').match(/R\$(\d+)/);
-    valorSessao = match ? parseFloat(match[1]) : 0;
+  var planoRefStr = localStorage.getItem('mc_plano_'+pacId);
+  if(planoRefStr){
+    var pr = JSON.parse(planoRefStr);
+    if(pr.forma==='sessao') valorSessao = pr.valorSessao;
+  }
+  if(!valorSessao){
+    var lans = state.lancamentos.filter(function(l){
+      return l.paciente_id==pacId && l.obs && l.obs.indexOf('Por Sessão')>=0;
+    });
+    if(lans.length){
+      var match = (lans[0].obs||'').match(/R\$(\d+)/);
+      valorSessao = match ? parseFloat(match[1]) : 0;
+    }
   }
   
   var valorStr = valorSessao > 0 ? valorSessao : '';
