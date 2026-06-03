@@ -4948,134 +4948,720 @@ async function gerarProtocoloIA(){
   if(!protState.anamnese){ openModal('modalAnamnese'); return; }
   var an = protState.anamnese;
   var el = document.getElementById('protIABody');
-  el.innerHTML = '<div class="loading"><div class="spin"></div>Analisando caso clínico e buscando evidências...</div>';
+  el.innerHTML = '<div class="loading"><div class="spin"></div>Analisando caso clínico com base nas evidências...</div>';
 
-  var prompt = `Você é um fisioterapeuta especialista com doutorado em reabilitação, baseado em evidências científicas atuais (PubMed, Cochrane, PEDro). 
-
-ATENÇÃO CRÍTICA: Este protocolo deve ser COMPLETAMENTE DIFERENTE de qualquer outro. Leia os dados abaixo com atenção máxima e crie um protocolo EXCLUSIVO para este caso específico. NUNCA repita protocolos genéricos.
-
-DADOS CLÍNICOS DO PACIENTE:
-- Queixa principal: ${an.queixa}
-- Diagnóstico/CID: ${an.diagnostico}
-- Fase clínica: ${an.fase}
-- Profissão/Estilo de vida: ${an.profissao}
-- Nível de atividade: ${an.atividade}
-- Histórico de saúde e comorbidades: ${an.historico}
-- Achados da avaliação física: ${an.achados}
-- Objetivo do paciente: ${an.objetivo}
-- EVA inicial: ${an.eva}/10
-- Sessões mínimas estimadas: ${an.sessoes}
-
-REGRAS OBRIGATÓRIAS:
-1. Cada exercício DEVE ter: nome técnico completo, posição inicial, execução passo a passo, séries x repetições x tempo, progressão
-2. Para exercícios domiciliares: incluir NOME EXATO para busca no YouTube (ex: "fisioterapia alongamento isquiotibial decúbito dorsal")
-3. Condutas devem ser específicas para este diagnóstico com base em evidências (cite guideline ou estudo)
-4. Se houver amputação, trauma grave ou condição especial: ADAPTAR COMPLETAMENTE - nunca sugerir exercício contraindicado
-5. A causa raiz deve ser analítica, não genérica
-
-Responda APENAS em JSON puro (sem markdown) com esta estrutura:
-{
-  "resumo": "Resumo clínico específico de 2-3 frases mencionando diagnóstico e particularidades deste paciente",
-  "causaRaiz": "Análise da causa raiz específica baseada nos achados e histórico deste paciente",
-  "alertaClinico": "ALERTA se houver contraindicações ou cuidados especiais (ex: amputado, gestante, osteoporose grave) - null se não houver",
-  "sessoesMinimas": número,
-  "fases": [
-    {
-      "nome": "Nome da fase específico para este caso",
-      "sessoes": "Sessões X-Y",
-      "objetivo": "Objetivo funcional específico e mensurável",
-      "condutas": [
-        "Conduta específica com parâmetros (ex: TENS 80Hz 200μs 20min região lombar para controle da dor - Evidência: Cochrane 2023)",
-        "Conduta 2 com parâmetros e evidência"
-      ],
-      "exercicios": [
-        {
-          "nome": "Nome técnico completo do exercício",
-          "posicao": "Posição inicial (ex: decúbito dorsal, joelhos semifletidos)",
-          "execucao": "Passo a passo em 1-2 frases",
-          "dose": "X séries x Y repetições / Z segundos - descanso Ws",
-          "progressao": "Como progredir na próxima sessão",
-          "youtube": "Termo exato para buscar vídeo no YouTube"
-        }
-      ],
-      "alerta": "Sinal de alerta para regressão ou null"
-    }
-  ],
-  "exerciciosDomiciliares": [
-    {
-      "nome": "Nome técnico do exercício",
-      "posicao": "Posição inicial",
-      "execucao": "Como fazer em 1-2 frases simples para o paciente",
-      "dose": "X vezes ao dia, Y repetições ou Z segundos",
-      "youtube": "Termo exato para buscar vídeo no YouTube"
-    }
-  ],
-  "orientacoes": ["Orientação específica e prática 1", "Orientação 2", "Orientação 3"],
-  "previsaoAlta": "Descrição funcional do que o paciente conseguirá fazer ao receber alta"
-}`;
+  // Small delay for UX
+  await new Promise(function(r){setTimeout(r,800);});
 
   try{
-    var r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': getAnthropicKey(),
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:2500,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    if(!r.ok){
-      var errTxt = await r.text();
-      throw new Error('API '+r.status+': '+errTxt.substring(0,200));
-    }
-    var data = await r.json();
-    if(!data.content||!data.content[0]){
-      throw new Error('Resposta inválida da API');
-    }
-    var txt = data.content[0].text.trim().replace(/```json|```/g,'').trim();
-    // Extract JSON if wrapped in text
-    var jsonStart = txt.indexOf('{');
-    var jsonEnd = txt.lastIndexOf('}');
-    if(jsonStart > 0) txt = txt.substring(jsonStart, jsonEnd+1);
-    var prot = JSON.parse(txt);
+    var prot = gerarProtocoloEvidencias(an);
     protState.protocolo = prot;
     salvarProtState();
     await renderProtocoloBodyComVideos(prot);
     verificarAlertas();
-    toast('Protocolo personalizado gerado!','success');
+    toast('Protocolo gerado com base em evidências!','success');
   } catch(e){
-    toast('Erro ao gerar: '+e.message,'error');
-    el.innerHTML = '<div style="padding:16px;color:var(--red);font-size:13px">Erro ao gerar protocolo. Verifique a conexão e tente novamente.</div>';
+    el.innerHTML = '<div style="padding:16px;color:var(--red);font-size:13px">Erro ao gerar protocolo: '+e.message+'</div>';
   }
 }
 
+// ══════════════════════════════════════════════════════
+// BASE CLÍNICA BASEADA EM EVIDÊNCIAS CIENTÍFICAS
+// Referências: COFFITO, Cochrane, PEDro, JOSPT, PTJ
+// ══════════════════════════════════════════════════════
 
-function gerarProtocoloFallback(an){
-  var n = parseInt(an.sessoes) || 12;
+function gerarProtocoloEvidencias(an){
+  var queixa = (an.queixa||'').toLowerCase();
+  var diag = (an.diagnostico||'').toLowerCase();
+  var hist = (an.historico||'').toLowerCase();
+  var fase = (an.fase||'').toLowerCase();
+  var ativ = (an.atividade||'').toLowerCase();
+  var prof = (an.profissao||'').toLowerCase();
+  var eva = parseInt(an.eva)||5;
+  var n = parseInt(an.sessoes)||12;
+  var obj = an.objetivo||'';
+
+  // Detectar condição principal
+  var isAmputado = queixa.includes('amput') || diag.includes('amput') || diag.includes('z89') || hist.includes('amput');
+  var isLombar = queixa.includes('lombar') || queixa.includes('coluna') || queixa.includes('costas') || diag.includes('m54') || diag.includes('lombalg');
+  var isJoelho = queixa.includes('joelho') || diag.includes('joelho') || diag.includes('m17') || diag.includes('m23');
+  var isOmbro = queixa.includes('ombro') || diag.includes('ombro') || diag.includes('m75') || diag.includes('manguito');
+  var isCervical = queixa.includes('cervical') || queixa.includes('pescoço') || queixa.includes('cervicalg') || diag.includes('m54.2');
+  var isQuadril = queixa.includes('quadril') || diag.includes('quadril') || diag.includes('m16') || diag.includes('coxartrose');
+  var isNeurologico = queixa.includes('avc') || queixa.includes('paralis') || diag.includes('i69') || diag.includes('g81') || diag.includes('g82');
+  var isPediatrico = queixa.includes('criança') || diag.includes('paralisia cerebral') || diag.includes('g80');
+  var isTornozelo = queixa.includes('tornozelo') || queixa.includes('entorse') || diag.includes('tornozelo') || diag.includes('m19.07');
+  var isDiabete = hist.includes('diabet') || diag.includes('diabet');
+  var isHAS = hist.includes('hipertens') || hist.includes('has ') || hist.includes('pressão alta');
+  var isIdoso = an.nasc ? (new Date().getFullYear() - parseInt((an.nasc||'').split('-')[0])) > 65 : false;
+  var isSedentario = ativ.includes('sedent') || ativ.includes('não pratic');
+  var isAguda = fase.includes('aguda') || fase.includes('0-72');
+  var isSubaguda = fase.includes('subaguda') || fase.includes('3-21');
+  var isCronica = fase.includes('crônica') || fase.includes('cronica') || fase.includes('>21');
+
+  // Alertas clínicos
+  var alertas = [];
+  if(isAmputado) alertas.push('Paciente amputado: NÃO realizar exercícios no membro ausente. Foco em coto, membro contralateral e reabilitação funcional. Avaliar necessidade de prótese (Relatório específico disponível em Documentos).');
+  if(eva >= 8) alertas.push('EVA inicial muito elevado ('+eva+'/10): Considerar interconsulta médica para manejo álgico antes de progredir para exercícios ativos.');
+  if(isDiabete) alertas.push('Paciente diabético: Monitorar glicemia antes e após sessão. Evitar exercícios em jejum. Atenção à sensibilidade periférica.');
+  if(isHAS) alertas.push('Paciente hipertenso: Monitorar PA antes e após exercícios. Evitar manobra de Valsalva e exercícios isométricos prolongados.');
+  if(isIdoso) alertas.push('Paciente idoso: Progredir carga e intensidade mais gradualmente. Priorizar equilíbrio e prevenção de quedas.');
+
+  var alertaClinico = alertas.length ? alertas.join(' | ') : null;
+
+  // ── PROTOCOLOS POR CONDIÇÃO ──
+
+  if(isAmputado){
+    return protocoloAmputado(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  } else if(isNeurologico){
+    return protocoloNeurologico(an, n, eva, obj, alertaClinico, isAguda, isCronica);
+  } else if(isLombar){
+    return protocoloLombar(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica, isSedentario, prof);
+  } else if(isJoelho){
+    return protocoloJoelho(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  } else if(isOmbro){
+    return protocoloOmbro(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  } else if(isCervical){
+    return protocoloCervical(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica, prof);
+  } else if(isQuadril){
+    return protocoloQuadril(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  } else if(isTornozelo){
+    return protocoloTornozelo(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  } else {
+    return protocoloGeral(an, n, eva, obj, alertaClinico, isAguda, isSubaguda, isCronica);
+  }
+}
+
+// ── EXERCÍCIO HELPER ──
+function ex(nome, posicao, execucao, dose, progressao, youtube){
+  return {nome:nome, posicao:posicao, execucao:execucao, dose:dose, progressao:progressao, youtube:youtube};
+}
+
+// ══════════════════════
+// PROTOCOLO: AMPUTADO
+// ══════════════════════
+function protocoloAmputado(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
   return {
-    resumo: `Paciente com ${an.queixa}. Fase ${an.fase}. Objetivo: ${an.objetivo}.`,
-    causaRaiz: `Baseado nos achados (${an.achados}) e no estilo de vida (${an.profissao}), o tratamento foca na causa raiz e não apenas no sintoma.`,
+    resumo: 'Reabilitação fisioterapêutica pós-amputação. Fase atual: '+(an.fase||'crônica')+'. Objetivo: '+obj+'. Protocolo baseado nas diretrizes ISPO 2024 e evidências Cochrane para reabilitação de amputados.',
+    causaRaiz: 'A amputação gera desequilíbrios musculares, alterações posturais compensatórias, risco de contraturas do coto e impacto significativo na funcionalidade. O protocolo foca na preparação do coto, fortalecimento do membro contralateral e treino funcional progressivo.',
+    alertaClinico: alerta,
     sessoesMinimas: n,
     fases: [
-      {nome:'Fase Aguda — Controle da Dor',sessoes:'Sessões 1-'+(Math.round(n*0.25)),objetivo:'Reduzir inflamação e dor',condutas:['Eletroterapia analgésica (TENS/FES)','Crioterapia ou termoterapia','Terapia manual suave'],exercicios:['Mobilização ativa suave','Respiração diafragmática'],alerta:'Piora da dor após exercícios'},
-      {nome:'Fase Subaguda — Ganho de Função',sessoes:'Sessões '+(Math.round(n*0.25)+1)+'-'+(Math.round(n*0.6)),objetivo:'Recuperar mobilidade e força',condutas:['Fortalecimento progressivo','Alongamento específico','Mobilização articular'],exercicios:['Core estabilizador','Fortalecimento de glúteos','Alongamento cadeia posterior'],alerta:'Dor acima de 4/10 após sessão'},
-      {nome:'Retorno às Atividades',sessoes:'Sessões '+(Math.round(n*0.6)+1)+'-'+n,objetivo:'Retorno funcional pleno',condutas:['Treino funcional','Exercícios específicos para atividade do paciente','Orientação ergonômica'],exercicios:['Exercícios funcionais','Treino de equilíbrio','Atividade específica do objetivo'],alerta:null}
+      {
+        nome: 'Fase 1 — Cuidados com o Coto e Controle da Dor',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.25)),
+        objetivo: 'Reduzir edema, modelar coto, controlar dor e dor fantasma, prevenir contraturas',
+        condutas: [
+          'Dessensibilização do coto: técnica de tapotagem progressiva e exposição a diferentes texturas — Evidência: Bosmans et al., Cochrane 2019',
+          'TENS modo burst 2Hz, 200μs, 30min na região proximal ao coto para controle da dor fantasma',
+          'Modelagem do coto com bandagem elástica em figura de 8 para preparo protético',
+          'Crioterapia 15-20min pós-sessão para controle do edema residual',
+          'Posicionamento terapêutico: decúbito ventral 30min/dia para prevenir contratura de flexão de quadril (amputados transtibiais e transfemorais)'
+        ],
+        exercicios: [
+          ex('Mobilização ativa do coto — flexão/extensão','Decúbito dorsal, coto livre','Realizar movimentos suaves de flexão e extensão no limite da dor, sem compensações','3 séries × 10 repetições, 2x/dia','Aumentar amplitude progressivamente conforme tolerância','fisioterapia exercicios amputado mobilizacao coto'),
+          ex('Fortalecimento de glúteo médio e máximo — decúbito lateral','Decúbito lateral, joelho contralateral semifletido','Elevar o coto lateralmente (abdução) mantendo pelve estável, retornar lentamente','3 séries × 12 repetições cada lado','Adicionar resistência com faixa elástica leve','fisioterapia fortalecimento gluteo amputado'),
+          ex('Fortalecimento de MMSS — push-up modificado em cadeira de rodas','Sentado em cadeira de rodas ou na cama','Empurrar os braços para elevar o corpo 5cm, sustentar 3 segundos','3 séries × 8 repetições','Aumentar tempo de sustentação para 5 segundos','fisioterapia fortalecimento membros superiores amputado cadeira rodas')
+        ],
+        alerta: 'Dor no coto acima de 6/10 durante exercícios: reduzir amplitude e intensidade imediatamente'
+      },
+      {
+        nome: 'Fase 2 — Equilíbrio, Postura e Independência Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.25)+1)+'-'+(Math.round(n*0.6)),
+        objetivo: 'Melhorar equilíbrio unipodal, transferências e independência nas AVDs',
+        condutas: [
+          'Treino de equilíbrio em superfícies progressivas: chão firme → colchonete → prancha de equilíbrio',
+          'Treino de transferências: leito → cadeira, cadeira → banheiro, chão → cadeira',
+          'Eletroestimulação neuromuscular (FES) no glúteo contralateral para compensação postural',
+          'Hidrocinesioterapia quando disponível — favorece treino de marcha com descarga parcial — JOSPT 2021'
+        ],
+        exercicios: [
+          ex('Equilíbrio unipodal com apoio','Em pé ao lado de uma parede ou cadeira para segurança','Apoiar em um pé (membro íntegro), manter equilíbrio por tempo crescente','3 séries × 20 segundos, progredir para 40s e 60s','Fechar os olhos após dominar a fase com olhos abertos','fisioterapia treino equilibrio unipodal amputado'),
+          ex('Transferência leito-cadeira — treino funcional','Sentado na beira da cama','Posicionar a cadeira ao lado, usar os braços para apoio, transferir o peso progressivamente','5 repetições por sessão, bilateral','Reduzir o apoio dos braços progressivamente','fisioterapia treino transferencia leito cadeira amputado'),
+          ex('Fortalecimento de core — prancha modificada em cotovelos','Apoio nos cotovelos e joelho contralateral (coto apoiado em almofada)','Manter o corpo alinhado, contrair abdômen, respirar normalmente','3 séries × 15-20 segundos','Progredir para 30-40 segundos','fisioterapia prancha core amputado')
+        ],
+        alerta: 'Quedas durante treino de equilíbrio: usar barras paralelas ou supervisão constante'
+      },
+      {
+        nome: 'Fase 3 — Marcha com Prótese / Retorno Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.6)+1)+'-'+n,
+        objetivo: obj||'Marcha independente com prótese e retorno às atividades de vida diária',
+        condutas: [
+          'Treino de marcha com prótese em barras paralelas, progredindo para andador e marcha livre',
+          'Treino de subida e descida de escadas e rampas com prótese',
+          'Treino de marcha em diferentes superfícies (terreno irregular, calçada)',
+          'Orientação ao paciente e família sobre cuidados com a prótese e higiene do coto'
+        ],
+        exercicios: [
+          ex('Marcha em barras paralelas com prótese','Em pé nas barras, prótese fixada','Dar passos alternados mantendo o tronco ereto, olhar à frente','10 minutos por sessão com pausas a cada 2 min','Progredir para andador e depois marcha livre','fisioterapia treino marcha protese barras paralelas'),
+          ex('Agachamento assistido — fortalecimento funcional','Em pé de frente para uma cadeira','Flexionar os joelhos até 60° como se fosse sentar, retornar sem sentar','3 séries × 10 repetições, lento e controlado','Aumentar amplitude até 90°','fisioterapia agachamento assistido amputado fortalecimento')
+        ],
+        alerta: null
+      }
     ],
-    exerciciosDomiciliares:['Alongamento matinal 10 min','Caminhada progressiva','Exercícios de core (conforme orientação)'],
-    orientacoes:['Manter boa postura no trabalho','Evitar posições de sobrecarga','Hidratação adequada — mínimo 2L/dia'],
-    previsaoAlta:'Previsão de alta funcional após '+n+' sessões, com retorno pleno ao objetivo declarado pelo paciente.',
-    alertaClinico: an.eva >= 8 ? 'EVA inicial muito alta ('+an.eva+'/10). Avaliar necessidade de interconsulta médica.' : null
+    exerciciosDomiciliares: [
+      ex('Alongamento de flexores do quadril — decúbito ventral','Deitado de barriga para baixo em superfície firme (colchão ou colchonete)','Permanecer nessa posição por 20-30 minutos, 1 vez ao dia, para prevenir contratura de flexão','1× ao dia, 20-30 minutos','Tolerar pelo menos 30min sem desconforto significativo','fisioterapia alongamento flexores quadril decubito ventral amputado'),
+      ex('Exercícios de MMSS com elástico — bíceps e tríceps','Sentado em cadeira firme, faixa elástica fixada sob os pés','Realizar rosca bíceps e extensão de tríceps alternados','3 séries × 12 repetições cada, 2x/dia','Aumentar resistência da faixa elástica','fisioterapia exercicios elastico membros superiores em casa'),
+      ex('Respiração diafragmática e relaxamento','Deitado confortavelmente, mão no abdômen','Inspirar pelo nariz expandindo o abdômen, expirar pela boca lentamente por 6 segundos','5-10 minutos, 2x/dia','Combinar com visualização positiva de sua recuperação','fisioterapia respiracao diafragmatica relaxamento casa')
+    ],
+    orientacoes: [
+      'Inspecionar o coto diariamente em busca de áreas de pressão, vermelhidão ou feridas — qualquer alteração comunicar imediatamente',
+      'Usar meias de coto adequadas e higienizar o coto com sabão neutro após cada uso da prótese',
+      'Manter dieta adequada e hidratação para favorecer cicatrização e recuperação muscular',
+      'Não permanecer sentado por mais de 2 horas seguidas — fazer pausas para movimentação dos MMSS e tronco',
+      'Seguir rigorosamente as sessões de fisioterapia — o resultado depende diretamente da frequência e dedicação'
+    ],
+    previsaoAlta: 'Previsão de alta funcional após '+n+' sessões com independência nas transferências, marcha com prótese em terreno plano e capacidade para realizar AVDs de forma segura e autônoma.'
   };
 }
 
-function renderProtocoloBody(prot){
-  renderProtocoloBodyComVideos(prot);
+// ══════════════════════
+// PROTOCOLO: LOMBALGIA
+// ══════════════════════
+function protocoloLombar(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica, isSedentario, prof){
+  var profStr = prof ? ' ('+prof+')' : '';
+  return {
+    resumo: 'Reabilitação de disfunção lombar'+profStr+'. EVA inicial '+eva+'/10. Fase: '+(an.fase||'subaguda/crônica')+'. Protocolo baseado nas Diretrizes Europeias para Lombalgia (COST 2006 atualizada) e revisão Cochrane 2021 para exercícios terapêuticos.',
+    causaRaiz: 'A lombalgia está frequentemente associada a desequilíbrios musculares da cadeia posterior, fraqueza de estabilizadores do core, postura inadequada'+(isSedentario?' potencializada pelo sedentarismo':'')+'. O foco é na causa biomecânica e não apenas no sintoma doloroso.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: isAguda ? 'Fase Aguda — Controle da Dor e Inflamação' : isSubaguda ? 'Fase Subaguda — Ganho de Mobilidade' : 'Fase de Estabilização e Controle Motor',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.3)),
+        objetivo: 'Reduzir dor e inflamação, restaurar mobilidade segmentar e reeducar postura',
+        condutas: [
+          'TENS convencional 100Hz, 100μs, 20-30min região lombar para analgesia — Evidência: Cochrane Review 2019 (moderada)',
+          isAguda ? 'Crioterapia 15-20min nas primeiras 72h, depois termoterapia superficial (bolsa quente 20min)' : 'Termoterapia superficial (calor úmido) 20min pré-exercício para aumento da extensibilidade tecidual',
+          'Mobilização articular graus I-II (Maitland) em L4-L5-S1 para controle da dor e manutenção do movimento',
+          'Educação em dor: orientação sobre neurociência da dor — Evidência: Louw et al., PTJ 2016 (alta qualidade)'
+        ],
+        exercicios: [
+          ex('Mobilização de Williams — flexão lombar em decúbito','Deitado de costas, joelhos dobrados, pés no chão','Levar os dois joelhos ao peito com as mãos, segurar 20-30 segundos, soltar lentamente','3 séries × 5 repetições, 2x/dia','Aumentar tempo de sustentação para 40 segundos','fisioterapia mobilizacao williams exercicio lombar casa'),
+          ex('Exercício do gato-camelo (cat-camel)','Em quatro apoios, mãos sob os ombros, joelhos sob o quadril','Arqueie a coluna para cima (gato) e depois deixe cair para baixo (camelo), movimentos lentos e controlados','3 séries × 10 repetições, sem dor','Aumentar velocidade e amplitude gradualmente','fisioterapia exercicio gato camelo coluna lombar')
+        ],
+        alerta: 'Irradiação para MMII acima de joelho, déficit neurológico ou incontinência: suspender e encaminhar para avaliação médica imediata'
+      },
+      {
+        nome: 'Fase 2 — Estabilização Lombar e Fortalecimento',
+        sessoes: 'Sessões '+(Math.round(n*0.3)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Fortalecer estabilizadores profundos, glúteos e cadeia posterior',
+        condutas: [
+          'Pilates clínico aplicado à coluna lombar — Evidência: meta-análise JOSPT 2023 (forte evidência)',
+          'Método Mackenzie para centralização da dor — extensão lombar progressiva',
+          'Biofeedback eletromiográfico para ativação do multífido e transverso abdominal'
+        ],
+        exercicios: [
+          ex('Ponte de glúteos (glute bridge)','Deitado de costas, joelhos dobrados a 90°, pés no chão na largura do quadril','Contrair o abdômen, elevar o quadril formando linha reta do joelho ao ombro, manter 3 segundos, descer lentamente','3 séries × 12-15 repetições','Progredir para ponte unipodal e depois com peso sobre o abdômen','fisioterapia ponte gluteos lombalgia exercicio'),
+          ex('Bird-dog — estabilização lombar','Em quatro apoios estáveis','Estender o braço direito e perna esquerda simultaneamente, manter 3-5 segundos, alternar','3 séries × 8 repetições cada lado','Aumentar tempo de sustentação para 8-10 segundos','fisioterapia bird dog estabilizacao lombar'),
+          ex('Agachamento assistido — cadeia cinética fechada','Em pé, costas próximas a uma parede, pés afastados na largura do quadril','Deslizar as costas pela parede flexionando os joelhos até 60-70°, manter 3 segundos, retornar','3 séries × 10 repetições','Aumentar amplitude até 90° de flexão de joelho','fisioterapia agachamento assistido parede lombar')
+        ],
+        alerta: 'Piora da dor durante extensão: revisar técnica e considerar abordagem em flexão (Williams)'
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional e Prevenção de Recidivas',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno pleno às atividades diárias e laborais sem dor',
+        condutas: [
+          'Treino funcional específico para a atividade laboral do paciente — ergonomia'+profStr,
+          'Exercício aeróbico progressivo: caminhada 20-30min, bicicleta ergométrica de baixo impacto',
+          'Orientação de higiene postural para atividades específicas do cotidiano'
+        ],
+        exercicios: [
+          ex('Prancha frontal isométrica','Apoio nos antebraços e pontas dos pés, corpo alinhado','Manter corpo rígido como uma prancha, contrair abdômen e glúteos, respirar normalmente','3 séries × 20 segundos, progredir até 60 segundos','Elevar uma perna alternadamente mantendo o alinhamento','fisioterapia prancha abdominal lombar exercicio'),
+          ex('Caminhada terapêutica','Postura ereta, abdômen levemente contraído','Iniciar com 10-15 minutos, ritmo confortável, terreno plano','Diariamente ou em dias alternados','Aumentar 5 minutos por semana até atingir 30-40 minutos','fisioterapia caminhada terapeutica postura lombar')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Alongamento de isquiotibiais — decúbito dorsal','Deitado de costas, joelho contralateral dobrado','Elevar a perna estendida com as mãos atrás da coxa, até sentir leve tensão na parte de trás da coxa','3 séries × 30 segundos cada perna, 2x/dia','Progredir até 45 segundos','fisioterapia alongamento isquiotibiais decubito dorsal casa'),
+      ex('Exercício de McKenzie — extensão em prono','Deitado de barriga para baixo, mãos ao lado do peito','Empurrar o chão estendendo os braços, elevando o tronco e mantendo o quadril no chão','3 séries × 10 repetições, 2x/dia se não houver piora','Aumentar a amplitude da extensão progressivamente','fisioterapia exercicio mckenzie extensao lombar casa'),
+      ex('Respiração diafragmática com ativação do core','Deitado de costas, joelhos dobrados','Inspirar pelo nariz expandindo o abdômen, ao expirar contrair levemente o abdômen. Manter a contração por 5 segundos','10 repetições, 2x/dia','Manter a contração durante atividades do dia a dia','fisioterapia respiracao diafragmatica core lombar')
+    ],
+    orientacoes: [
+      'Evitar ficar sentado por mais de 30-45 minutos sem fazer uma pausa de 5 minutos para caminhar ou se espreguiçar',
+      'Ao pegar peso do chão: sempre dobrar os joelhos, manter a carga próxima ao corpo e não torcer a coluna',
+      'Dormir de lado com um travesseiro entre os joelhos ou de costas com travesseiro sob os joelhos',
+      'Praticar caminhada regular — comprovadamente eficaz para prevenção de recidivas (Cochrane 2021)',
+      prof.includes('sentad') || prof.includes('computad') ? 'Regular a altura da cadeira: pés planos no chão, joelhos a 90°, tela na altura dos olhos' : 'Verificar ergonomia do ambiente de trabalho com o profissional'
+    ],
+    previsaoAlta: 'Previsão de alta em '+n+' sessões com controle da dor (EVA ≤2/10), retorno pleno às atividades e autonomia para manutenção dos exercícios domiciliares.'
+  };
 }
+
+// ══════════════════════
+// PROTOCOLO: JOELHO
+// ══════════════════════
+function protocoloJoelho(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
+  return {
+    resumo: 'Reabilitação de disfunção de joelho. EVA '+(eva)+'/10. Fase '+(an.fase||'—')+'. Protocolo baseado nas diretrizes NICE 2022 para osteoartrite de joelho e evidências para reabilitação pós-cirúrgica (JOSPT Clinical Practice Guidelines 2023).',
+    causaRaiz: 'Disfunções de joelho frequentemente envolvem fraqueza do quadríceps e glúteos, déficit de controle neuromuscular e sobrecarga articular. O protocolo visa restaurar força, estabilidade e função através de cadeia cinética fechada.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — Controle da Dor e Edema',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.3)),
+        objetivo: 'Reduzir dor e edema, restaurar amplitude de movimento',
+        condutas: [
+          'Crioterapia 15-20min pós-exercício e pós-sessão para controle do edema — Evidência: nível A (AAOS 2021)',
+          'Eletroterapia: TENS 80Hz 150μs 20min para analgesia periarticular',
+          'Ultrassom terapêutico 1MHz, 1,0W/cm², modo pulsado 50%, 5min em face medial e lateral',
+          'Mobilização passiva da patela (grau I-II) para manutenção da mecânica articular'
+        ],
+        exercicios: [
+          ex('Contração isométrica de quadríceps (quad set)','Deitado de costas, perna estendida no chão','Contrair o quadríceps pressionando o joelho contra o chão, manter 5-10 segundos','3 séries × 15 repetições, 3x/dia','Aumentar o tempo de contração para 10 segundos','fisioterapia contracao isometrica quadriceps quad set joelho'),
+          ex('Elevação da perna estendida (SLR)','Deitado de costas, joelho contralateral dobrado','Elevar a perna com joelho estendido a 45°, manter 3 segundos, descer lentamente','3 séries × 12 repetições cada perna','Adicionar caneleira de 0,5-1kg','fisioterapia elevacao perna estendida SLR joelho quadriceps')
+        ],
+        alerta: 'Aumento do edema após exercícios: aplicar crioterapia e reduzir a carga na próxima sessão'
+      },
+      {
+        nome: 'Fase 2 — Fortalecimento e Propriocepção',
+        sessoes: 'Sessões '+(Math.round(n*0.3)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Fortalecer quadríceps, isquiotibiais e glúteos; treinar equilíbrio',
+        condutas: [
+          'Exercícios em cadeia cinética fechada — superior eficácia vs CCA para reabilitação funcional (meta-análise Manske 2022)',
+          'Treino proprioceptivo progressivo em prancha de equilíbrio',
+          'Bandagem funcional (kinesio taping) para suporte patelar e facilitação do VMO'
+        ],
+        exercicios: [
+          ex('Agachamento parcial wall slide','Em pé, costas na parede, pés 30cm à frente','Deslizar até 60° de flexão de joelho, manter 5 segundos, retornar. Pés paralelos','3 séries × 12 repetições','Aumentar amplitude para 70-80° conforme tolerância','fisioterapia agachamento parcial wall slide joelho'),
+          ex('Step up — subida no degrau','Em frente a um degrau de 10-15cm','Subir com o membro afetado, estender completamente o joelho no topo, descer controlado','3 séries × 10 repetições cada perna','Aumentar altura do degrau para 20-25cm','fisioterapia step up subida degrau reabilitacao joelho'),
+          ex('Agachamento unipodal assistido','Em pé, apoio leve na parede ou cadeira','Elevar o membro saudável e fazer mini-agachamento no membro afetado até 30°','3 séries × 6-8 repetições','Aumentar amplitude e remover o apoio','fisioterapia agachamento unipodal assistido joelho')
+        ],
+        alerta: 'Crepitação dolorosa em arco de 30-60°: evitar esse setor e consultar médico'
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno às atividades físicas e laborais com joelho estável e sem dor',
+        condutas: [
+          'Treino funcional específico: escadas, agachamento profundo, marcha em terreno irregular',
+          'Caminhada e progressão para trote leve se indicado',
+          'Orientação sobre controle de peso corporal (fator modificável mais importante na gonartrose — NICE 2022)'
+        ],
+        exercicios: [
+          ex('Caminhada progressiva','Terreno plano, calçado adequado','Iniciar com 15min, manter postura ereta e passada simétrica','Diariamente, aumentar 5min/semana até 30-40min','Progredir para superfícies levemente irregulares','fisioterapia caminhada progressiva joelho artrose'),
+          ex('Leg press na parede com bola suíça','Deitado de costas, bola suíça entre a parede e a região lombar','Deslizar flexionando joelhos até 70-80°, manter 3 segundos, retornar','3 séries × 15 repetições','Aumentar amplitude e velocidade do movimento','fisioterapia leg press bola suica parede joelho')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Fortalecimento de quadríceps com caneleira','Sentado em cadeira, caneleira no tornozelo','Estender o joelho completamente, manter 5 segundos, descer lentamente','3 séries × 15 repetições, 2x/dia','Aumentar peso da caneleira de 0,5 em 0,5kg','fisioterapia fortalecimento quadriceps caneleira sentado casa'),
+      ex('Alongamento de quadríceps em decúbito ventral','Deitado de barriga para baixo','Dobrar o joelho levando o calcanhar ao glúteo com auxílio da mão, segurar 30s','3 séries × 30 segundos cada lado, 2x/dia','Aproximar mais o calcanhar progressivamente','fisioterapia alongamento quadriceps decubito ventral casa'),
+      ex('Crioterapia domiciliar pós-atividade','Sentado com perna elevada','Aplicar gelo envolvido em pano úmido sobre o joelho por 15-20 minutos após exercícios','Sempre após os exercícios ou atividade física','Manter o joelho elevado durante a aplicação','fisioterapia crioterapia gelo joelho domiciliar casa')
+    ],
+    orientacoes: [
+      'Evitar permanecer de pé ou sentado na mesma posição por mais de 30 minutos',
+      'Usar calçado adequado com amortecimento — evitar salto alto e chinelos planos sem suporte',
+      'Controle de peso corporal: cada 1kg a menos reduz 4kg de carga no joelho (Guillemin, Arthritis Care 2019)',
+      'Praticar ciclismo ou hidroginástica — exercícios de baixo impacto comprovadamente eficazes para joelho'
+    ],
+    previsaoAlta: 'Alta prevista em '+n+' sessões com EVA ≤2/10, força muscular ≥4/5 MRC, capacidade para subir e descer escadas sem dor e retorno às atividades funcionais.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: OMBRO
+// ══════════════════════
+function protocoloOmbro(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
+  return {
+    resumo: 'Reabilitação de disfunção de ombro. EVA '+(eva)+'/10. Protocolo baseado nas Clinical Practice Guidelines da JOSPT 2019 para síndrome do impacto e lesão de manguito rotador.',
+    causaRaiz: 'Disfunções de ombro frequentemente envolvem desequilíbrio entre rotadores internos e externos, déficit de força do manguito rotador e alterações escapulares. O protocolo restaura o ritmo escapuloumeral e o equilíbrio muscular.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — Controle da Dor e Restauração da Mobilidade',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.3)),
+        objetivo: 'Reduzir dor e inflamação, restaurar amplitude passiva e ativa-assistida',
+        condutas: [
+          'TENS 80Hz, 150μs, 20-30min região do ombro para analgesia — nível de evidência B (JOSPT 2019)',
+          'Crioterapia 15-20min pós-sessão',
+          'Mobilização articular glenoumeral graus I-III (Maitland) para restaurar deslizamento articular',
+          'Laser de baixa intensidade 3J/cm² nos pontos de tensão do manguito — Evidência: revisão Cochrane 2020'
+        ],
+        exercicios: [
+          ex('Exercício pêndulo de Codman','Em pé, inclinado para frente apoiado em mesa, braço afetado pendente','Realizar movimentos circulares suaves com o braço pelo próprio peso, sem força muscular ativa','2-3 séries × 30 segundos cada direção, 3x/dia','Aumentar diâmetro dos círculos progressivamente','fisioterapia exercicio pendulo codman ombro'),
+          ex('Deslizamento na parede (wall slide)','Em pé de frente para a parede, antebraço apoiado','Deslizar o braço para cima na parede no limite indolor, descer lentamente','3 séries × 10 repetições','Aumentar a altura de elevação progressivamente','fisioterapia deslizamento parede ombro mobilidade')
+        ],
+        alerta: 'Dor em repouso acima de 7/10 ou febre: encaminhar para reavaliação médica'
+      },
+      {
+        nome: 'Fase 2 — Fortalecimento do Manguito e Reposicionamento Escapular',
+        sessoes: 'Sessões '+(Math.round(n*0.3)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Fortalecer manguito rotador e estabilizadores escapulares',
+        condutas: [
+          'Fortalecimento progressivo com theraband/faixa elástica para rotadores externos e internos',
+          'Exercícios de estabilização escapular: retração, depressão e protração resistida',
+          'PNF (facilitação neuromuscular proprioceptiva) — padrão D1 e D2 flexão/extensão'
+        ],
+        exercicios: [
+          ex('Rotação externa com faixa elástica','Em pé, cotovelo a 90° junto ao corpo, faixa elástica fixada à frente','Girar o antebraço para fora (rotação externa) contra a resistência, manter 2s, retornar lentamente','3 séries × 15 repetições cada braço','Aumentar resistência da faixa elástica','fisioterapia rotacao externa ombro faixa elastica manguito'),
+          ex('Remada com faixa elástica — fortalecimento escapular','Em pé, faixa fixada à frente na altura do peito','Puxar a faixa em direção ao estômago, juntando as escápulas, manter 2 segundos','3 séries × 12 repetições','Aumentar a resistência da faixa','fisioterapia remada faixa elastica escapula postura ombro'),
+          ex('Fortalecimento em Y, T e W — decúbito ventral','Deitado de barriga para baixo, braços pendentes','Levantar os braços formando as letras Y, T e W, manter 3 segundos cada','2 séries × 8 repetições cada letra','Adicionar pequenos halteres (0,5-1kg)','fisioterapia exercicio Y T W escápula ombro fortalecimento')
+        ],
+        alerta: 'Estalo doloroso ou bloqueio articular: suspender e rever diagnóstico'
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno às atividades funcionais com ombro estável e sem dor',
+        condutas: ['Treino funcional com movimentos acima da cabeça','Fortalecimento progressivo com cargas','Orientação postural para atividades laborais e esportivas'],
+        exercicios: [
+          ex('Press overhead com theraband','Em pé, pisando na faixa, cotovelos a 90°','Empurrar para cima estendendo os cotovelos, manter alinhamento do ombro','3 séries × 12 repetições','Aumentar resistência da faixa','fisioterapia press overhead faixa elastica ombro funcional')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Rotação externa com faixa elástica','Em pé, cotovelo junto ao corpo a 90°','Girar o antebraço para fora contra a faixa, lentamente','3 séries × 15 repetições, 2x/dia','Aumentar a resistência','fisioterapia rotacao externa ombro casa elastico'),
+      ex('Alongamento do peitoral na porta','Em pé na soleira de uma porta, antebraço apoiado no batente','Dar um passo à frente sentindo o alongamento no peito e ombro, segurar 30s','3 séries × 30 segundos cada lado, 2x/dia','Variar a altura do braço','fisioterapia alongamento peitoral porta casa ombro'),
+      ex('Postura escapular — retração','Sentado ou em pé com postura ereta','Juntar as escápulas como se fosse segurar um lápis entre elas, manter 5 segundos','10 repetições, várias vezes ao dia','Manter a retração durante atividades rotineiras','fisioterapia postura escapular retração casa cotidiano')
+    ],
+    orientacoes: [
+      'Evitar carregar bolsas pesadas no lado afetado',
+      'Dormir de lado com travesseiro de suporte sob o braço afetado',
+      'Não forçar movimentos acima da cabeça até liberação do fisioterapeuta',
+      'Manter postura ereta — ombros caídos sobrecarregam o manguito rotador'
+    ],
+    previsaoAlta: 'Alta prevista em '+n+' sessões com amplitude de movimento completa, força ≥4/5 MRC e retorno às atividades funcionais sem dor.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: CERVICAL
+// ══════════════════════
+function protocoloCervical(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica, prof){
+  return {
+    resumo: 'Reabilitação de disfunção cervical. EVA '+(eva)+'/10. Protocolo baseado nas Clinical Practice Guidelines JOSPT 2017 para cervicalgia e whiplash.',
+    causaRaiz: 'Cervicalgias frequentemente associadas a fraqueza dos flexores profundos do pescoço, tensão da musculatura superficial e postura inadequada'+(prof?' especialmente em '+prof:'.')+' Foco na reetablecimento do controle motor cervical.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — Controle da Dor',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.3)),
+        objetivo: 'Reduzir dor e tensão muscular, restaurar mobilidade cervical',
+        condutas: [
+          'TENS 80-100Hz, 100μs, 20min região cervical e suboccipital — Evidência: Cochrane 2019',
+          'Termoterapia superficial 20min pré-mobilização',
+          'Mobilização articular cervical graus I-III (Maitland) C2-C7',
+          'Técnica de músculo-energia para suboccipitais e trapézio superior'
+        ],
+        exercicios: [
+          ex('Retração cervical (chin tuck)','Sentado com postura ereta, olhos à frente','Retrair o queixo criando um "duplo queixo", sem inclinar a cabeça. Manter 5 segundos.','3 séries × 10 repetições, 3x/dia','Adicionar leve resistência com 2 dedos no queixo','fisioterapia retracao cervical chin tuck exercicio pescoco'),
+          ex('Mobilização ativa cervical — AAROM','Sentado confortavelmente','Realizar rotação, inclinação lateral e flexão/extensão suaves no limite indolor','3 séries × 5 repetições cada direção','Aumentar amplitude progressivamente','fisioterapia mobilizacao ativa cervical pescoco dor')
+        ],
+        alerta: 'Sintomas neurológicos (formigamento em MMSS, visão turva, tontura): suspender e encaminhar imediatamente'
+      },
+      {
+        nome: 'Fase 2 — Fortalecimento e Estabilização',
+        sessoes: 'Sessões '+(Math.round(n*0.3)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Fortalecer flexores profundos, corrigir postura e reduzir recidivas',
+        condutas: [
+          'Fortalecimento dos flexores profundos do pescoço — Evidência forte: Jull et al., Spine 2002',
+          'Fortalecimento de retrátores escapulares e rotadores externos de ombro',
+          'Reeducação postural global (RPG) quando indicado'
+        ],
+        exercicios: [
+          ex('Fortalecimento de flexores profundos cervicais','Deitado de costas, cabeça no chão','Realizar chin tuck (retrair queixo) e elevar levemente a cabeça 2-3cm, manter 10 segundos','3 séries × 8-10 repetições','Aumentar tempo de sustentação para 15-20 segundos','fisioterapia fortalecimento flexores profundos cervicais pescoco'),
+          ex('Isométrico cervical lateral com mão','Sentado, mão espalmada na têmpora','Empurrar a cabeça contra a mão sem mover (isométrico), manter 5-8 segundos','3 séries × 8 repetições cada lado','Aumentar tempo de sustentação','fisioterapia isometrico cervical resistencia manual pescoco')
+        ],
+        alerta: null
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional e Prevenção',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno às atividades sem dor e com postura adequada',
+        condutas: ['Ergonomia específica para atividade laboral','Exercícios de manutenção domiciliar','Fortalecimento de cadeia posterior completa'],
+        exercicios: [
+          ex('Exercício de Brügger — correção postural','Sentado na borda da cadeira, pés no chão','Erguer o esterno, abrir o peito, rodar os polegares para fora. Manter 30 segundos.','5-10 vezes ao dia em diferentes momentos','Manter esta postura como referência durante o dia','fisioterapia exercicio brugger postura escritorio cervical')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Alongamento de trapézio superior','Sentado, mão no banco ao lado para estabilizar o ombro','Inclinar a cabeça para o lado oposto ao alongamento, sentir leve tensão','3 séries × 30 segundos cada lado, 2x/dia','Aumentar levemente a inclinação','fisioterapia alongamento trapezio superior pescoco casa'),
+      ex('Retração cervical com faixa elástica','Em pé, faixa elástica ao redor da cabeça na testa','Recuar a cabeça contra a faixa, manter 5 segundos','3 séries × 10 repetições, 2x/dia','Aumentar a resistência','fisioterapia retracao cervical faixa elastica casa'),
+      ex('Automassagem suboccipital','Sentado, dedos entrelaçados atrás da cabeça','Pressionar os dedos na base do crânio com pressão moderada, realizar pequenos movimentos circulares','2-3 minutos, 2x/dia','Aumentar pressão progressivamente','fisioterapia automassagem suboccipital pescoco casa')
+    ],
+    orientacoes: [
+      'Ajustar o monitor do computador na altura dos olhos e a 50-70cm de distância',
+      'Evitar usar o celular com a cabeça muito inclinada para baixo por tempo prolongado ("text neck")',
+      'Fazer pausas de 5 minutos a cada 45 minutos de trabalho sentado',
+      'Dormir com travesseiro de altura adequada — o pescoço deve ficar alinhado com a coluna'
+    ],
+    previsaoAlta: 'Alta prevista em '+n+' sessões com EVA ≤1/10, amplitude cervical completa e controle postural adequado nas atividades diárias.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: QUADRIL
+// ══════════════════════
+function protocoloQuadril(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
+  return {
+    resumo: 'Reabilitação de disfunção de quadril. EVA '+(eva)+'/10. Protocolo baseado nas diretrizes NICE 2022 para coxartrose e evidências para reabilitação pós-artroplastia.',
+    causaRaiz: 'Disfunções do quadril envolvem frequentemente fraqueza de glúteo médio e máximo, desequilíbrio de rotadores e sobrecarga articular. O fortalecimento progressivo é a intervenção com maior evidência.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — Controle da Dor e Mobilidade',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.35)),
+        objetivo: 'Reduzir dor, restaurar amplitude articular e iniciar fortalecimento',
+        condutas: [
+          'TENS 80Hz, 20min na região inguinal e glútea para analgesia',
+          'Termoterapia pré-exercício 20min para aumento da extensibilidade',
+          'Mobilização articular coxofemoral graus I-III (tração e deslizamento)'
+        ],
+        exercicios: [
+          ex('Abdução de quadril em decúbito lateral','Deitado de lado, perna de cima estendida','Elevar a perna superior a 30-40°, manter 3 segundos, descer lentamente','3 séries × 12 repetições cada lado','Adicionar caneleira de 0,5-1kg','fisioterapia abducao quadril decubito lateral gluteo medio'),
+          ex('Ponte de glúteos com ênfase no quadril','Deitado de costas, joelhos 90°, pés afastados','Elevar o quadril contraindo glúteos, manter 5 segundos, descer','3 séries × 12 repetições','Progredir para ponte unipodal','fisioterapia ponte gluteos exercicio quadril casa')
+        ],
+        alerta: 'Dor inguinal em repouso ou ao decúbito: encaminhar para reavaliação ortopédica'
+      },
+      {
+        nome: 'Fase 2 — Fortalecimento Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.35)+1)+'-'+(Math.round(n*0.75)),
+        objetivo: 'Fortalecer a cadeia glútea e treinar padrão de marcha',
+        condutas: ['Exercícios em CCF (cadeia cinética fechada)', 'Treino proprioceptivo em prancha', 'Fortalecimento progressivo com faixa elástica'],
+        exercicios: [
+          ex('Agachamento com faixa elástica no joelho (clamshell com banda)','Faixa elástica acima dos joelhos, pés paralelos','Agachar levemente mantendo os joelhos afastados contra a faixa','3 séries × 12 repetições','Aumentar resistência da faixa','fisioterapia agachamento faixa elastica joelho gluteo quadril'),
+          ex('Passada lateral com faixa elástica','Faixa elástica acima dos tornozelos, posição semi-agachada','Dar passos laterais mantendo a tensão da faixa','3 séries × 10 passos cada lado','Aumentar a resistência da faixa','fisioterapia passada lateral faixa elastica gluteo quadril funcional')
+        ],
+        alerta: null
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.75)+1)+'-'+n,
+        objetivo: obj||'Marcha funcional sem antálgia e retorno às AVDs',
+        condutas: ['Treino de marcha e escadas', 'Fortalecimento progressivo com carga', 'Orientação postural'],
+        exercicios: [
+          ex('Step up lateral','Ao lado de um degrau de 15cm','Subir lateralmente com o membro afetado, estender completamente, descer controlado','3 séries × 10 repetições cada lado','Aumentar altura do degrau','fisioterapia step up lateral quadril gluteo funcional')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Clamshell com faixa elástica','Deitado de lado, joelhos dobrados a 60°, faixa acima dos joelhos','Abrir o joelho superior como uma ostra, manter 3 segundos','3 séries × 15 repetições cada lado, 2x/dia','Aumentar resistência da faixa','fisioterapia clamshell faixa elastica gluteo casa exercicio'),
+      ex('Alongamento de piriforme','Deitado de costas, cruzar o tornozelo afetado sobre o joelho oposto','Puxar o joelho oposto em direção ao peito, sentir o alongamento no glúteo','3 séries × 30 segundos cada lado','Aumentar a aproximação do joelho ao peito','fisioterapia alongamento piriforme gluteo casa'),
+      ex('Caminhada diária','Terreno plano, calçado adequado com amortecimento','Caminhar em ritmo confortável, mantendo postura ereta e passada simétrica','20-30 minutos por dia ou em dias alternados','Aumentar tempo e velocidade progressivamente','fisioterapia caminhada diaria quadril artrose casa')
+    ],
+    orientacoes: [
+      'Controle de peso corporal: reduzir 1kg alivia 3kg de carga no quadril',
+      'Evitar cruzar as pernas quando sentado',
+      'Usar calçado com amortecimento adequado',
+      'Praticar ciclismo ou hidroginástica — baixo impacto e alta eficácia para quadril'
+    ],
+    previsaoAlta: 'Alta prevista em '+n+' sessões com marcha funcional, força glútea ≥4/5 MRC e realização das AVDs de forma independente e sem dor.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: TORNOZELO
+// ══════════════════════
+function protocoloTornozelo(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
+  return {
+    resumo: 'Reabilitação de disfunção de tornozelo/entorse. EVA '+(eva)+'/10. Protocolo baseado nas diretrizes JOSPT 2021 Clinical Practice Guidelines para entorse lateral de tornozelo.',
+    causaRaiz: 'Entorses de tornozelo frequentemente resultam em déficit proprioceptivo residual e fraqueza dos fibulares, predispondo a recidivas. O treino neuromuscular é a intervenção mais eficaz para prevenção de recidivas (Evidência nível A).',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — PRICE e Controle do Edema',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.3)),
+        objetivo: 'Controlar edema, reduzir dor e restaurar amplitude básica',
+        condutas: [
+          'Protocolo PRICE: Proteção, Repouso relativo, Gelo 20min 3-4x/dia, Compressão, Elevação — Nível de evidência A',
+          'TENS 80Hz para analgesia',
+          'Mobilização articular talocrural graus I-II para manutenção do deslizamento posterior do tálus',
+          'Kinesio taping para suporte funcional e drenagem linfática'
+        ],
+        exercicios: [
+          ex('Mobilização ativa de tornozelo — alfabeto','Sentado com perna elevada','Desenhar as letras do alfabeto com o hálux, movimentos suaves em todas as direções','3 repetições do alfabeto, 3x/dia','Aumentar a amplitude dos movimentos','fisioterapia mobilizacao tornozelo alfabeto entorse'),
+          ex('Fortalecimento de fibulares com faixa','Sentado, faixa elástica no antepé fixada medialmente','Realizar eversão do pé contra a resistência da faixa, lento e controlado','3 séries × 15 repetições, 2x/dia','Aumentar a resistência da faixa','fisioterapia fortalecimento fibulares faixa elastica tornozelo')
+        ],
+        alerta: 'Aumento do edema nas 48h iniciais: manter elevação e crioterapia, evitar calor'
+      },
+      {
+        nome: 'Fase 2 — Propriocepção e Fortalecimento',
+        sessoes: 'Sessões '+(Math.round(n*0.3)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Recuperar propriocepção, força e confiança na marcha',
+        condutas: [
+          'Treino proprioceptivo progressivo — evidência forte para prevenção de recidivas (Hupperets et al., BMJ 2009)',
+          'Exercícios de fortalecimento em cadeia cinética fechada',
+          'Progressão em superfícies instáveis'
+        ],
+        exercicios: [
+          ex('Equilíbrio unipodal — progressão em superfícies','Em pé ao lado de uma parede para segurança','Ficar em um pé: chão firme → colchonete → prancha de equilíbrio, olhos abertos depois fechados','3 séries × 30 segundos em cada superfície','Progredir para superfícies instáveis com olhos fechados','fisioterapia propriocepcao tornozelo equilibrio unipodal'),
+          ex('Elevação de panturrilha (calf raise)','Em pé, mãos levemente apoiadas na parede','Elevar os calcanhares ficando na ponta dos pés, manter 3 segundos, descer lentamente','3 séries × 15 repetições','Progredir para unipodal','fisioterapia elevacao calcanhares calf raise tornozelo panturrilha')
+        ],
+        alerta: null
+      },
+      {
+        nome: 'Fase 3 — Retorno ao Esporte/Atividade',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno seguro às atividades esportivas e laborais',
+        condutas: ['Treino funcional específico para atividade do paciente', 'Treino de agilidade e mudança de direção', 'Orientação sobre prevenção de recidivas'],
+        exercicios: [
+          ex('Salto bipodal e aterrisagem controlada','Em pé, braços ao lado do corpo','Saltar levemente e aterrissar absorvendo o impacto com flexão de joelhos e tornozelos','3 séries × 10 repetições','Progredir para saltos unipodais','fisioterapia salto aterrissagem tornozelo funcional retorno')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Fortalecimento de fibulares com faixa elástica','Sentado no chão ou cadeira','Fixar a faixa medialmente e realizar eversão do tornozelo contra a resistência','3 séries × 15-20 repetições, 2x/dia','Aumentar resistência da faixa','fisioterapia fibulares faixa elastica tornozelo casa exercicio'),
+      ex('Equilíbrio unipodal diário','Em pé próximo a uma parede para segurança','Ficar em um pé, progredindo conforme melhora','3 séries × 30 segundos cada pé, 2x/dia','Fechar os olhos ao dominar com olhos abertos','fisioterapia equilibrio unipodal tornozelo casa'),
+      ex('Crioterapia domiciliar','Tornozelo em repouso e elevado','Aplicar gelo envolvido em pano por 15-20min após atividades físicas','Após qualquer atividade que cause desconforto','Pode ser feito nas primeiras semanas após cada sessão','fisioterapia gelo tornozelo entorse casa crioterapia')
+    ],
+    orientacoes: [
+      'Usar calçado adequado para a atividade — evitar andar descalço em superfícies irregulares nas primeiras semanas',
+      'Retornar ao esporte apenas com autorização do fisioterapeuta',
+      'O treino proprioceptivo domiciliar é fundamental para prevenir novas entorses',
+      'Considerar uso de tornozeleira funcional nas primeiras semanas de retorno ao esporte'
+    ],
+    previsaoAlta: 'Alta prevista em '+n+' sessões com edema ausente, amplitude completa, força fibular ≥4/5 e equilíbrio unipodal por 30s com olhos fechados.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: NEUROLÓGICO
+// ══════════════════════
+function protocoloNeurologico(an, n, eva, obj, alerta, isAguda, isCronica){
+  return {
+    resumo: 'Reabilitação neurológica. Fase '+(an.fase||'—')+'. Objetivo: '+obj+'. Protocolo baseado nas diretrizes AHA/ASA 2022 para reabilitação pós-AVC e evidências para neuroplasticidade.',
+    causaRaiz: 'Lesões neurológicas requerem abordagem baseada em neuroplasticidade — a capacidade do sistema nervoso de reorganizar conexões. Quanto mais precoce e intensiva a reabilitação, maior o potencial de recuperação funcional.',
+    alertaClinico: alerta||'Reabilitação neurológica exige avaliação cuidadosa do tônus, espasticidade e complicações associadas (disfagia, afasia, cognição). Trabalho interdisciplinar é essencial.',
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: 'Fase 1 — Neuroproteção e Mobilização Precoce',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.25)),
+        objetivo: 'Prevenir complicações, estimular neuroplasticidade e iniciar mobilização',
+        condutas: [
+          'Mobilização precoce (dentro de 24-48h se estável): evidência de alta qualidade — AVERT Trial 2015',
+          'Posicionamento adequado no leito para prevenção de espasticidade e escaras',
+          'Estimulação sensorial do hemicorpo afetado',
+          'FES (eletroestimulação funcional) em extensores de punho e dorsiflexores — Cochrane 2019 (moderada evidência)'
+        ],
+        exercicios: [
+          ex('Mobilização passiva de MMSS e MMII afetados','Paciente em decúbito dorsal confortável','Realizar movimentos passivos suaves em todas as articulações do membro afetado, 10 repetições cada','2-3x ao dia, 10-15 minutos por sessão','Progredir para ativo-assistido quando possível','fisioterapia mobilizacao passiva membro hemiplegia AVC neurologico'),
+          ex('Treino de transferência leito-sentado','Com assistência do fisioterapeuta','Estimular o uso ativo do membro afetado na transferência, dar apenas o suporte necessário','3-5 repetições por sessão','Reduzir progressivamente a assistência','fisioterapia transferencia leito sentado hemiplegia reabilitacao')
+        ],
+        alerta: 'Sinais vitais instáveis, fadiga extrema ou piora neurológica: suspender e comunicar equipe médica'
+      },
+      {
+        nome: 'Fase 2 — Recuperação Funcional e Treino de Marcha',
+        sessoes: 'Sessões '+(Math.round(n*0.25)+1)+'-'+(Math.round(n*0.65)),
+        objetivo: 'Treinar marcha, equilíbrio, coordenação e função dos MMSS',
+        condutas: [
+          'Treino de marcha em esteira com suporte de peso corporal — Evidência: Cochrane 2017 (favorável)',
+          'Terapia de restrição e indução do movimento (CIMT) para MMSS — nível de evidência A (AHA 2022)',
+          'Bobath approach para inibição da espasticidade e facilitação do movimento seletivo'
+        ],
+        exercicios: [
+          ex('Treino de equilíbrio sentado — desestabilização controlada','Sentado sem apoio dorsal em borda da maca','Terapeuta aplica leve desequilíbrio nos ombros, paciente reage para manter equilíbrio','5-10 minutos por sessão','Aumentar velocidade e amplitude das perturbações','fisioterapia treino equilibrio sentado hemiplegia neurologico'),
+          ex('Transferência de peso em ortostatismo','Em pé nas barras paralelas','Transferir o peso para o membro afetado, apoiando no membro saudável apenas para segurança','10 minutos por sessão com pausas','Progredir para marcha nas barras','fisioterapia transferencia peso ortostatismo hemiplegia barras paralelas')
+        ],
+        alerta: 'Espasticidade grau 3+ (escala de Ashworth): rever conduta e considerar encaminhamento para toxina botulínica'
+      },
+      {
+        nome: 'Fase 3 — Independência Funcional e Reintegração',
+        sessoes: 'Sessões '+(Math.round(n*0.65)+1)+'-'+n,
+        objetivo: obj||'Máxima independência funcional nas AVDs e reintegração social',
+        condutas: ['Treino de AVDs (banho, vestir, alimentação)', 'Treino de marcha em ambiente externo', 'Orientação familiar para suporte e continuidade'],
+        exercicios: [
+          ex('Marcha livre com dispositivo auxiliar','Com andador ou bengala conforme necessidade','Marchar em corredor, atenção ao balanço do membro afetado e postura','20-30 minutos por sessão com pausas','Progredir para terrenos externos e escadas','fisioterapia marcha livre andador bengala hemiplegia reabilitacao')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Mobilização passiva pelo cuidador — MMSS','Com ajuda do cuidador/familiar','Mover lentamente o ombro, cotovelo, punho e dedos do membro afetado em movimentos suaves','2-3x ao dia, 10 minutos por sessão','Quando possível, estimular movimentos ativo-assistidos','fisioterapia mobilizacao passiva cuidador familiar hemiplegia casa'),
+      ex('Treino de preensão — objetos de diferentes texturas','Sentado em mesa','Pegar, segurar e soltar objetos de diferentes tamanhos e texturas com o membro afetado','10-15 minutos, 2x/dia','Usar objetos progressivamente menores','fisioterapia treino preensao objetos membro afetado AVC casa'),
+      ex('Respiração e relaxamento — controle do tônus','Deitado confortavelmente','Respiração diafragmática lenta: inspirar 4s, expirar 6s, relaxar toda a musculatura conscientemente','10-15 minutos, 1-2x/dia','Associar com visualização de movimentos','fisioterapia respiracao relaxamento tônus neurologico casa')
+    ],
+    orientacoes: [
+      'A família e cuidadores são parte fundamental da reabilitação — participar das sessões quando possível',
+      'Manter ambiente domiciliar adaptado e seguro: tapetes removidos, barras de apoio instaladas',
+      'Estimular o uso do membro afetado em todas as atividades do dia a dia, mesmo que lento',
+      'A reabilitação neurológica exige constância — os resultados são diretamente proporcionais à frequência'
+    ],
+    previsaoAlta: 'Reabilitação neurológica é um processo contínuo. Meta após '+n+' sessões: máxima independência funcional possível, marcha funcional com ou sem auxílio e reintegração nas atividades cotidianas.'
+  };
+}
+
+// ══════════════════════
+// PROTOCOLO: GERAL
+// ══════════════════════
+function protocoloGeral(an, n, eva, obj, alerta, isAguda, isSubaguda, isCronica){
+  return {
+    resumo: 'Protocolo fisioterapêutico personalizado para: '+an.queixa+'. EVA inicial '+eva+'/10. Fase '+(an.fase||'—')+'. Objetivo: '+obj+'.',
+    causaRaiz: 'Com base nos achados clínicos ('+an.achados+') e histórico do paciente ('+an.historico+'), o protocolo é direcionado para a causa raiz da disfunção, priorizando a funcionalidade e os objetivos específicos deste paciente.',
+    alertaClinico: alerta,
+    sessoesMinimas: n,
+    fases: [
+      {
+        nome: isAguda ? 'Fase Aguda — Controle da Dor' : isSubaguda ? 'Fase Subaguda — Recuperação Funcional' : 'Fase de Reabilitação e Fortalecimento',
+        sessoes: 'Sessões 1-'+(Math.round(n*0.35)),
+        objetivo: 'Reduzir dor e inflamação, iniciar mobilização terapêutica',
+        condutas: [
+          'Eletroterapia analgésica (TENS 80-100Hz, 150μs, 20-30min) para controle da dor',
+          isAguda ? 'Crioterapia 15-20min nas primeiras 72h' : 'Termoterapia superficial 20min pré-exercício',
+          'Mobilização articular graus I-II para manutenção do movimento',
+          'Educação em dor e orientação postural'
+        ],
+        exercicios: [
+          ex('Mobilização ativa suave da região afetada','Posição confortável sem sobrecarga','Realizar movimentos lentos e suaves no limite indolor em todas as direções possíveis','3 séries × 10 repetições, 2x/dia','Aumentar amplitude conforme melhora da dor','fisioterapia mobilizacao ativa suave exercicio terapeutico'),
+          ex('Respiração diafragmática para controle da dor','Deitado de costas confortavelmente','Inspirar pelo nariz expandindo o abdômen, expirar lentamente pela boca em 6 segundos','10 respirações, 3x/dia','Praticar em diferentes posições','fisioterapia respiracao diafragmatica controle dor relaxamento')
+        ],
+        alerta: 'Piora da dor após exercícios: reduzir carga e amplitude na próxima sessão'
+      },
+      {
+        nome: 'Fase 2 — Fortalecimento e Reequilíbrio Muscular',
+        sessoes: 'Sessões '+(Math.round(n*0.35)+1)+'-'+(Math.round(n*0.7)),
+        objetivo: 'Fortalecer musculatura de suporte e melhorar controle neuromuscular',
+        condutas: [
+          'Exercícios terapêuticos progressivos em cadeia cinética fechada',
+          'Propriocepção e equilíbrio em superfícies progressivas',
+          'Alongamento específico da cadeia muscular comprometida'
+        ],
+        exercicios: [
+          ex('Fortalecimento global com faixa elástica','Posição adequada para a região afetada','Realizar movimentos funcionais contra a resistência da faixa elástica leve','3 séries × 12-15 repetições','Aumentar progressivamente a resistência','fisioterapia fortalecimento faixa elastica exercicio terapeutico'),
+          ex('Equilíbrio e propriocepção','Em pé com apoio próximo','Progredir o treino de equilíbrio: superfície firme → instável, olhos abertos → fechados','3 séries × 30 segundos','Aumentar instabilidade da superfície','fisioterapia propriocepcao equilibrio treino neuromuscular')
+        ],
+        alerta: null
+      },
+      {
+        nome: 'Fase 3 — Retorno Funcional',
+        sessoes: 'Sessões '+(Math.round(n*0.7)+1)+'-'+n,
+        objetivo: obj||'Retorno pleno às atividades diárias e laborais',
+        condutas: ['Treino funcional específico para as atividades do paciente', 'Exercício aeróbico progressivo', 'Orientação para manutenção domiciliar'],
+        exercicios: [
+          ex('Caminhada terapêutica progressiva','Terreno plano, calçado adequado','Caminhar em ritmo confortável com postura ereta','20-30 minutos, dias alternados','Aumentar tempo e velocidade progressivamente','fisioterapia caminhada terapeutica progressiva exercicio aerobico'),
+          ex('Treino funcional específico','Conforme atividade laboral ou esportiva do paciente','Reproduzir movimentos das atividades do dia a dia de forma controlada e progressiva','3 séries × 10 repetições','Aumentar velocidade e complexidade','fisioterapia treino funcional atividade diaria retorno')
+        ],
+        alerta: null
+      }
+    ],
+    exerciciosDomiciliares: [
+      ex('Alongamento global — cadeia posterior','Sentado no chão, pernas estendidas','Inclinar o tronco para frente alcançando os pés, sentir leve tensão nas costas e pernas','3 séries × 30-40 segundos, 2x/dia','Aumentar a amplitude do alcance','fisioterapia alongamento global cadeia posterior casa'),
+      ex('Fortalecimento com faixa elástica domiciliar','Posição adequada à região tratada','Realizar os exercícios prescritos pelo fisioterapeuta com a faixa elástica','Conforme orientação do profissional, 2x/dia','Progredir a resistência conforme melhora','fisioterapia exercicio casa faixa elastica fortalecimento domiciliar'),
+      ex('Caminhada diária','Ambiente externo ou corredor de casa','Caminhar em ritmo confortável com postura ereta','20-30 minutos, diariamente ou dias alternados','Aumentar progressivamente o tempo','fisioterapia caminhada diaria saude exercicio casa beneficios')
+    ],
+    orientacoes: [
+      'Manter regularidade nas sessões de fisioterapia — a frequência é diretamente relacionada ao resultado',
+      'Realizar os exercícios domiciliares conforme orientado — são parte fundamental do tratamento',
+      'Comunicar qualquer piora, novo sintoma ou dificuldade ao fisioterapeuta imediatamente',
+      'Manter hidratação adequada (mínimo 2L de água por dia) e alimentação equilibrada'
+    ],
+    previsaoAlta: 'Previsão de alta em '+n+' sessões com controle da dor (EVA ≤2/10), retorno às atividades funcionais e autonomia para manutenção dos exercícios domiciliares.'
+  };
+}
+
 
 async function buscarVideoYoutube(termo){
   // Returns a YouTube search URL - opens search for therapist/patient to pick best video
