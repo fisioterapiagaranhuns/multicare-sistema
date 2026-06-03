@@ -962,34 +962,83 @@ Vamos retomar? Aguardo você!
         <div id="pt-avaliacoes" class="tab-panel active">
           <div class="card" style="margin-bottom:14px">
             <div class="sec-head">
-              <div><div class="sec-title">Avaliação Fisioterapêutica Inicial</div><div class="sec-sub">Preencha os campos e salve — ficará no prontuário permanentemente</div></div>
+              <div><div class="sec-title">Avaliação Fisioterapêutica Inicial</div><div class="sec-sub">Preencha, salve e use para gerar o protocolo com IA — fica salvo permanentemente</div></div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-outline btn-sm" onclick="imprimirAvaliacao()">🖨 Imprimir</button>
                 <button class="btn btn-green btn-sm" onclick="salvarAvaliacao()">💾 Salvar</button>
               </div>
             </div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line)">📋 Dados Clínicos</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">Queixa Principal *</label><input class="form-control" id="avQueixa" placeholder="Ex: Dor lombar irradiando para MMII há 3 meses"/></div>
               <div class="form-group"><label class="form-label">Diagnóstico Médico / CID</label><input class="form-control" id="avDiag" placeholder="Ex: M54.5 — Lombalgia"/></div>
-              <div class="form-group"><label class="form-label">Fase Clínica</label>
+              <div class="form-group"><label class="form-label">Data de início do problema</label><input class="form-control" type="date" id="avDataInicio"/></div>
+              <div class="form-group"><label class="form-label">Fase Clínica *</label>
                 <select class="form-control" id="avFase">
-                  <option>Aguda (0-72h)</option><option>Subaguda (3-21 dias)</option><option>Crônica (&gt;21 dias)</option>
+                  <option>Aguda (0-72h)</option><option>Subaguda (3-21 dias)</option><option selected>Crônica (&gt;21 dias)</option>
                 </select>
               </div>
-              <div class="form-group"><label class="form-label">EVA inicial (0-10)</label><input class="form-control" type="number" min="0" max="10" id="avEva" placeholder="0-10"/></div>
-              <div class="form-group"><label class="form-label">Data de início do problema</label><input class="form-control" type="date" id="avDataInicio"/></div>
             </div>
-            <div class="form-group"><label class="form-label">Queixa Principal</label><textarea class="form-control" id="avQueixa" rows="2" placeholder="Descreva a queixa principal do paciente..."></textarea></div>
-            <div class="form-group"><label class="form-label">História da Doença Atual</label><textarea class="form-control" id="avHDA" rows="3" placeholder="Como iniciou, fatores de melhora/piora, irradiações, tratamentos anteriores..."></textarea></div>
-            <div class="form-group"><label class="form-label">Histórico de Saúde / Comorbidades / Cirurgias</label><textarea class="form-control" id="avHist" rows="2" placeholder="Doenças associadas, cirurgias, internações, medicamentos em uso..."></textarea></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-              <div class="form-group"><label class="form-label">Inspeção Física</label><textarea class="form-control" id="avInspec" rows="2" placeholder="Postura, marcha, assimetrias..."></textarea></div>
-              <div class="form-group"><label class="form-label">Achados Funcionais</label><textarea class="form-control" id="avAchados" rows="2" placeholder="ADM, força muscular, sensibilidade, equilíbrio..."></textarea></div>
-              <div class="form-group"><label class="form-label">Prótese / Órtese / Dispositivo auxiliar</label><input class="form-control" id="avProtese" placeholder="Descreva se houver"/></div>
-              <div class="form-group"><label class="form-label">Profissão / Estilo de vida</label><input class="form-control" id="avProfissao" placeholder="Ex: Advogada, sedentária..."/></div>
+            <div class="form-group"><label class="form-label">História da Doença Atual</label><textarea class="form-control" id="avHDA" rows="2" placeholder="Como iniciou, fatores de melhora e piora, irradiações, tratamentos anteriores..."></textarea></div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)">🏥 Histórico de Saúde</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">Comorbidades (HAS, DM, etc.)</label><input class="form-control" id="avComorbidades" placeholder="Ex: HAS controlada, DM tipo 2"/></div>
+              <div class="form-group"><label class="form-label">Cirurgias / Traumas anteriores</label><input class="form-control" id="avCirurgias" placeholder="Ex: Artroscopia de joelho em 2022"/></div>
+              <div class="form-group"><label class="form-label">Medicamentos em uso</label><input class="form-control" id="avMedicamentos" placeholder="Ex: Losartana 50mg, Metformina"/></div>
+              <div class="form-group"><label class="form-label">Alergias</label><input class="form-control" id="avAlergias" placeholder="Ex: Dipirona, látex, nenhuma"/></div>
             </div>
-            <div class="form-group"><label class="form-label">Diagnóstico Fisioterapêutico</label><textarea class="form-control" id="avDiagFisio" rows="2" placeholder="Conclusão diagnóstica fisioterapêutica..."></textarea></div>
-            <div class="form-group"><label class="form-label">Objetivos do Tratamento</label><textarea class="form-control" id="avObjetivos" rows="2" placeholder="O que o paciente quer alcançar? Quais metas funcionais?"></textarea></div>
-            <div class="form-group"><label class="form-label">Atividade Física / Nível de condicionamento</label><input class="form-control" id="avAtividade" placeholder="Ex: Sedentário, pratica caminhada 3x/semana..."/></div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)">🏃 Funcionalidade</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">Profissão / Estilo de vida</label><input class="form-control" id="avProfissao" placeholder="Ex: Advogada, trabalha sentada 8h/dia"/></div>
+              <div class="form-group"><label class="form-label">Nível de Atividade Física</label>
+                <select class="form-control" id="avAtividade">
+                  <option>Sedentário</option><option>Levemente ativo</option><option>Moderadamente ativo</option><option>Muito ativo</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Independência Funcional</label>
+                <select class="form-control" id="avIndependencia">
+                  <option>Independente</option><option>Independente com dispositivo</option><option>Assistência parcial</option><option>Dependente</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Dispositivo auxiliar</label><input class="form-control" id="avProtese" placeholder="Ex: Andador, bengala, cadeira de rodas, prótese transtibial"/></div>
+              <div class="form-group" style="grid-column:1/-1"><label class="form-label">Limitação Funcional Principal</label><input class="form-control" id="avLimitacao" placeholder="Ex: Dificuldade para subir escadas, incapacidade para marcha prolongada"/></div>
+            </div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)">🔍 Avaliação Física</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">EVA — Dor Atual (0-10) *</label><input class="form-control" type="number" min="0" max="10" id="avEva" placeholder="0 = sem dor, 10 = pior dor"/></div>
+              <div class="form-group"><label class="form-label">Localização e Característica da Dor</label><input class="form-control" id="avDorDesc" placeholder="Ex: Dor lombar em queimação, irradiando para MIE"/></div>
+              <div class="form-group"><label class="form-label">Amplitude de Movimento (ADM)</label><input class="form-control" id="avADM" placeholder="Ex: Flexão lombar 50%, rotação cervical reduzida à E"/></div>
+              <div class="form-group"><label class="form-label">Força Muscular (MRC 0-5)</label><input class="form-control" id="avForca" placeholder="Ex: QD 4/5, GD 3/5, isquiotibiais 4/5"/></div>
+              <div class="form-group"><label class="form-label">Equilíbrio</label>
+                <select class="form-control" id="avEquilibrio">
+                  <option>Normal</option><option>Levemente comprometido</option><option>Moderadamente comprometido</option><option>Gravemente comprometido</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Marcha</label>
+                <select class="form-control" id="avMarcha">
+                  <option>Normal</option><option>Antálgica</option><option>Escarvante</option><option>Trendelenburg</option><option>Com dispositivo auxiliar</option><option>Impossibilitado</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Inspeção / Postura</label><input class="form-control" id="avInspec" placeholder="Ex: Hiperlordose lombar, escoliose funcional, edema em MIE"/></div>
+              <div class="form-group"><label class="form-label">Sensibilidade</label><input class="form-control" id="avSensib" placeholder="Ex: Hipoestesia em face lateral de MIE, preservada"/></div>
+              <div class="form-group" style="grid-column:1/-1"><label class="form-label">Achados Complementares / Testes Especiais</label><textarea class="form-control" id="avAchados" rows="2" placeholder="Ex: Lasègue positivo à D, Thomas positivo bilateral, teste de Thomas..."></textarea></div>
+            </div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)">🎯 Objetivos</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">Objetivo Principal do Paciente *</label><input class="form-control" id="avObjetivos" placeholder="Ex: Quero voltar a caminhar sem dor"/></div>
+              <div class="form-group"><label class="form-label">Objetivos Fisioterapêuticos</label><input class="form-control" id="avObjFisio" placeholder="Ex: Reduzir EVA, ganhar ADM, fortalecer QD"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Diagnóstico Fisioterapêutico</label><textarea class="form-control" id="avDiagFisio" rows="2" placeholder="Ex: Síndrome de impacto subacromial com fraqueza de manguito rotador e instabilidade escapular..."></textarea></div>
+            <div class="form-group"><label class="form-label">Observações Adicionais / Histórico Completo</label><textarea class="form-control" id="avHist" rows="2" placeholder="Informações relevantes adicionais, contexto familiar, ocupacional..."></textarea></div>
+
+            <div style="background:var(--forest-light);border-radius:8px;padding:12px;font-size:12px;color:var(--forest);margin-top:8px">
+              💡 Após salvar, clique em <strong>🩺 Protocolo</strong> no menu lateral para gerar o protocolo clínico com IA usando esses dados automaticamente.
+            </div>
           </div>
         </div>
 
@@ -1774,9 +1823,10 @@ function buildPerfilFoot(id, tel, nome){
   var h = '<button class="btn btn-outline" id="pfFechar">Fechar</button>';
   h += '<button class="btn btn-outline" id="pfEditar">Editar</button>';
   h += '<button class="btn btn-wa" id="pfWa">WhatsApp</button>';
+  h += '<button class="btn btn-green" id="pfProntuario" style="font-weight:700">📋 Prontuário</button>';
   h += '<button class="btn btn-blue" id="pfPlano">Plano</button>';
   h += '<button class="btn btn-outline" id="pfProtocolo" style="border-color:var(--forest-mid);color:var(--forest-mid)">🩺 Protocolo</button>';
-  h += '<button class="btn btn-green" id="pfAgendar">Agendar</button>';
+  h += '<button class="btn btn-green" id="pfAgendar" style="background:var(--forest)">+ Sessão</button>';
   setTimeout(function(){
     var el;
     el=document.getElementById('pfFechar'); if(el) el.onclick=function(){ closeModal('modalDrill'); };
@@ -1785,6 +1835,7 @@ function buildPerfilFoot(id, tel, nome){
     el=document.getElementById('pfPlano');  if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
     el=document.getElementById('pfAgendar');if(el) el.onclick=function(){ closeModal('modalDrill'); populateSelects(); setTimeout(function(){ document.getElementById('agPaciente').value=_perfilAtivo.id; },80); openModal('modalAgendar'); };
     el=document.getElementById('pfBtnPlano2');if(el) el.onclick=function(){ closeModal('modalDrill'); abrirPlano(_perfilAtivo.id); };
+    el=document.getElementById('pfProntuario');if(el) el.onclick=function(){ closeModal('modalDrill'); verPerfilCompleto(_perfilAtivo.id); };
     el=document.getElementById('pfProtocolo');if(el) el.onclick=function(){ closeModal('modalDrill'); irParaProtocolo(_perfilAtivo.id); };
   },10);
   return h;
@@ -4877,10 +4928,15 @@ function prontCarregarAvaliacao(){
   var saved = localStorage.getItem(key);
   if(saved){
     var av = JSON.parse(saved);
-    var fields = {avDiag:'diagnostico',avFase:'fase',avEva:'eva',avDataInicio:'dataInicio',
-      avQueixa:'queixa',avHDA:'hda',avHist:'historico',avInspec:'inspec',
-      avAchados:'achados',avProtese:'protese',avProfissao:'profissao',
-      avDiagFisio:'diagFisio',avObjetivos:'objetivos',avAtividade:'atividade'};
+    var fields = {
+      avQueixa:'queixa',avDiag:'diagnostico',avFase:'fase',avDataInicio:'dataInicio',avHDA:'hda',
+      avComorbidades:'comorbidades',avCirurgias:'cirurgias',avMedicamentos:'medicamentos',avAlergias:'alergias',
+      avProfissao:'profissao',avAtividade:'atividade',avIndependencia:'independencia',
+      avProtese:'protese',avLimitacao:'limitacao',
+      avEva:'eva',avDorDesc:'dorDesc',avADM:'adm',avForca:'forca',
+      avEquilibrio:'equilibrio',avMarcha:'marcha',avInspec:'inspec',avSensib:'sensib',avAchados:'achados',
+      avObjetivos:'objetivos',avObjFisio:'objFisio',avDiagFisio:'diagFisio',avHist:'historico'
+    };
     Object.keys(fields).forEach(function(elId){
       var el = document.getElementById(elId);
       if(el) el.value = av[fields[elId]]||'';
@@ -4911,21 +4967,20 @@ function prontCarregarAvaliacao(){
 function salvarAvaliacao(){
   var pid = prontState.pacienteId;
   if(!pid){ toast('Selecione um paciente','error'); return; }
+  function gv(id){ var e=document.getElementById(id); return e?e.value:''; }
   var av = {
-    diagnostico: document.getElementById('avDiag').value,
-    fase: document.getElementById('avFase').value,
-    eva: document.getElementById('avEva').value,
-    dataInicio: document.getElementById('avDataInicio').value,
-    queixa: document.getElementById('avQueixa').value,
-    hda: document.getElementById('avHDA').value,
-    historico: document.getElementById('avHist').value,
-    inspec: document.getElementById('avInspec').value,
-    achados: document.getElementById('avAchados').value,
-    protese: document.getElementById('avProtese').value,
-    profissao: document.getElementById('avProfissao').value,
-    diagFisio: document.getElementById('avDiagFisio').value,
-    objetivos: document.getElementById('avObjetivos').value,
-    atividade: document.getElementById('avAtividade').value,
+    queixa: gv('avQueixa'), diagnostico: gv('avDiag'), fase: gv('avFase'),
+    dataInicio: gv('avDataInicio'), hda: gv('avHDA'),
+    comorbidades: gv('avComorbidades'), cirurgias: gv('avCirurgias'),
+    medicamentos: gv('avMedicamentos'), alergias: gv('avAlergias'),
+    profissao: gv('avProfissao'), atividade: gv('avAtividade'),
+    independencia: gv('avIndependencia'), protese: gv('avProtese'),
+    limitacao: gv('avLimitacao'),
+    eva: gv('avEva'), dorDesc: gv('avDorDesc'), adm: gv('avADM'),
+    forca: gv('avForca'), equilibrio: gv('avEquilibrio'), marcha: gv('avMarcha'),
+    inspec: gv('avInspec'), sensib: gv('avSensib'), achados: gv('avAchados'),
+    objetivos: gv('avObjetivos'), objFisio: gv('avObjFisio'),
+    diagFisio: gv('avDiagFisio'), historico: gv('avHist'),
     dataSalvo: new Date().toISOString()
   };
   localStorage.setItem('mc_aval_'+pid, JSON.stringify(av));
@@ -4933,8 +4988,11 @@ function salvarAvaliacao(){
   // Sync to protState.anamnese so protocol generation uses this data
   protState.anamnese = {
     queixa: av.queixa, diagnostico: av.diagnostico, fase: av.fase,
-    eva: av.eva, historico: av.historico, achados: av.achados,
+    eva: av.eva, historico: av.historico+' | '+av.comorbidades+' | '+av.cirurgias+' | Medicamentos: '+av.medicamentos,
+    achados: av.achados+' | ADM: '+av.adm+' | Força: '+av.forca+' | Equilíbrio: '+av.equilibrio+' | Marcha: '+av.marcha+' | '+av.dorDesc,
     profissao: av.profissao, objetivo: av.objetivos, atividade: av.atividade,
+    limitacao: av.limitacao, independencia: av.independencia, protese: av.protese,
+    diagFisio: av.diagFisio, objFisio: av.objFisio,
     sessoes: '12'
   };
   salvarProtState();
@@ -5658,8 +5716,11 @@ function toggleComparativo(){
 async function gerarProtocoloIA(){
   if(!protState.pacienteId){ toast('Selecione um paciente','error'); return; }
   if(!protState.anamnese || !protState.anamnese.queixa){
-    toast('Preencha a anamnese antes de gerar o protocolo','error');
-    openModal('modalAnamnese');
+    toast('Preencha a Avaliação no Prontuário do paciente primeiro','error');
+    // Try to go to prontuario avaliacao tab
+    if(protState.pacienteId){
+      verPerfilCompleto(protState.pacienteId);
+    }
     return;
   }
   var an = protState.anamnese;
