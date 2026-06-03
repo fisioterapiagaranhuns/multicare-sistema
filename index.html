@@ -316,6 +316,7 @@ if(window.location.search.indexOf('agendar=1')>=0){
       <div class="nav-item" onclick="goTo('agenda')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</div>
       <div class="nav-item" onclick="goTo('protocolo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Protocolos Clínicos</div>
       <div class="nav-item" onclick="goTo('pacientes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes</div>
+      <div class="nav-item" onclick="goTo('prontuario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Prontuário</div>
       <div class="sb-section">Financeiro</div>
       <div class="nav-item" onclick="goTo('financeiro')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Financeiro</div>
       <div class="sb-section">Relatórios</div>
@@ -833,6 +834,91 @@ Vamos retomar? Aguardo você!
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- PRONTUÁRIO COMPLETO -->
+    <div class="page" id="page-prontuario">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <select class="form-control" style="max-width:300px" id="prontPacSelect" onchange="abrirProntuario(this.value)">
+          <option value="">— Selecione um paciente —</option>
+        </select>
+        <button class="btn btn-green btn-sm" onclick="openModal('modalPaciente')">+ Novo Paciente</button>
+      </div>
+
+      <div id="prontVazio" style="text-align:center;padding:60px 20px;color:var(--ink3)">
+        <div style="font-size:48px;margin-bottom:16px">👤</div>
+        <div style="font-size:15px;font-weight:500;color:var(--ink2);margin-bottom:8px">Selecione um paciente para ver o prontuário completo</div>
+        <div style="font-size:13px">Dados, sessões, protocolo clínico, mapa de dor e financeiro em um único lugar</div>
+      </div>
+
+      <div id="prontCorpo" style="display:none">
+        <!-- CABEÇALHO DO PACIENTE -->
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div id="prontAvatar" style="width:56px;height:56px;border-radius:50%;background:var(--forest-light);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest);flex-shrink:0">?</div>
+            <div style="flex:1">
+              <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--ink)" id="prontNome">—</div>
+              <div style="font-size:13px;color:var(--ink3);margin-top:2px" id="prontInfo">—</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-wa btn-sm" id="prontBtnWA">WhatsApp</button>
+              <button class="btn btn-outline btn-sm" id="prontBtnEditar">Editar</button>
+              <button class="btn btn-green btn-sm" id="prontBtnAgendar">+ Sessão</button>
+              <button class="btn btn-blue btn-sm" id="prontBtnPlano">Plano</button>
+            </div>
+          </div>
+          <!-- STATS RÁPIDOS -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px" id="prontStats"></div>
+        </div>
+
+        <!-- TABS INTERNAS -->
+        <div class="tabs" id="prontTabs">
+          <div class="tab active" onclick="switchProntTab(this,'pt-sessoes')">📅 Sessões</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-protocolo')">🩺 Protocolo</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-financeiro')">💰 Financeiro</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-dados')">📋 Dados</div>
+        </div>
+
+        <!-- SESSÕES -->
+        <div id="pt-sessoes" class="tab-panel active">
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Sessões Agendadas</div></div>
+              <button class="btn btn-green btn-sm" id="prontBtnAgendar2">+ Agendar</button>
+            </div>
+            <div id="prontListaSessoes"></div>
+          </div>
+        </div>
+
+        <!-- PROTOCOLO -->
+        <div id="pt-protocolo" class="tab-panel">
+          <!-- Reusa o conteúdo do módulo de protocolo -->
+          <div id="prontProtocoloEmbed"></div>
+        </div>
+
+        <!-- FINANCEIRO -->
+        <div id="pt-financeiro" class="tab-panel">
+          <div class="card">
+            <div class="sec-head">
+              <div class="sec-title">Financeiro do Paciente</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="openModal('modalLancamento')">+ Lançar</button>
+                <button class="btn btn-blue btn-sm" id="prontBtnPlano2">Plano de Tratamento</button>
+              </div>
+            </div>
+            <div id="prontFinanceiro"></div>
+          </div>
+        </div>
+
+        <!-- DADOS PESSOAIS -->
+        <div id="pt-dados" class="tab-panel">
+          <div class="card">
+            <div class="sec-head"><div class="sec-title">Dados Pessoais</div><button class="btn btn-outline btn-sm" id="prontBtnEditar2">Editar</button></div>
+            <div id="prontDados"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1374,11 +1460,11 @@ function goTo(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   var el=document.getElementById('page-'+page);if(el)el.classList.add('active');
-  var titles={dashboard:'Dashboard',protocolo:'Protocolos Clínicos',engajamento:'Engajamento & PROMs',autoridade:'Autoridade & Laudos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
+  var titles={dashboard:'Dashboard',prontuario:'Prontuário do Paciente',protocolo:'Protocolos Clínicos',engajamento:'Engajamento & PROMs',autoridade:'Autoridade & Laudos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
   closeSidebar();
-  var renders={dashboard:renderDashboard,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,'link-paciente':renderLinkPaciente,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
+  var renders={dashboard:renderDashboard,prontuario:renderProntuario,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,'link-paciente':renderLinkPaciente,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
   if(renders[page])renders[page]();
   populateSelects();
 }
@@ -1732,7 +1818,7 @@ function renderDashboard(){
   document.getElementById('dReceita').textContent='R$'+Math.round(recMes);
   document.getElementById('dFaltas').textContent=state.lancamentos.filter(l=>l.tipo==='Falta Cobrada'&&l.data&&new Date(l.data.replace(/-/g,'/')).getMonth()===mes).length;
   var prox=state.agendamentos.filter(a=>a.data>=todayStr).sort((a,b)=>a.data.localeCompare(b.data)||a.hora.localeCompare(b.hora)).slice(0,5);
-  document.getElementById('dProximas').innerHTML=prox.length?prox.map(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="verPerfil(${a.paciente_id})"><div class="p-avatar">${p?p.nome[0]:'?'}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${p?p.nome:'—'}</div><div style="font-size:11px;color:var(--ink3)">${a.data?a.data.split('-').reverse().join('/'):'—'} ${a.hora||''} · ${a.tipo||''}</div></div><span class="badge ${a.status==='Confirmado'?'badge-green':a.status==='Cancelado'?'badge-red':'badge-amber'}">${a.status||''}</span></div>`;}).join(''):'<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px 0">Nenhuma sessão agendada</p>';
+  document.getElementById('dProximas').innerHTML=prox.length?prox.map(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="verPerfilCompleto(${a.paciente_id})"><div class="p-avatar">${p?p.nome[0]:'?'}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${p?p.nome:'—'}</div><div style="font-size:11px;color:var(--ink3)">${a.data?a.data.split('-').reverse().join('/'):'—'} ${a.hora||''} · ${a.tipo||''}</div></div><span class="badge ${a.status==='Confirmado'?'badge-green':a.status==='Cancelado'?'badge-red':'badge-amber'}">${a.status||''}</span></div>`;}).join(''):'<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px 0">Nenhuma sessão agendada</p>';
   var am=new Date();am.setDate(am.getDate()+1);var amStr=am.toISOString().split('T')[0];
   var lem=state.agendamentos.filter(a=>a.data===amStr);
   document.getElementById('dLembretes').innerHTML=lem.length?lem.map(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><div style="flex:1;cursor:pointer" onclick="verPerfil(${a.paciente_id})"><div style="font-size:13px;font-weight:500">${p?p.nome:'—'} · ${a.hora||''}</div><div style="font-size:11px;color:var(--ink3)">${a.tipo||''}</div></div><button class="btn btn-wa btn-sm" onclick="waMsg('${p?p.tel:''}','Olá ${p?p.nome:''}! Lembrando da sua sessão amanhã ${amStr.split('-').reverse().join('/')} às ${a.hora}h com Dr. Igor — MultiCare. Confirma presença?')">Lembrete WA</button></div>`;}).join(''):'<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px 0">Nenhuma sessão amanhã</p>';
@@ -3480,6 +3566,237 @@ function irParaProtocolo(pacId){
 function confirmarRapido(){
   document.getElementById('agStatus').value = 'Confirmado';
   salvarAgendar(true); // save and send WA confirmation
+}
+
+
+// ══════════════════════════════════
+// PRONTUÁRIO COMPLETO
+// ══════════════════════════════════
+var prontState = { pacienteId: null };
+
+function renderProntuario(){
+  var sel = document.getElementById('prontPacSelect');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione um paciente —</option>'
+      + state.pacientes.map(function(p){
+          return '<option value="'+p.id+'"'+(prontState.pacienteId==p.id?' selected':'')+'>'+p.nome+'</option>';
+        }).join('');
+  }
+  if(prontState.pacienteId) abrirProntuario(prontState.pacienteId);
+}
+
+function abrirProntuario(pid){
+  if(!pid){
+    document.getElementById('prontVazio').style.display='block';
+    document.getElementById('prontCorpo').style.display='none';
+    return;
+  }
+  prontState.pacienteId = pid;
+  var p = state.pacientes.find(function(x){return x.id==pid;});
+  if(!p) return;
+
+  document.getElementById('prontVazio').style.display='none';
+  document.getElementById('prontCorpo').style.display='block';
+
+  // Header
+  document.getElementById('prontAvatar').textContent = p.nome.charAt(0);
+  document.getElementById('prontNome').textContent = p.nome;
+  document.getElementById('prontInfo').textContent =
+    (p.nasc ? p.nasc.split('-').reverse().join('/') : '—') +
+    ' · ' + (p.tel||'') +
+    (p.convenio ? ' · ' + p.convenio : ' · Particular');
+
+  // Button actions
+  var btn;
+  btn = document.getElementById('prontBtnWA');
+  if(btn) btn.onclick = function(){ waMsg(p.tel,'Olá '+p.nome+'! Dr. Igor aqui da MultiCare Fisioterapia.'); };
+  btn = document.getElementById('prontBtnEditar');
+  if(btn) btn.onclick = function(){ editarPaciente(pid); };
+  btn = document.getElementById('prontBtnEditar2');
+  if(btn) btn.onclick = function(){ editarPaciente(pid); };
+  btn = document.getElementById('prontBtnAgendar');
+  if(btn) btn.onclick = function(){ populateSelects(); setTimeout(function(){document.getElementById('agPaciente').value=pid;},80); openModal('modalAgendar'); };
+  btn = document.getElementById('prontBtnAgendar2');
+  if(btn) btn.onclick = function(){ populateSelects(); setTimeout(function(){document.getElementById('agPaciente').value=pid;},80); openModal('modalAgendar'); };
+  btn = document.getElementById('prontBtnPlano');
+  if(btn) btn.onclick = function(){ abrirPlano(pid); };
+  btn = document.getElementById('prontBtnPlano2');
+  if(btn) btn.onclick = function(){ abrirPlano(pid); };
+
+  // Stats
+  var ags = state.agendamentos.filter(function(a){return a.paciente_id==pid;});
+  var lans = state.lancamentos.filter(function(l){return l.paciente_id==pid;});
+  var realizadas = ags.filter(function(a){return a.data<hoje()&&a.status!=='Cancelado';}).length;
+  var proximas = ags.filter(function(a){return a.data>=hoje()&&a.status!=='Cancelado';}).length;
+  var recebido = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+  var aReceber = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+
+  document.getElementById('prontStats').innerHTML =
+    '<div style="text-align:center;padding:12px;background:var(--paper);border-radius:8px"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">'+realizadas+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Realizadas</div></div>'
+    +'<div style="text-align:center;padding:12px;background:var(--paper);border-radius:8px"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--blue)">'+proximas+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Agendadas</div></div>'
+    +'<div style="text-align:center;padding:12px;background:var(--paper);border-radius:8px;cursor:pointer" onclick="abrirTabFinanceiro()"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">R$'+Math.round(recebido)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Recebido</div></div>'
+    +'<div style="text-align:center;padding:12px;background:var(--paper);border-radius:8px;cursor:pointer" onclick="abrirTabFinanceiro()"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--red)">R$'+Math.round(aReceber)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">A Receber</div></div>';
+
+  // Render tabs
+  prontRenderSessoes(p, ags);
+  prontRenderFinanceiro(p, lans);
+  prontRenderDados(p);
+  prontRenderProtocolo(pid);
+}
+
+function switchProntTab(el, panelId){
+  document.querySelectorAll('#prontTabs .tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('#pt-sessoes,#pt-protocolo,#pt-financeiro,#pt-dados').forEach(function(p){p.classList.remove('active');});
+  if(el) el.classList.add('active');
+  var panel = document.getElementById(panelId);
+  if(panel) panel.classList.add('active');
+  if(panelId==='pt-protocolo') prontRenderProtocolo(prontState.pacienteId);
+}
+
+function prontRenderSessoes(p, ags){
+  var el = document.getElementById('prontListaSessoes');
+  var sorted = ags.slice().sort(function(a,b){return a.data.localeCompare(b.data);});
+  if(!sorted.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhuma sessão registrada</p>';
+    return;
+  }
+  var hoje_str = hoje();
+  el.innerHTML = sorted.map(function(a){
+    var isPast = a.data < hoje_str;
+    var bc = a.status==='Confirmado'?'badge-green':a.status==='Cancelado'?'badge-red':a.status==='Remarcado'?'badge-blue':'badge-amber';
+    var dataFmt = a.data?a.data.split('-').reverse().join('/'):'—';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);'+(isPast?'opacity:0.6':'')+'">'
+      +'<div style="width:40px;height:40px;border-radius:8px;background:'+(isPast?'var(--paper)':'var(--forest-light)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">'
+        +'<div style="font-size:14px;font-weight:700;color:'+(isPast?'var(--ink3)':'var(--forest)')+'">'+a.data.split('-')[2]+'</div>'
+        +'<div style="font-size:9px;color:var(--ink3)">'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(a.data.split('-')[1])-1]+'</div>'
+      +'</div>'
+      +'<div style="flex:1">'
+        +'<div style="font-size:13px;font-weight:500">'+a.tipo+' — '+a.hora+'h</div>'
+        +'<div style="font-size:11px;color:var(--ink3)">'+dataFmt+(a.obs?' · '+a.obs.substring(0,40):'')+'</div>'
+      +'</div>'
+      +'<span class="badge '+bc+'">'+a.status+'</span>'
+      +'<button class="btn btn-outline btn-sm" onclick="editarAgendamento('+a.id+')" style="padding:4px 8px;font-size:11px">Editar</button>'
+    +'</div>';
+  }).join('');
+}
+
+function prontRenderFinanceiro(p, lans){
+  var el = document.getElementById('prontFinanceiro');
+  var recebido = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+  var aReceber = lans.filter(function(l){return l.tipo==='A Receber';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+
+  var resumo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+    +'<div style="background:var(--forest-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">R$'+recebido.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Recebido</div></div>'
+    +'<div style="background:var(--red-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--red)">R$'+aReceber.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">A Receber</div></div>'
+    +'</div>';
+
+  var lista = lans.length
+    ? lans.sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(l){
+        var cor = l.tipo==='Recebido'?'var(--forest)':l.tipo==='Falta Cobrada'?'var(--red)':'var(--amber)';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">'
+          +'<div><div style="font-size:13px;font-weight:500">'+(l.obs||l.tipo)+'</div><div style="font-size:11px;color:var(--ink3)">'+(l.data?l.data.split('-').reverse().join('/'):'—')+'</div></div>'
+          +'<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:700;color:'+cor+'">R$'+parseFloat(l.valor||0).toFixed(0)+'</div>'
+        +'</div>';
+      }).join('')
+    : '<p style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Nenhum lançamento</p>';
+
+  el.innerHTML = resumo + lista;
+}
+
+function prontRenderDados(p){
+  var el = document.getElementById('prontDados');
+  el.innerHTML =
+    '<div class="form-row" style="margin-bottom:14px">'
+      +'<div><div class="form-label">WhatsApp</div><div style="font-size:14px;margin-top:3px">'+p.tel+'</div></div>'
+      +'<div><div class="form-label">Nascimento</div><div style="font-size:14px;margin-top:3px">'+(p.nasc?p.nasc.split('-').reverse().join('/'):'—')+'</div></div>'
+    +'</div>'
+    +'<div class="form-row" style="margin-bottom:14px">'
+      +'<div><div class="form-label">CPF</div><div style="font-size:14px;margin-top:3px">'+(p.cpf||'—')+'</div></div>'
+      +'<div><div class="form-label">Convênio</div><div style="font-size:14px;margin-top:3px">'+(p.convenio||'Particular')+'</div></div>'
+    +'</div>'
+    +(p.obs?'<div><div class="form-label">Observações / Anamnese</div><div style="font-size:13px;color:var(--ink2);line-height:1.65;background:var(--paper);padding:12px;border-radius:8px;margin-top:5px">'+p.obs+'</div></div>':'');
+}
+
+function prontRenderProtocolo(pid){
+  var el = document.getElementById('prontProtocoloEmbed');
+  if(!el) return;
+  // Load protocol state for this patient
+  var key = 'mc_prot_' + pid;
+  var saved = localStorage.getItem(key);
+  var prot = saved ? JSON.parse(saved) : null;
+
+  if(!prot || !prot.protocolo){
+    el.innerHTML = '<div class="card">'
+      +'<div style="text-align:center;padding:32px 20px;color:var(--ink3)">'
+        +'<div style="font-size:36px;margin-bottom:12px">🩺</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--ink2);margin-bottom:8px">Nenhum protocolo criado ainda</div>'
+        +'<div style="font-size:13px;margin-bottom:20px">Clique para criar o protocolo personalizado com IA para este paciente</div>'
+        +'<button class="btn btn-green" onclick="irParaProtocoloPront('+pid+')" style="width:auto;padding:12px 24px">🧠 Criar Protocolo com IA</button>'
+      +'</div>'
+    +'</div>';
+    return;
+  }
+
+  var protData = prot.protocolo;
+  var evs = prot.evolucoes || [];
+  var sessaoAtual = evs.length;
+  var totalPrev = prot.anamnese ? parseInt(prot.anamnese.sessoes)||12 : 12;
+  var pct = Math.min(Math.round(sessaoAtual/totalPrev*100),100);
+  var evaAtual = evs.length ? evs[evs.length-1].eva : '—';
+
+  el.innerHTML = '<div class="card" style="margin-bottom:16px">'
+    // Progress
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<div style="font-size:13px;font-weight:600">Jornada de Recuperação</div>'
+      +'<div style="font-size:14px;font-weight:700;color:var(--forest-mid)">'+pct+'%</div>'
+    +'</div>'
+    +'<div style="height:10px;background:var(--line);border-radius:100px;overflow:hidden;margin-bottom:14px">'
+      +'<div style="height:100%;background:linear-gradient(90deg,var(--forest-mid),#52c97a);border-radius:100px;width:'+pct+'%;transition:width 0.8s"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+      +'<div style="text-align:center;padding:10px;background:var(--paper);border-radius:8px"><div style="font-family:Playfair Display,serif;font-size:20px;color:var(--forest)">'+sessaoAtual+'/'+totalPrev+'</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">Sessões</div></div>'
+      +'<div style="text-align:center;padding:10px;background:var(--paper);border-radius:8px"><div style="font-family:Playfair Display,serif;font-size:20px;color:var(--amber)">'+evaAtual+'</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">EVA Atual</div></div>'
+    +'</div>'
+    // Resumo
+    +'<div style="background:var(--forest-light);border-radius:8px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Resumo Clínico</div>'
+      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+protData.resumo+'</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button class="btn btn-outline btn-sm" onclick="irParaProtocoloPront('+pid+')">Ver Protocolo Completo</button>'
+      +'<button class="btn btn-green btn-sm" onclick="irParaProtocoloPront('+pid+')">+ Registrar Sessão</button>'
+    +'</div>'
+  +'</div>';
+}
+
+function irParaProtocoloPront(pid){
+  goTo('protocolo');
+  setTimeout(function(){
+    var sel = document.getElementById('protPacienteSelect');
+    if(sel){ sel.value=pid; carregarProtocolo(pid); }
+  },200);
+}
+
+// Override verPerfil to open prontuario instead of modal
+function verPerfilCompleto(pid){
+  prontState.pacienteId = pid;
+  goTo('prontuario');
+  setTimeout(function(){
+    var sel = document.getElementById('prontPacSelect');
+    if(sel) sel.value = pid;
+    abrirProntuario(pid);
+  },100);
+}
+
+
+function abrirTabFinanceiro(){
+  var tabs = document.querySelectorAll('#prontTabs .tab');
+  var panels = document.querySelectorAll('#pt-sessoes,#pt-protocolo,#pt-financeiro,#pt-dados');
+  tabs.forEach(function(t){t.classList.remove('active');});
+  panels.forEach(function(p){p.classList.remove('active');});
+  if(tabs[2]) tabs[2].classList.add('active');
+  var fin = document.getElementById('pt-financeiro');
+  if(fin) fin.classList.add('active');
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
