@@ -4155,7 +4155,7 @@ function cabecalhoDoc(){
     +'<div style="display:flex;align-items:center;gap:14px">'
       +'<img src="'+logoSrc+'" style="width:56px;height:56px;object-fit:contain" />'
       +'<div>'
-        +'<div style="font-family:Playfair Display,serif;font-size:20px;color:#1c5c34;font-weight:700">'+c.clinica+'</div>'
+        +'<div style="font-family:Playfair Display,serif;font-size:20px;color:#1c5c34;font-weight:700;text-transform:uppercase;letter-spacing:0.02em">'+c.clinica+'</div>'
         +'<div style="font-size:12px;color:#7a8077;margin-top:2px">'+c.nome+(c.crefito?' · CREFITO '+c.crefito:'')+'</div>'
         +'<div style="font-size:11px;color:#7a8077;margin-top:1px">'+c.endereco+'</div>'
       +'</div>'
@@ -4484,6 +4484,29 @@ async function excluirAgendamentoPront(btn){
     renderDashboard();
     renderAgenda();
   } catch(e){ toast('Erro ao excluir','error'); }
+}
+
+
+function enviarExerciciosDomiciliares(){
+  var p = state.pacientes.find(function(x){return x.id==protState.pacienteId;});
+  if(!p){ toast('Paciente não encontrado','error'); return; }
+  var prot = protState.protocolo;
+  if(!prot||!prot.exerciciosDomiciliares||!prot.exerciciosDomiciliares.length){
+    toast('Nenhum exercício domiciliar no protocolo','error'); return;
+  }
+  var c = clinicaConfig;
+  var msg = 'Olá '+p.nome+'! 👋\n\n'
+    +'Aqui estão seus *exercícios para fazer em casa*, prescritos pelo '+c.nome+' da '+c.clinica+':\n\n';
+  prot.exerciciosDomiciliares.forEach(function(ex, i){
+    msg += (i+1)+'. *'+ex.nome+'*\n';
+    if(ex.posicao) msg += '📍 '+ex.posicao+'\n';
+    if(ex.execucao) msg += '▶ '+ex.execucao+'\n';
+    if(ex.dose) msg += '⚡ '+ex.dose+'\n';
+    var ytUrl = 'https://www.youtube.com/results?search_query='+encodeURIComponent((ex.youtube||ex.nome)+' fisioterapia');
+    msg += '🎥 Vídeo: '+ytUrl+'\n\n';
+  });
+  msg += 'Dúvidas, estou à disposição! 💚\n'+c.clinica+' · '+c.tel;
+  waMsg(p.tel, msg);
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
@@ -5020,7 +5043,11 @@ function toggleComparativo(){
 // ── PROTOCOLO IA ──
 async function gerarProtocoloIA(){
   if(!protState.pacienteId){ toast('Selecione um paciente','error'); return; }
-  if(!protState.anamnese){ openModal('modalAnamnese'); return; }
+  if(!protState.anamnese || !protState.anamnese.queixa){
+    toast('Preencha a anamnese antes de gerar o protocolo','error');
+    openModal('modalAnamnese');
+    return;
+  }
   var an = protState.anamnese;
   var el = document.getElementById('protIABody');
   el.innerHTML = '<div class="loading"><div class="spin"></div>Analisando caso clínico com base nas evidências...</div>';
@@ -5032,9 +5059,16 @@ async function gerarProtocoloIA(){
     var prot = gerarProtocoloEvidencias(an);
     protState.protocolo = prot;
     salvarProtState();
+    // Also save to paciente-specific key for persistence
+    var protKey = 'mc_prot_'+protState.pacienteId;
+    var saved = JSON.parse(localStorage.getItem(protKey)||'{}');
+    saved.protocolo = prot;
+    saved.anamnese = protState.anamnese;
+    saved.evolucoes = saved.evolucoes || [];
+    localStorage.setItem(protKey, JSON.stringify(saved));
     await renderProtocoloBodyComVideos(prot);
     verificarAlertas();
-    toast('Protocolo gerado com base em evidências!','success');
+    toast('Protocolo gerado e salvo!','success');
   } catch(e){
     el.innerHTML = '<div style="padding:16px;color:var(--red);font-size:13px">Erro ao gerar protocolo: '+e.message+'</div>';
   }
@@ -5801,6 +5835,8 @@ async function renderProtocoloBodyComVideos(prot){
   }).join('');
 
   var domHtml = (prot.exerciciosDomiciliares||[]).map(function(ex,i){ return renderExercicioDomiciliar(ex,i); }).join('');
+  var p = state.pacientes.find(function(x){return x.id==protState.pacienteId;});
+  var waExercicios = p && domHtml ? '<div style="margin-top:12px"><button class="btn btn-wa btn-sm" onclick="enviarExerciciosDomiciliares()">📲 Enviar Exercícios por WhatsApp</button></div>' : '';
 
   el.innerHTML =
     '<div style="background:var(--forest-light);border-radius:8px;padding:14px;margin-bottom:14px">'
@@ -5817,6 +5853,7 @@ async function renderProtocoloBodyComVideos(prot){
     +'<div style="border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:4px">'
       +'<div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">🏠 Exercícios Domiciliares</div>'
       +domHtml
+      +waExercicios
     +'</div>'
     +'<div style="margin-top:12px;background:var(--forest-light);border-radius:8px;padding:14px">'
       +'<div style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">✅ Orientações ao Paciente</div>'
