@@ -3767,10 +3767,12 @@ function abrirProntuario(pid){
   // Header
   document.getElementById('prontAvatar').textContent = p.nome.charAt(0);
   document.getElementById('prontNome').textContent = p.nome;
+  var localIcon = p.local_preferencial==='Domiciliar'?'🏠 Domiciliar':p.local_preferencial==='Online'?'💻 Online':'🏥 Clínica';
   document.getElementById('prontInfo').textContent =
     (p.nasc ? p.nasc.split('-').reverse().join('/') : '—') +
     ' · ' + (p.tel||'') +
-    (p.convenio ? ' · ' + p.convenio : ' · Particular');
+    (p.convenio ? ' · ' + p.convenio : ' · Particular') +
+    ' · ' + localIcon;
 
   // Button actions
   var btn;
@@ -4444,10 +4446,12 @@ function gerarDoc(tipo){
       recusa:'Termo de Recusa de Tratamento',
       alta_pedido:'Termo de Alta a Pedido'
     };
+    // Build fields based on document type
+    var campos = getDocFields(tipo, p, an, evs, ags, lans, hoje_str);
     conteudo = cab
       +'<div class="titulo">'+(titulos[tipo]||tipo)+'</div>'
       +'<div style="font-size:12px;color:#7a8077;margin-bottom:20px">Paciente: <strong>'+p.nome+'</strong> · CPF: '+(p.cpf||'—')+' · Data: '+hoje_str+'</div>'
-      +'<div style="border:1px solid #e4e6e0;border-radius:8px;padding:20px;min-height:300px;font-size:13px;color:#7a8077;font-style:italic">Preencha as informações específicas deste documento...</div>'
+      +campos
       +rod;
   }
 
@@ -4553,6 +4557,235 @@ function enviarExerciciosDomiciliares(){
   });
   msg += 'Dúvidas, estou à disposição! 💚\n'+c.clinica+' · '+c.tel;
   waMsg(p.tel, msg);
+}
+
+
+function campo(label, valor, editavel){
+  if(editavel){
+    return '<div class="campo"><div class="label">'+label+'</div>'
+      +'<div class="editavel" contenteditable="true" data-ph="Clique para preencher...">'+( valor&&valor!=='—'?valor:'')+'</div></div>';
+  }
+  return '<div class="campo"><div class="label">'+label+'</div><div class="valor">'+(valor||'—')+'</div></div>';
+}
+
+function blocoEditavel(label, valor){
+  return '<div class="campo"><div class="label">'+label+'</div>'
+    +'<div class="bloco-editavel" contenteditable="true" data-ph="Clique para preencher...">'+(valor||'')+'</div></div>';
+}
+
+function getDocFields(tipo, p, an, evs, ags, lans, hoje_str){
+  var fd = function(d){ return d?d.split('-').reverse().join('/'):'—'; };
+  var idadeAnos = p.nasc ? Math.floor((new Date()-new Date(p.nasc))/(365.25*24*3600*1000)) : '—';
+  
+  if(tipo==='anamnese'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +campo('Queixa Principal', an.queixa||'', true)
+      +campo('Diagnóstico / CID', an.diagnostico||'', true)
+      +campo('Data de Início do Problema', '', true)
+      +campo('Fase Clínica', an.fase||'', true)
+      +'</div>'
+      +blocoEditavel('História da Doença Atual', an.queixa||'')
+      +blocoEditavel('Cirurgias / Internações', an.historico||'')
+      +blocoEditavel('Medicamentos em uso', '')
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Profissão', an.profissao||'', true)
+        +campo('Nível de Atividade Física', an.atividade||'', true)
+        +campo('Objetivos do Tratamento', an.objetivo||'', true)
+        +campo('EVA inicial', (an.eva||'—')+'/10', false)
+      +'</div>';
+  }
+  
+  if(tipo==='plano_terapeutico'){
+    return blocoEditavel('Objetivos de Curto Prazo (1-4 semanas)', '')
+      +blocoEditavel('Objetivos de Médio Prazo (4-8 semanas)', '')
+      +blocoEditavel('Objetivos de Longo Prazo / Alta', '')
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Frequência das Sessões', ags.length+' sessões agendadas', false)
+        +campo('Duração Prevista', '', true)
+        +campo('Recursos Terapêuticos', '', true)
+        +campo('Modalidade', p.local_preferencial||'Clínica', false)
+      +'</div>'
+      +blocoEditavel('Exercícios / Condutas Propostas', '');
+  }
+  
+  if(tipo==='reavaliacao'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Data da Reavaliação', hoje_str, false)
+        +campo('Sessões realizadas até o momento', evs.length+'', false)
+        +campo('EVA inicial', (an.eva||'—')+'/10', false)
+        +campo('EVA atual', evs.length?(evs[evs.length-1].eva||'—')+'/10':'—', false)
+      +'</div>'
+      +blocoEditavel('Ganhos Funcionais Observados', '')
+      +blocoEditavel('Evolução da Força / Mobilidade / Equilíbrio', '')
+      +blocoEditavel('Ajustes no Plano Terapêutico', '')
+      +blocoEditavel('Novas Metas', '');
+  }
+  
+  if(tipo==='relatorio_inss'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('CID', an.diagnostico||'', true)
+        +campo('Data de Início do Tratamento', ags.length?fd(ags.sort(function(a,b){return a.data.localeCompare(b.data);})[0].data):'', false)
+        +campo('Sessões Realizadas', evs.length+'', false)
+        +campo('EVA Inicial / Atual', (an.eva||'—')+'/10 → '+(evs.length?(evs[evs.length-1].eva||'—'):'—')+'/10', false)
+      +'</div>'
+      +blocoEditavel('Descrição da Incapacidade / Limitações Funcionais', '')
+      +blocoEditavel('Condutas Realizadas', '')
+      +blocoEditavel('Evolução Clínica', '')
+      +blocoEditavel('Prognóstico e Estimativa de Recuperação', '');
+  }
+  
+  if(tipo==='relatorio_homecare'){
+    return blocoEditavel('Justificativa para Atendimento Domiciliar', 'O paciente apresenta limitações de mobilidade que impedem o deslocamento até a clínica, sendo o atendimento domiciliar indicado para garantir continuidade do tratamento.')
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Frequência Necessária', '', true)
+        +campo('Duração Prevista de cada Sessão', '60 minutos', true)
+      +'</div>'
+      +blocoEditavel('Objetivos do Atendimento Domiciliar', '')
+      +blocoEditavel('Recursos e Equipamentos Necessários', '');
+  }
+
+  if(tipo==='relatorio_protese'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Nível de Amputação', '', true)
+        +campo('Lado', '', true)
+        +campo('Causa da Amputação', an.historico||'', true)
+        +campo('Data da Amputação', '', true)
+        +campo('Nível Funcional (K0-K4)', '', true)
+        +campo('Condição do Coto', '', true)
+      +'</div>'
+      +blocoEditavel('Justificativa Clínica para a Prótese', 'O paciente apresenta condições clínicas favoráveis para uso de prótese, com coto bem cicatrizado, força muscular preservada e capacidade cognitiva para aprendizado do uso protético.')
+      +blocoEditavel('Tipo de Prótese Indicada', '')
+      +blocoEditavel('Objetivos com o Uso da Prótese', '');
+  }
+  
+  if(tipo==='encaminhamento'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Encaminhar para', '', true)
+        +campo('Especialidade', '', true)
+      +'</div>'
+      +blocoEditavel('Motivo do Encaminhamento', '')
+      +blocoEditavel('Informações Relevantes para o Profissional', '');
+  }
+  
+  if(tipo==='abandono'){
+    return '<div style="font-size:13px;line-height:1.9;margin-bottom:16px">Declaro que o(a) paciente <strong>'+p.nome+'</strong> abandonou o tratamento fisioterapêutico iniciado em ___/___/________, tendo realizado <span class="editavel" contenteditable="true" style="display:inline-block;min-width:40px">'+evs.length+'</span> sessões de um total previsto de <span class="editavel" contenteditable="true" style="display:inline-block;min-width:40px">___</span> sessões.</div>'
+      +blocoEditavel('Motivo relatado pelo paciente', '')
+      +blocoEditavel('Orientações fornecidas sobre os riscos da interrupção', '')
+      +'<div style="font-size:13px;margin-top:12px">O profissional responsável não se responsabiliza pelos resultados decorrentes da interrupção precoce do tratamento.</div>';
+  }
+  
+  if(tipo==='intercorrencia'){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Data e Hora da Ocorrência', hoje_str, true)
+        +campo('Tipo de Intercorrência', '', true)
+        +campo('Sessão Nº', evs.length+'', false)
+        +campo('Condição do Paciente no início da sessão', '', true)
+      +'</div>'
+      +blocoEditavel('Descrição detalhada da intercorrência', '')
+      +blocoEditavel('Conduta adotada imediatamente', '')
+      +blocoEditavel('Resultado / Evolução após a conduta', '')
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Familiar/Responsável foi comunicado?', '', true)
+        +campo('Encaminhamento para UPA/Hospital?', '', true)
+      +'</div>';
+  }
+  
+  if(tipo==='consentimento_imagem'){
+    return '<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:16px">'
+      +'Eu, <strong>'+p.nome+'</strong>, portador(a) do CPF nº '+(p.cpf||'_____________')+', autorizo a captação de imagens fotográficas e/ou videográficas durante o tratamento fisioterapêutico realizado na '+clinicaConfig.clinica+', sob responsabilidade do(a) fisioterapeuta '+clinicaConfig.nome+' (CREFITO '+clinicaConfig.crefito+').'
+      +'</div>'
+      +blocoEditavel('Finalidade das imagens (marcar o que se aplica)', '&#9744; Prontuário clínico&#10;&#9744; Ensino e pesquisa&#10;&#9744; Publicação em redes sociais com identidade preservada&#10;&#9744; Publicação em redes sociais com identificação&#10;&#9744; Outra: _______________')
+      +'<div style="font-size:13px;margin-top:16px">Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='contrato'){
+    var totalPlano = lans.filter(function(l){return l.tipo==='A Receber'&&parseFloat(l.valor||0)>0;}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+        +campo('Valor por Sessão', 'R$ '+campo('', '', true), false)
+        +campo('Nº de Sessões Contratadas', '', true)
+        +campo('Forma de Pagamento', '', true)
+        +campo('Frequência', '', true)
+        +campo('Modalidade de Atendimento', p.local_preferencial||'Clínica', false)
+        +campo('Início do Tratamento', hoje_str, false)
+      +'</div>'
+      +blocoEditavel('Política de Cancelamento', clinicaConfig.politica||'Cancelamentos devem ser comunicados com 24h de antecedência. Faltas sem aviso serão cobradas integralmente.')
+      +'<div style="font-size:13px;text-align:justify;line-height:1.9;margin-top:16px">As partes concordam com os termos acima descritos e com as normas de funcionamento da clínica.<br><br>Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='ciencia_faltas'){
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify;margin-bottom:16px">'
+      +'Declaro estar ciente da política de cancelamentos e faltas da '+clinicaConfig.clinica+':'
+      +'</div>'
+      +blocoEditavel('Política de Cancelamento', clinicaConfig.politica||'Cancelamentos devem ser comunicados com mínimo de 24h de antecedência. Faltas sem aviso prévio serão cobradas.')
+      +'<div style="font-size:13px;margin-top:20px">Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='quitacao'){
+    var recTotal = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify;margin-bottom:20px">'
+      +'Declaro que o(a) paciente <strong>'+p.nome+'</strong>, portador(a) do CPF nº '+(p.cpf||'_____________')+', quitou integralmente os débitos referentes ao tratamento fisioterapêutico realizado na '+clinicaConfig.clinica+'.'
+      +'</div>'
+      +'<div style="border:2px solid #1c5c34;border-radius:10px;padding:20px;text-align:center;margin-bottom:20px">'
+        +'<div style="font-size:12px;color:#7a8077;margin-bottom:8px">Valor total quitado</div>'
+        +'<div style="font-family:Playfair Display,serif;font-size:32px;color:#1c5c34;font-weight:700">R$ '+recTotal.toFixed(2).replace('.',',')+'</div>'
+        +'<div style="font-size:12px;color:#7a8077;margin-top:8px">'+hoje_str+'</div>'
+      +'</div>'
+      +'<div style="font-size:13px">Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='declaracao_tratamento'){
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify">'
+      +'Declaro, para os devidos fins, que o(a) paciente <strong>'+p.nome+'</strong>, portador(a) do CPF nº '+(p.cpf||'_____________')+'  está em tratamento fisioterapêutico regular na '+clinicaConfig.clinica+', sob minha responsabilidade profissional.'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">'
+        +campo('Diagnóstico', an.diagnostico||'', true)
+        +campo('Início do Tratamento', ags.length?fd(ags.sort(function(a,b){return a.data.localeCompare(b.data);})[0].data):'', false)
+        +campo('Frequência', '', true)
+        +campo('Previsão de Alta', '', true)
+      +'</div>'
+      +blocoEditavel('Observações relevantes', '')
+      +'<div style="font-size:13px;margin-top:16px">Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='resp_domiciliar'){
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify;margin-bottom:16px">'
+      +'Declaro, como responsável pelo(a) paciente '+p.nome+', estar ciente e de acordo com o atendimento fisioterapêutico domiciliar a ser realizado pelo(a) fisioterapeuta '+clinicaConfig.nome+' (CREFITO '+clinicaConfig.crefito+'), nas condições descritas abaixo.'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +campo('Endereço do Atendimento', '', true)
+        +campo('Frequência', '', true)
+        +campo('Responsável presente no atendimento', '', true)
+        +campo('Contato de emergência', '', true)
+      +'</div>'
+      +blocoEditavel('Condições e responsabilidades acordadas', '')
+      +'<div style="font-size:13px;margin-top:16px">Garanhuns/PE, '+hoje_str+'.</div>';
+  }
+  
+  if(tipo==='recusa'){
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify;margin-bottom:16px">'
+      +'Declaro ter sido informado(a) pelo(a) fisioterapeuta <strong>'+clinicaConfig.nome+'</strong> (CREFITO '+clinicaConfig.crefito+') sobre a conduta terapêutica abaixo descrita, seus objetivos, benefícios e riscos, e que optei, de forma livre e esclarecida, por não realizá-la.'
+      +'</div>'
+      +campo('Conduta recusada', '', true)
+      +blocoEditavel('Motivo da recusa (opcional)', '')
+      +'<div style="font-size:13px;line-height:1.9;text-align:justify;margin-top:16px">'
+        +'Assumo responsabilidade pelos riscos decorrentes da não realização da conduta indicada. Garanhuns/PE, '+hoje_str+'.'
+      +'</div>';
+  }
+  
+  if(tipo==='alta_pedido'){
+    return '<div style="font-size:13px;line-height:1.9;text-align:justify;margin-bottom:16px">'
+      +'Declaro que o(a) paciente <strong>'+p.nome+'</strong> solicitou alta do tratamento fisioterapêutico em '+hoje_str+', antes de atingir os objetivos terapêuticos propostos, tendo realizado <strong>'+evs.length+'</strong> sessão(ões).'
+      +'</div>'
+      +blocoEditavel('Motivo da solicitação de alta pelo paciente', '')
+      +blocoEditavel('Estado funcional no momento da alta', '')
+      +blocoEditavel('Orientações e recomendações fornecidas', '')
+      +'<div style="font-size:13px;line-height:1.9;text-align:justify;margin-top:16px">'
+        +'O profissional responsável esclareceu os riscos da interrupção precoce, os quais foram compreendidos pelo paciente. Garanhuns/PE, '+hoje_str+'.'
+      +'</div>';
+  }
+  
+  // Default - editable block
+  return blocoEditavel('Informações do documento', '');
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
