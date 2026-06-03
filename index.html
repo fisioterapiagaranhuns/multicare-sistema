@@ -949,15 +949,87 @@ Vamos retomar? Aguardo você!
         </div>
 
         <!-- TABS INTERNAS -->
-        <div class="tabs" id="prontTabs">
-          <div class="tab active" onclick="switchProntTab(this,'pt-sessoes')">📅 Sessões</div>
+        <div class="tabs" id="prontTabs" style="flex-wrap:wrap">
+          <div class="tab active" onclick="switchProntTab(this,'pt-avaliacoes')">📋 Avaliação</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-sessoes')">📅 Sessões</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-evolucoes')">📝 Evoluções</div>
           <div class="tab" onclick="switchProntTab(this,'pt-protocolo')">🩺 Protocolo</div>
           <div class="tab" onclick="switchProntTab(this,'pt-financeiro')">💰 Financeiro</div>
-          <div class="tab" onclick="switchProntTab(this,'pt-dados')">📋 Dados</div>
+          <div class="tab" onclick="switchProntTab(this,'pt-dados')">👤 Dados</div>
+        </div>
+
+        <!-- AVALIAÇÃO FISIOTERAPÊUTICA -->
+        <div id="pt-avaliacoes" class="tab-panel active">
+          <div class="card" style="margin-bottom:14px">
+            <div class="sec-head">
+              <div><div class="sec-title">Avaliação Fisioterapêutica Inicial</div><div class="sec-sub">Preencha os campos e salve — ficará no prontuário permanentemente</div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="imprimirAvaliacao()">🖨 Imprimir</button>
+                <button class="btn btn-green btn-sm" onclick="salvarAvaliacao()">💾 Salvar</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group"><label class="form-label">Diagnóstico Médico / CID</label><input class="form-control" id="avDiag" placeholder="Ex: M54.5 — Lombalgia"/></div>
+              <div class="form-group"><label class="form-label">Fase Clínica</label>
+                <select class="form-control" id="avFase">
+                  <option>Aguda (0-72h)</option><option>Subaguda (3-21 dias)</option><option>Crônica (&gt;21 dias)</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">EVA inicial (0-10)</label><input class="form-control" type="number" min="0" max="10" id="avEva" placeholder="0-10"/></div>
+              <div class="form-group"><label class="form-label">Data de início do problema</label><input class="form-control" type="date" id="avDataInicio"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Queixa Principal</label><textarea class="form-control" id="avQueixa" rows="2" placeholder="Descreva a queixa principal do paciente..."></textarea></div>
+            <div class="form-group"><label class="form-label">História da Doença Atual</label><textarea class="form-control" id="avHDA" rows="3" placeholder="Como iniciou, fatores de melhora/piora, irradiações, tratamentos anteriores..."></textarea></div>
+            <div class="form-group"><label class="form-label">Histórico de Saúde / Comorbidades / Cirurgias</label><textarea class="form-control" id="avHist" rows="2" placeholder="Doenças associadas, cirurgias, internações, medicamentos em uso..."></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div class="form-group"><label class="form-label">Inspeção Física</label><textarea class="form-control" id="avInspec" rows="2" placeholder="Postura, marcha, assimetrias..."></textarea></div>
+              <div class="form-group"><label class="form-label">Achados Funcionais</label><textarea class="form-control" id="avAchados" rows="2" placeholder="ADM, força muscular, sensibilidade, equilíbrio..."></textarea></div>
+              <div class="form-group"><label class="form-label">Prótese / Órtese / Dispositivo auxiliar</label><input class="form-control" id="avProtese" placeholder="Descreva se houver"/></div>
+              <div class="form-group"><label class="form-label">Profissão / Estilo de vida</label><input class="form-control" id="avProfissao" placeholder="Ex: Advogada, sedentária..."/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Diagnóstico Fisioterapêutico</label><textarea class="form-control" id="avDiagFisio" rows="2" placeholder="Conclusão diagnóstica fisioterapêutica..."></textarea></div>
+            <div class="form-group"><label class="form-label">Objetivos do Tratamento</label><textarea class="form-control" id="avObjetivos" rows="2" placeholder="O que o paciente quer alcançar? Quais metas funcionais?"></textarea></div>
+            <div class="form-group"><label class="form-label">Atividade Física / Nível de condicionamento</label><input class="form-control" id="avAtividade" placeholder="Ex: Sedentário, pratica caminhada 3x/semana..."/></div>
+          </div>
+        </div>
+
+        <!-- EVOLUÇÕES -->
+        <div id="pt-evolucoes" class="tab-panel">
+          <div class="card">
+            <div class="sec-head">
+              <div><div class="sec-title">Registro de Evolução</div><div class="sec-sub">Registre cada sessão realizada</div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="imprimirEvolucoes()">🖨 Imprimir Todas</button>
+                <button class="btn btn-green btn-sm" onclick="abrirNovaEvolucao()">+ Nova Evolução</button>
+              </div>
+            </div>
+            <!-- Nova evolução form -->
+            <div id="formNovaEvolucao" style="display:none;background:var(--forest-light);border-radius:8px;padding:16px;margin-bottom:16px">
+              <div style="font-size:13px;font-weight:600;color:var(--forest);margin-bottom:12px">Nova Evolução</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-group"><label class="form-label">Data</label><input class="form-control" type="date" id="evData"/></div>
+                <div class="form-group"><label class="form-label">Fase</label>
+                  <select class="form-control" id="evFase">
+                    <option>Fase Aguda</option><option>Fase Subaguda</option><option>Fase Crônica</option><option>Manutenção</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="form-label">EVA (0-10)</label><input class="form-control" type="number" min="0" max="10" id="evEva" placeholder="0-10"/></div>
+              </div>
+              <div class="form-group"><label class="form-label">Condutas Realizadas</label><textarea class="form-control" id="evCondutas" rows="3" placeholder="Ex: TENS 80Hz 20min, fortalecimento de quadríceps, mobilização lombar..."></textarea></div>
+              <div class="form-group"><label class="form-label">Resposta do Paciente / Evolução Observada</label><textarea class="form-control" id="evResposta" rows="2" placeholder="Ex: Paciente colaborativo, EVA reduziu de 7 para 5, melhora da ADM de flexão..."></textarea></div>
+              <div class="form-group"><label class="form-label">Intercorrências</label><input class="form-control" id="evInterc" placeholder="Nenhuma / descreva se houver"/></div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('formNovaEvolucao').style.display='none'">Cancelar</button>
+                <button class="btn btn-green btn-sm" onclick="salvarEvolucaoPront()">💾 Salvar Evolução</button>
+              </div>
+            </div>
+            <!-- Lista de evoluções -->
+            <div id="prontListaEvolucoes"></div>
+          </div>
         </div>
 
         <!-- SESSÕES -->
-        <div id="pt-sessoes" class="tab-panel active">
+        <div id="pt-sessoes" class="tab-panel">
           <div class="card">
             <div class="sec-head">
               <div><div class="sec-title">Sessões Agendadas</div></div>
@@ -3810,15 +3882,21 @@ function abrirProntuario(pid){
   prontRenderFinanceiro(p, lans);
   prontRenderDados(p);
   prontRenderProtocolo(pid);
+  // Load avaliacao (default tab)
+  setTimeout(function(){ prontCarregarAvaliacao(); }, 100);
 }
 
 function switchProntTab(el, panelId){
   document.querySelectorAll('#prontTabs .tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('#pt-sessoes,#pt-protocolo,#pt-financeiro,#pt-dados').forEach(function(p){p.classList.remove('active');});
+  ['pt-avaliacoes','pt-sessoes','pt-evolucoes','pt-protocolo','pt-financeiro','pt-dados'].forEach(function(id){
+    var x=document.getElementById(id); if(x) x.classList.remove('active');
+  });
   if(el) el.classList.add('active');
   var panel = document.getElementById(panelId);
   if(panel) panel.classList.add('active');
   if(panelId==='pt-protocolo') prontRenderProtocolo(prontState.pacienteId);
+  if(panelId==='pt-evolucoes') prontRenderEvolucoes();
+  if(panelId==='pt-avaliacoes') prontCarregarAvaliacao();
 }
 
 function prontRenderSessoes(p, ags){
@@ -4786,6 +4864,263 @@ function getDocFields(tipo, p, an, evs, ags, lans, hoje_str){
   
   // Default - editable block
   return blocoEditavel('Informações do documento', '');
+}
+
+
+// ══════════════════════════════
+// AVALIAÇÃO FISIOTERAPÊUTICA
+// ══════════════════════════════
+function prontCarregarAvaliacao(){
+  var pid = prontState.pacienteId;
+  if(!pid) return;
+  var key = 'mc_aval_'+pid;
+  var saved = localStorage.getItem(key);
+  if(saved){
+    var av = JSON.parse(saved);
+    var fields = {avDiag:'diagnostico',avFase:'fase',avEva:'eva',avDataInicio:'dataInicio',
+      avQueixa:'queixa',avHDA:'hda',avHist:'historico',avInspec:'inspec',
+      avAchados:'achados',avProtese:'protese',avProfissao:'profissao',
+      avDiagFisio:'diagFisio',avObjetivos:'objetivos',avAtividade:'atividade'};
+    Object.keys(fields).forEach(function(elId){
+      var el = document.getElementById(elId);
+      if(el) el.value = av[fields[elId]]||'';
+    });
+  } else {
+    // Pre-fill from patient data and protState
+    var p = state.pacientes.find(function(x){return x.id==pid;});
+    if(p){
+      var diagEl = document.getElementById('avDiag');
+      if(diagEl && p.diagnostico_inicial) diagEl.value = p.diagnostico_inicial;
+      var profEl = document.getElementById('avProfissao');
+      if(profEl && p.obs) profEl.value = '';
+    }
+    // Also load from protState.anamnese if exists
+    if(protState.anamnese){
+      var an = protState.anamnese;
+      var mapAn = {avDiag:an.diagnostico,avFase:an.fase,avEva:an.eva,
+        avQueixa:an.queixa,avHist:an.historico,avAchados:an.achados,
+        avProfissao:an.profissao,avObjetivos:an.objetivo,avAtividade:an.atividade};
+      Object.keys(mapAn).forEach(function(elId){
+        var el=document.getElementById(elId);
+        if(el&&mapAn[elId]) el.value=mapAn[elId];
+      });
+    }
+  }
+}
+
+function salvarAvaliacao(){
+  var pid = prontState.pacienteId;
+  if(!pid){ toast('Selecione um paciente','error'); return; }
+  var av = {
+    diagnostico: document.getElementById('avDiag').value,
+    fase: document.getElementById('avFase').value,
+    eva: document.getElementById('avEva').value,
+    dataInicio: document.getElementById('avDataInicio').value,
+    queixa: document.getElementById('avQueixa').value,
+    hda: document.getElementById('avHDA').value,
+    historico: document.getElementById('avHist').value,
+    inspec: document.getElementById('avInspec').value,
+    achados: document.getElementById('avAchados').value,
+    protese: document.getElementById('avProtese').value,
+    profissao: document.getElementById('avProfissao').value,
+    diagFisio: document.getElementById('avDiagFisio').value,
+    objetivos: document.getElementById('avObjetivos').value,
+    atividade: document.getElementById('avAtividade').value,
+    dataSalvo: new Date().toISOString()
+  };
+  localStorage.setItem('mc_aval_'+pid, JSON.stringify(av));
+  
+  // Sync to protState.anamnese so protocol generation uses this data
+  protState.anamnese = {
+    queixa: av.queixa, diagnostico: av.diagnostico, fase: av.fase,
+    eva: av.eva, historico: av.historico, achados: av.achados,
+    profissao: av.profissao, objetivo: av.objetivos, atividade: av.atividade,
+    sessoes: '12'
+  };
+  salvarProtState();
+  toast('Avaliação salva! Dados disponíveis para geração do protocolo.','success');
+}
+
+function imprimirAvaliacao(){
+  var pid = prontState.pacienteId;
+  var p = state.pacientes.find(function(x){return x.id==pid;});
+  if(!p){ toast('Selecione um paciente','error'); return; }
+  var c = clinicaConfig;
+  var av = {
+    diagnostico:document.getElementById('avDiag').value||'—',
+    fase:document.getElementById('avFase').value||'—',
+    eva:document.getElementById('avEva').value||'—',
+    queixa:document.getElementById('avQueixa').value||'—',
+    hda:document.getElementById('avHDA').value||'—',
+    historico:document.getElementById('avHist').value||'—',
+    inspec:document.getElementById('avInspec').value||'—',
+    achados:document.getElementById('avAchados').value||'—',
+    protese:document.getElementById('avProtese').value||'—',
+    profissao:document.getElementById('avProfissao').value||'—',
+    diagFisio:document.getElementById('avDiagFisio').value||'—',
+    objetivos:document.getElementById('avObjetivos').value||'—',
+    atividade:document.getElementById('avAtividade').value||'—'
+  };
+  var idadeAnos = p.nasc ? Math.floor((new Date()-new Date(p.nasc))/(365.25*24*3600*1000)) : '—';
+  var hoje_str = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var logoSrc = document.querySelector('.login-logo-icon img') ? document.querySelector('.login-logo-icon img').src : '';
+  
+  var conteudo = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1c5c34">'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+      +(logoSrc?'<img src="'+logoSrc+'" style="width:52px;height:52px;object-fit:contain"/>':'')
+      +'<div><div style="font-family:Playfair Display,serif;font-size:18px;color:#1c5c34;font-weight:700;text-transform:uppercase">'+c.clinica+'</div>'
+        +'<div style="font-size:11px;color:#7a8077">'+c.nome+' · CREFITO '+c.crefito+'</div>'
+        +'<div style="font-size:11px;color:#7a8077">'+c.endereco+'</div></div>'
+    +'</div>'
+    +'<div style="text-align:right;font-size:11px;color:#7a8077"><div>'+hoje_str+'</div></div>'
+  +'</div>'
+  +'<div style="font-family:Playfair Display,serif;font-size:18px;color:#1c5c34;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #e4e6e0">Avaliação Fisioterapêutica Inicial</div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:12px;background:#f8f9f6;border-radius:8px">'
+    +'<div><div style="font-size:10px;font-weight:700;color:#7a8077;text-transform:uppercase">Paciente</div><div style="font-size:13px;font-weight:600">'+p.nome+'</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:#7a8077;text-transform:uppercase">Nascimento / Idade</div><div style="font-size:13px">'+(p.nasc?p.nasc.split('-').reverse().join('/'):'—')+' ('+idadeAnos+' anos)</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:#7a8077;text-transform:uppercase">CPF</div><div style="font-size:13px">'+(p.cpf||'—')+'</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:#7a8077;text-transform:uppercase">WhatsApp</div><div style="font-size:13px">'+p.tel+'</div></div>'
+  +'</div>'
+  +'<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'
+    +[['Diagnóstico / CID',av.diagnostico],['Fase Clínica',av.fase],
+      ['EVA Inicial',av.eva+'/10'],['Profissão',av.profissao],
+      ['Prótese / Dispositivo',av.protese],['Nível de Atividade',av.atividade]
+     ].map(function(r){return '<tr><td style="padding:8px;border:1px solid #e4e6e0;font-weight:600;width:35%;background:#f8f9f6">'+r[0]+'</td><td style="padding:8px;border:1px solid #e4e6e0">'+r[1]+'</td></tr>';}).join('')
+  +'</table>'
+  +[['Queixa Principal',av.queixa],['História da Doença Atual',av.hda],
+    ['Histórico / Comorbidades / Cirurgias',av.historico],
+    ['Inspeção Física',av.inspec],['Achados Funcionais (ADM, Força, Equilíbrio)',av.achados],
+    ['Diagnóstico Fisioterapêutico',av.diagFisio],['Objetivos do Tratamento',av.objetivos]
+   ].map(function(r){
+     return '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:#7a8077;text-transform:uppercase;margin-bottom:4px">'+r[0]+'</div>'
+       +'<div style="font-size:13px;line-height:1.7;padding:8px;border:1px solid #e4e6e0;border-radius:6px;min-height:36px">'+r[1]+'</div></div>';
+   }).join('')
+  +'<div style="margin-top:40px;display:flex;justify-content:space-between">'
+    +'<div style="text-align:center;border-top:1px solid #0f1410;padding-top:6px;min-width:220px"><div style="font-size:12px">'+c.nome+'</div><div style="font-size:11px;color:#7a8077">CREFITO '+c.crefito+'</div></div>'
+    +'<div style="text-align:center;border-top:1px solid #0f1410;padding-top:6px;min-width:200px"><div style="font-size:12px">'+p.nome+'</div><div style="font-size:11px;color:#7a8077">Assinatura do Paciente</div></div>'
+  +'</div>';
+  
+  abrirJanela('Avaliação Fisioterapêutica — '+p.nome, conteudo);
+}
+
+// ══════════════════════════════
+// EVOLUÇÕES
+// ══════════════════════════════
+function abrirNovaEvolucao(){
+  var form = document.getElementById('formNovaEvolucao');
+  if(form){
+    form.style.display='block';
+    document.getElementById('evData').value = hoje();
+    document.getElementById('evEva').value='';
+    document.getElementById('evCondutas').value='';
+    document.getElementById('evResposta').value='';
+    document.getElementById('evInterc').value='Nenhuma';
+  }
+}
+
+function salvarEvolucaoPront(){
+  var pid = prontState.pacienteId;
+  if(!pid) return;
+  var ev = {
+    data: document.getElementById('evData').value,
+    fase: document.getElementById('evFase').value,
+    eva: document.getElementById('evEva').value,
+    condutas: document.getElementById('evCondutas').value,
+    resposta: document.getElementById('evResposta').value,
+    interc: document.getElementById('evInterc').value,
+    id: Date.now()
+  };
+  if(!ev.data||!ev.condutas){ toast('Preencha data e condutas','error'); return; }
+  
+  var key = 'mc_evol_'+pid;
+  var evols = JSON.parse(localStorage.getItem(key)||'[]');
+  evols.push(ev);
+  localStorage.setItem(key, JSON.stringify(evols));
+  
+  // Also sync to protState
+  var protKey = 'mc_prot_'+pid;
+  var prot = JSON.parse(localStorage.getItem(protKey)||'{}');
+  prot.evolucoes = evols;
+  localStorage.setItem(protKey, JSON.stringify(prot));
+  
+  document.getElementById('formNovaEvolucao').style.display='none';
+  prontRenderEvolucoes();
+  toast('Evolução registrada!','success');
+}
+
+function prontRenderEvolucoes(){
+  var pid = prontState.pacienteId;
+  if(!pid) return;
+  var el = document.getElementById('prontListaEvolucoes');
+  if(!el) return;
+  var key = 'mc_evol_'+pid;
+  var evols = JSON.parse(localStorage.getItem(key)||'[]').sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+  
+  if(!evols.length){
+    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Nenhuma evolução registrada ainda.<br>Clique em <strong>+ Nova Evolução</strong> após cada sessão.</div>';
+    return;
+  }
+  el.innerHTML = evols.map(function(ev,i){
+    return '<div style="border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid var(--forest-mid)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--forest)">'+(ev.data?ev.data.split('-').reverse().join('/'):'—')+' — '+(ev.fase||'—')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+          +(ev.eva?'<span style="background:var(--amber-light);color:var(--amber);font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px">EVA '+ev.eva+'/10</span>':'')
+          +'<button class="btn btn-red" style="padding:3px 8px;font-size:11px" data-evid="'+ev.id+'" onclick="excluirEvolucao(this)">🗑</button>'
+        +'</div>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--ink2);margin-bottom:6px"><strong>Condutas:</strong> '+ev.condutas+'</div>'
+      +(ev.resposta?'<div style="font-size:12px;color:var(--ink2);margin-bottom:4px"><strong>Evolução:</strong> '+ev.resposta+'</div>':'')
+      +(ev.interc&&ev.interc!=='Nenhuma'?'<div style="font-size:12px;color:var(--red);margin-top:4px">⚠️ Intercorrência: '+ev.interc+'</div>':'')
+    +'</div>';
+  }).join('');
+}
+
+function excluirEvolucao(btn){
+  if(!confirm('Excluir esta evolução?')) return;
+  var pid = prontState.pacienteId;
+  var evId = parseInt(btn.getAttribute('data-evid'));
+  var key = 'mc_evol_'+pid;
+  var evols = JSON.parse(localStorage.getItem(key)||'[]').filter(function(e){return e.id!==evId;});
+  localStorage.setItem(key, JSON.stringify(evols));
+  prontRenderEvolucoes();
+  toast('Evolução excluída','success');
+}
+
+function imprimirEvolucoes(){
+  var pid = prontState.pacienteId;
+  var p = state.pacientes.find(function(x){return x.id==pid;});
+  if(!p) return;
+  var evols = JSON.parse(localStorage.getItem('mc_evol_'+pid)||'[]').sort(function(a,b){return (a.data||'').localeCompare(b.data||'');});
+  var c = clinicaConfig;
+  var logoSrc = document.querySelector('.login-logo-icon img') ? document.querySelector('.login-logo-icon img').src : '';
+  var hoje_str = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  
+  var conteudo = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1c5c34">'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+      +(logoSrc?'<img src="'+logoSrc+'" style="width:52px;height:52px;object-fit:contain"/>':'')
+      +'<div><div style="font-family:Playfair Display,serif;font-size:18px;color:#1c5c34;font-weight:700;text-transform:uppercase">'+c.clinica+'</div>'
+        +'<div style="font-size:11px;color:#7a8077">'+c.nome+' · CREFITO '+c.crefito+'</div></div>'
+    +'</div>'
+    +'<div style="text-align:right;font-size:11px;color:#7a8077">'+hoje_str+'</div>'
+  +'</div>'
+  +'<div style="font-family:Playfair Display,serif;font-size:18px;color:#1c5c34;margin-bottom:6px">Evolução Fisioterapêutica</div>'
+  +'<div style="font-size:13px;color:#7a8077;margin-bottom:20px">Paciente: <strong>'+p.nome+'</strong> · '+evols.length+' sessão(ões) registrada(s)</div>'
+  +(evols.length ? evols.map(function(ev){
+    return '<div style="margin-bottom:14px;padding:14px;border:1px solid #e4e6e0;border-radius:8px;border-left:3px solid #2a7d48">'
+      +'<div style="font-weight:700;color:#1c5c34;margin-bottom:8px;font-size:13px">'+(ev.data?ev.data.split('-').reverse().join('/'):'—')+' — '+ev.fase+(ev.eva?' — EVA '+ev.eva+'/10':'')+'</div>'
+      +'<div style="font-size:12px;line-height:1.8"><strong>Condutas:</strong> '+ev.condutas+'</div>'
+      +(ev.resposta?'<div style="font-size:12px;line-height:1.8;margin-top:4px"><strong>Evolução:</strong> '+ev.resposta+'</div>':'')
+      +(ev.interc&&ev.interc!=='Nenhuma'?'<div style="font-size:12px;color:#e63946;margin-top:4px">⚠️ Intercorrência: '+ev.interc+'</div>':'')
+    +'</div>';
+  }).join('')
+  : '<p style="color:#7a8077;font-style:italic">Nenhuma evolução registrada</p>')
+  +'<div style="margin-top:40px;border-top:1px solid #0f1410;padding-top:6px;text-align:center;max-width:220px">'
+    +'<div style="font-size:12px">'+c.nome+'</div>'
+    +'<div style="font-size:11px;color:#7a8077">CREFITO '+c.crefito+'</div>'
+  +'</div>';
+  
+  abrirJanela('Evolução Fisioterapêutica — '+p.nome, conteudo);
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
