@@ -977,7 +977,10 @@ Vamos retomar? Aguardo você!
               <div class="form-group"><label class="form-label">Data de início do problema</label><input class="form-control" type="date" id="avDataInicio"/></div>
               <div class="form-group"><label class="form-label">Fase Clínica *</label>
                 <select class="form-control" id="avFase">
-                  <option>Aguda (0-72h)</option><option>Subaguda (3-21 dias)</option><option selected>Crônica (&gt;21 dias)</option>
+                  <option value="Aguda (até 6 semanas)">Aguda (até 6 semanas)</option>
+                  <option value="Subaguda (6 semanas a 3 meses)">Subaguda (6 semanas a 3 meses)</option>
+                  <option value="Crônica (acima de 3 meses)" selected>Crônica (acima de 3 meses)</option>
+                  <option value="Não se aplica">Não se aplica</option>
                 </select>
               </div>
             </div>
@@ -996,7 +999,10 @@ Vamos retomar? Aguardo você!
               <div class="form-group"><label class="form-label">Profissão / Estilo de vida</label><input class="form-control" id="avProfissao" placeholder="Ex: Advogada, trabalha sentada 8h/dia"/></div>
               <div class="form-group"><label class="form-label">Nível de Atividade Física</label>
                 <select class="form-control" id="avAtividade">
-                  <option>Sedentário</option><option>Levemente ativo</option><option>Moderadamente ativo</option><option>Muito ativo</option>
+                  <option value="Sedentário">Sedentário</option>
+                  <option value="Levemente ativo (caminhada ocasional)">Leve</option>
+                  <option value="Moderadamente ativo (3x/semana)">Moderado</option>
+                  <option value="Muito ativo (diário / atleta)">Intenso</option>
                 </select>
               </div>
               <div class="form-group"><label class="form-label">Independência Funcional</label>
@@ -1004,13 +1010,37 @@ Vamos retomar? Aguardo você!
                   <option>Independente</option><option>Independente com dispositivo</option><option>Assistência parcial</option><option>Dependente</option>
                 </select>
               </div>
-              <div class="form-group"><label class="form-label">Dispositivo auxiliar</label><input class="form-control" id="avProtese" placeholder="Ex: Andador, bengala, cadeira de rodas, prótese transtibial"/></div>
+              <div class="form-group"><label class="form-label">Dispositivo Auxiliar</label>
+                <select class="form-control" id="avProtese">
+                  <option value="Nenhum">Nenhum</option>
+                  <option value="Andador">Andador</option>
+                  <option value="Bengala / Muleta">Bengala / Muleta</option>
+                  <option value="Cadeira de Rodas">Cadeira de Rodas</option>
+                  <option value="Prótese de Membro Inferior">Prótese de Membro Inferior</option>
+                  <option value="Prótese de Membro Superior">Prótese de Membro Superior</option>
+                  <option value="Órtese">Órtese</option>
+                  <option value="Colar Cervical">Colar Cervical</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">Limitação Funcional Principal</label><input class="form-control" id="avLimitacao" placeholder="Ex: Dificuldade para subir escadas, incapacidade para marcha prolongada"/></div>
             </div>
 
             <div style="font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)">🔍 Avaliação Física</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-              <div class="form-group"><label class="form-label">EVA — Dor Atual (0-10) *</label><input class="form-control" type="number" min="0" max="10" id="avEva" placeholder="0 = sem dor, 10 = pior dor"/></div>
+              <div class="form-group">
+                <label class="form-label">EVA — Dor Atual *</label>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+                  <input type="range" id="avEva" min="0" max="10" value="5" step="1" style="flex:1;accent-color:var(--forest-mid)" oninput="document.getElementById('avEvaVal').textContent=this.value;document.getElementById('avEvaDesc').textContent=['Sem dor','Dor muito leve','Dor leve','Dor leve-moderada','Dor moderada','Dor moderada','Dor moderada-intensa','Dor intensa','Dor muito intensa','Dor severa','Dor máxima'][this.value]"/>
+                  <div style="text-align:center;min-width:52px">
+                    <div id="avEvaVal" style="font-family:Playfair Display,serif;font-size:24px;font-weight:700;color:var(--forest-mid)">5</div>
+                    <div style="font-size:9px;color:var(--ink3)">/10</div>
+                  </div>
+                </div>
+                <div id="avEvaDesc" style="font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic">Dor moderada</div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:2px"><span>0 Sem dor</span><span>10 Máxima</span></div>
+                <div style="margin-top:6px"><label style="font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:6px"><input type="checkbox" id="avEvaNaoAplica" onchange="document.getElementById('avEva').disabled=this.checked;document.getElementById('avEvaVal').textContent=this.checked?'N/A':'5';document.getElementById('avEvaDesc').textContent=this.checked?'Não se aplica':'Dor moderada'"/> Não se aplica</label></div>
+              </div>
               <div class="form-group"><label class="form-label">Localização e Característica da Dor</label><input class="form-control" id="avDorDesc" placeholder="Ex: Dor lombar em queimação, irradiando para MIE"/></div>
               <div class="form-group"><label class="form-label">Amplitude de Movimento (ADM)</label><input class="form-control" id="avADM" placeholder="Ex: Flexão lombar 50%, rotação cervical reduzida à E"/></div>
               <div class="form-group"><label class="form-label">Força Muscular (MRC 0-5)</label><input class="form-control" id="avForca" placeholder="Ex: QD 4/5, GD 3/5, isquiotibiais 4/5"/></div>
@@ -1063,11 +1093,36 @@ Vamos retomar? Aguardo você!
                     <option>Fase Aguda</option><option>Fase Subaguda</option><option>Fase Crônica</option><option>Manutenção</option>
                   </select>
                 </div>
-                <div class="form-group"><label class="form-label">EVA (0-10)</label><input class="form-control" type="number" min="0" max="10" id="evEva" placeholder="0-10"/></div>
+                <div class="form-group"><label class="form-label">EVA da Sessão</label>
+                  <select class="form-control" id="evEva">
+                    <option value="">— Selecione —</option>
+                    <option value="0">0 — Sem dor</option>
+                    <option value="1">1 — Dor muito leve</option>
+                    <option value="2">2 — Dor leve</option>
+                    <option value="3">3 — Dor leve-moderada</option>
+                    <option value="4">4 — Dor moderada</option>
+                    <option value="5">5 — Dor moderada</option>
+                    <option value="6">6 — Dor moderada-intensa</option>
+                    <option value="7">7 — Dor intensa</option>
+                    <option value="8">8 — Dor muito intensa</option>
+                    <option value="9">9 — Dor severa</option>
+                    <option value="10">10 — Dor máxima</option>
+                    <option value="N/A">Não se aplica</option>
+                  </select>
+                </div>
               </div>
               <div class="form-group"><label class="form-label">Condutas Realizadas</label><textarea class="form-control" id="evCondutas" rows="3" placeholder="Ex: TENS 80Hz 20min, fortalecimento de quadríceps, mobilização lombar..."></textarea></div>
               <div class="form-group"><label class="form-label">Resposta do Paciente / Evolução Observada</label><textarea class="form-control" id="evResposta" rows="2" placeholder="Ex: Paciente colaborativo, EVA reduziu de 7 para 5, melhora da ADM de flexão..."></textarea></div>
-              <div class="form-group"><label class="form-label">Intercorrências</label><input class="form-control" id="evInterc" placeholder="Nenhuma / descreva se houver"/></div>
+              <div class="form-group">
+                <label class="form-label">Intercorrências</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer">
+                  <input type="checkbox" id="evSemInterc" checked onchange="document.getElementById('evIntercBox').style.display=this.checked?'none':'block';if(this.checked)document.getElementById('evInterc').value=''"/>
+                  Sem intercorrências
+                </label>
+                <div id="evIntercBox" style="display:none">
+                  <textarea class="form-control" id="evInterc" rows="2" placeholder="Descreva a intercorrência: queda, dor aguda, mal-estar..."></textarea>
+                </div>
+              </div>
               <div style="display:flex;gap:8px;margin-top:8px">
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('formNovaEvolucao').style.display='none'">Cancelar</button>
                 <button class="btn btn-green btn-sm" onclick="salvarEvolucaoPront()">💾 Salvar Evolução</button>
@@ -4954,6 +5009,22 @@ function prontCarregarAvaliacao(){
       var el = document.getElementById(elId);
       if(el) el.value = av[fields[elId]]||'';
     });
+    // Special: EVA slider
+    var evaEl = document.getElementById('avEva');
+    var evaValEl = document.getElementById('avEvaVal');
+    var evaDescEl = document.getElementById('avEvaDesc');
+    var evaNAEl = document.getElementById('avEvaNaoAplica');
+    var evaDescs = ['Sem dor','Dor muito leve','Dor leve','Dor leve-moderada','Dor moderada','Dor moderada','Dor moderada-intensa','Dor intensa','Dor muito intensa','Dor severa','Dor máxima'];
+    if(av.eva==='N/A'||av.eva==='Não se aplica'){
+      if(evaNAEl) evaNAEl.checked=true;
+      if(evaEl) evaEl.disabled=true;
+      if(evaValEl) evaValEl.textContent='N/A';
+      if(evaDescEl) evaDescEl.textContent='Não se aplica';
+    } else if(av.eva&&evaEl){
+      evaEl.value=av.eva;
+      if(evaValEl) evaValEl.textContent=av.eva;
+      if(evaDescEl) evaDescEl.textContent=evaDescs[parseInt(av.eva)]||'';
+    }
   } else {
     // Set default avaliacao date to today
     var avDateEl = document.getElementById('avDataAvaliacao');
@@ -4993,7 +5064,8 @@ function salvarAvaliacao(){
     profissao: gv('avProfissao'), atividade: gv('avAtividade'),
     independencia: gv('avIndependencia'), protese: gv('avProtese'),
     limitacao: gv('avLimitacao'),
-    eva: gv('avEva'), dorDesc: gv('avDorDesc'), adm: gv('avADM'),
+    eva: (function(){ var naEl=document.getElementById('avEvaNaoAplica'); return naEl&&naEl.checked?'N/A':gv('avEva'); })(),
+    dorDesc: gv('avDorDesc'), adm: gv('avADM'),
     forca: gv('avForca'), equilibrio: gv('avEquilibrio'), marcha: gv('avMarcha'),
     inspec: gv('avInspec'), sensib: gv('avSensib'), achados: gv('avAchados'),
     objetivos: gv('avObjetivos'), objFisio: gv('avObjFisio'),
@@ -5090,7 +5162,9 @@ function abrirNovaEvolucao(){
     document.getElementById('evEva').value='';
     document.getElementById('evCondutas').value='';
     document.getElementById('evResposta').value='';
-    document.getElementById('evInterc').value='Nenhuma';
+    var siEl = document.getElementById('evSemInterc');
+    if(siEl){ siEl.checked=true; document.getElementById('evIntercBox').style.display='none'; }
+    var intEl = document.getElementById('evInterc'); if(intEl) intEl.value='';
   }
 }
 
@@ -5103,7 +5177,7 @@ function salvarEvolucaoPront(){
     eva: document.getElementById('evEva').value,
     condutas: document.getElementById('evCondutas').value,
     resposta: document.getElementById('evResposta').value,
-    interc: document.getElementById('evInterc').value,
+    interc: (function(){ var si=document.getElementById('evSemInterc'); return si&&si.checked?'Sem intercorrências':(document.getElementById('evInterc')?document.getElementById('evInterc').value:''); })(),
     id: Date.now()
   };
   if(!ev.data||!ev.condutas){ toast('Preencha data e condutas','error'); return; }
@@ -5121,7 +5195,33 @@ function salvarEvolucaoPront(){
   
   document.getElementById('formNovaEvolucao').style.display='none';
   prontRenderEvolucoes();
-  toast('Evolução registrada!','success');
+  
+  // Alert at 10 and 20 sessions
+  var totalEvols = evols.length;
+  if(totalEvols===10||totalEvols===20){
+    setTimeout(function(){
+      if(confirm('✅ Paciente atingiu '+totalEvols+' sessões!\n\nO CREFITO orienta realizar uma Reavaliação Fisioterapêutica a cada 10-20 sessões.\n\nDeseja ir para os Documentos para gerar a Reavaliação agora?')){
+        goTo('documentos');
+        setTimeout(function(){
+          var sel = document.getElementById('docPacSelect');
+          if(sel) sel.value = pid;
+        },200);
+      }
+    },500);
+  } else {
+    toast('Evolução '+totalEvols+' registrada!','success');
+  }
+  
+  // Check plan limit
+  var planoRef = localStorage.getItem('mc_plano_'+pid);
+  if(planoRef){
+    var pr = JSON.parse(planoRef);
+    if(pr.totalSessoes && totalEvols >= pr.totalSessoes){
+      setTimeout(function(){
+        toast('⚠️ Paciente atingiu o limite de '+pr.totalSessoes+' sessões do plano!','error');
+      },600);
+    }
+  }
 }
 
 function prontRenderEvolucoes(){
