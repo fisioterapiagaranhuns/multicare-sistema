@@ -326,9 +326,19 @@ if(window.location.search.indexOf('agendar=1')>=0){
       <div class="nav-item" onclick="goTo('aniversariantes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Aniversariantes</div>
       <div class="nav-item" onclick="goTo('engajamento')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><circle cx="12" cy="12" r="1"/></svg>Engajamento</div>
       <div class="nav-item" onclick="goTo('autoridade')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Autoridade</div>
+      <div class="nav-item" onclick="goTo('documentos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Documentos</div>
       <div class="nav-item" onclick="goTo('link-paciente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Link do Paciente</div>
     </nav>
-    <div class="sb-bottom"><div class="sb-user"><div class="sb-avatar" id="sbAvatar">IM</div><div><div class="sb-user-name" id="sbName">Dr. Igor</div><div class="sb-user-role" id="sbRole">Fisioterapeuta</div></div></div></div>
+    <div class="sb-bottom">
+  <div class="sb-user" style="cursor:pointer" onclick="openModal('modalSettings')" title="Configurações">
+    <div class="sb-avatar" id="sbAvatar">IM</div>
+    <div style="flex:1">
+      <div class="sb-user-name" id="sbName">Dr. Igor</div>
+      <div class="sb-user-role" id="sbRole">Fisioterapeuta</div>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </div>
+</div>
   </aside>
 
   <div class="main">
@@ -837,6 +847,72 @@ Vamos retomar? Aguardo você!
       </div>
     </div>
 
+    <!-- DOCUMENTOS & PRONTUÁRIO -->
+    <div class="page" id="page-documentos">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <select class="form-control" style="max-width:280px" id="docPacSelect">
+          <option value="">— Selecione um paciente —</option>
+        </select>
+        <div style="font-size:13px;color:var(--ink3)">Selecione o paciente para preencher os documentos automaticamente</div>
+      </div>
+
+      <div class="tabs" style="margin-bottom:20px">
+        <div class="tab active" onclick="switchTab(this,'docAdm')">📋 Administrativos</div>
+        <div class="tab" onclick="switchTab(this,'docClin')">🩺 Clínicos</div>
+        <div class="tab" onclick="switchTab(this,'docFin')">💰 Financeiros</div>
+        <div class="tab" onclick="switchTab(this,'docEsp')">📄 Especiais</div>
+      </div>
+
+      <!-- ADMINISTRATIVOS -->
+      <div class="tab-panel active" id="docAdm">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+          <div class="card card-click" onclick="gerarDoc('ficha_cadastro')"><div style="font-size:20px;margin-bottom:8px">📝</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Ficha de Cadastro</div><div style="font-size:12px;color:var(--ink3)">Dados pessoais, contatos, convênio e responsável</div></div>
+          <div class="card card-click" onclick="gerarDoc('anamnese')"><div style="font-size:20px;margin-bottom:8px">📋</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Anamnese Fisioterapêutica</div><div style="font-size:12px;color:var(--ink3)">Queixa, história clínica, diagnósticos, medicamentos</div></div>
+          <div class="card card-click" onclick="gerarDoc('consentimento_tratamento')"><div style="font-size:20px;margin-bottom:8px">✍️</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Consentimento para Tratamento</div><div style="font-size:12px;color:var(--ink3)">Explicação, riscos, benefícios e assinatura</div></div>
+          <div class="card card-click" onclick="gerarDoc('consentimento_imagem')"><div style="font-size:20px;margin-bottom:8px">📸</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Consentimento para Uso de Imagem</div><div style="font-size:12px;color:var(--ink3)">Fotos, vídeos, redes sociais</div></div>
+          <div class="card card-click" onclick="gerarDoc('contrato')"><div style="font-size:20px;margin-bottom:8px">📜</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Contrato de Prestação de Serviços</div><div style="font-size:12px;color:var(--ink3)">Valor, frequência, política de faltas, cancelamento</div></div>
+          <div class="card card-click" onclick="gerarDoc('ciencia_faltas')"><div style="font-size:20px;margin-bottom:8px">⚠️</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Ciência de Faltas</div><div style="font-size:12px;color:var(--ink3)">Política de cancelamentos e ausências</div></div>
+        </div>
+      </div>
+
+      <!-- CLÍNICOS -->
+      <div class="tab-panel" id="docClin">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+          <div class="card card-click" onclick="gerarDoc('avaliacao_inicial')"><div style="font-size:20px;margin-bottom:8px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Avaliação Fisioterapêutica Inicial</div><div style="font-size:12px;color:var(--ink3)">Diagnóstico, inspeção, EVA, ADM, força, marcha</div></div>
+          <div class="card card-click" onclick="gerarDoc('plano_terapeutico')"><div style="font-size:20px;margin-bottom:8px">🗺️</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Plano Terapêutico</div><div style="font-size:12px;color:var(--ink3)">Objetivos, frequência, recursos, metas</div></div>
+          <div class="card card-click" onclick="gerarDoc('evolucao')"><div style="font-size:20px;margin-bottom:8px">📈</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Evolução Fisioterapêutica</div><div style="font-size:12px;color:var(--ink3)">Registro de todas as sessões realizadas</div></div>
+          <div class="card card-click" onclick="gerarDoc('reavaliacao')"><div style="font-size:20px;margin-bottom:8px">🔄</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Reavaliação Fisioterapêutica</div><div style="font-size:12px;color:var(--ink3)">Ganhos funcionais, ajustes do plano</div></div>
+          <div class="card card-click" onclick="gerarDoc('relatorio_fisio')"><div style="font-size:20px;margin-bottom:8px">📄</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Relatório Fisioterapêutico</div><div style="font-size:12px;color:var(--ink3)">INSS, advogados, convênios, médicos</div></div>
+          <div class="card card-click" onclick="gerarDoc('relatorio_inss')"><div style="font-size:20px;margin-bottom:8px">🏛️</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Relatório para INSS</div><div style="font-size:12px;color:var(--ink3)">Incapacidade, limitações, prognóstico</div></div>
+          <div class="card card-click" onclick="gerarDoc('relatorio_homecare')"><div style="font-size:20px;margin-bottom:8px">🏠</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Relatório para Home Care</div><div style="font-size:12px;color:var(--ink3)">Justificativa, objetivos, frequência</div></div>
+          <div class="card card-click" onclick="gerarDoc('relatorio_protese')"><div style="font-size:20px;margin-bottom:8px">🦾</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Relatório para Prótese/Órtese</div><div style="font-size:12px;color:var(--ink3)">Especialmente para amputados</div></div>
+          <div class="card card-click" onclick="gerarDoc('encaminhamento')"><div style="font-size:20px;margin-bottom:8px">📨</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Encaminhamento Interdisciplinar</div><div style="font-size:12px;color:var(--ink3)">Médico, TO, psicólogo, nutricionista</div></div>
+          <div class="card card-click" onclick="gerarDoc('alta')"><div style="font-size:20px;margin-bottom:8px">🏁</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Alta Fisioterapêutica</div><div style="font-size:12px;color:var(--ink3)">Objetivos alcançados, condição funcional, orientações</div></div>
+          <div class="card card-click" onclick="gerarDoc('abandono')"><div style="font-size:20px;margin-bottom:8px">🚪</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Abandono de Tratamento</div><div style="font-size:12px;color:var(--ink3)">Quando paciente interrompe o acompanhamento</div></div>
+          <div class="card card-click" onclick="gerarDoc('intercorrencia')"><div style="font-size:20px;margin-bottom:8px">🚨</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Registro de Intercorrência</div><div style="font-size:12px;color:var(--ink3)">Quedas, mal-estar, eventos adversos</div></div>
+        </div>
+      </div>
+
+      <!-- FINANCEIROS -->
+      <div class="tab-panel" id="docFin">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+          <div class="card card-click" onclick="gerarDoc('recibo')"><div style="font-size:20px;margin-bottom:8px">🧾</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Recibo de Pagamento</div><div style="font-size:12px;color:var(--ink3)">Para autônomos e clínicas</div></div>
+          <div class="card card-click" onclick="gerarDoc('declaracao_comparecimento')"><div style="font-size:20px;margin-bottom:8px">📅</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Declaração de Comparecimento</div><div style="font-size:12px;color:var(--ink3)">Confirma presença às sessões</div></div>
+          <div class="card card-click" onclick="gerarDoc('declaracao_tratamento')"><div style="font-size:20px;margin-bottom:8px">📃</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Declaração de Tratamento</div><div style="font-size:12px;color:var(--ink3)">Confirma que está em tratamento</div></div>
+          <div class="card card-click" onclick="gerarDoc('quitacao')"><div style="font-size:20px;margin-bottom:8px">✅</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Comprovante de Quitação</div><div style="font-size:12px;color:var(--ink3)">Confirma pagamento total do tratamento</div></div>
+        </div>
+      </div>
+
+      <!-- ESPECIAIS -->
+      <div class="tab-panel" id="docEsp">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+          <div class="card card-click" onclick="gerarDoc('resp_domiciliar')"><div style="font-size:20px;margin-bottom:8px">🏠</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Responsabilidade Domiciliar</div><div style="font-size:12px;color:var(--ink3)">Para atendimentos em domicílio</div></div>
+          <div class="card card-click" onclick="gerarDoc('recusa')"><div style="font-size:20px;margin-bottom:8px">🚫</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Recusa de Tratamento</div><div style="font-size:12px;color:var(--ink3)">Quando paciente recusa uma conduta</div></div>
+          <div class="card card-click" onclick="gerarDoc('alta_pedido')"><div style="font-size:20px;margin-bottom:8px">📤</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">Termo de Alta a Pedido</div><div style="font-size:12px;color:var(--ink3)">Quando paciente solicita alta antes da conclusão</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- PRONTUÁRIO COMPLETO -->
     <div class="page" id="page-prontuario">
       <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
@@ -1116,6 +1192,14 @@ Vamos retomar? Aguardo você!
       <div class="form-row"><div class="form-group"><label class="form-label">Paciente *</label><select class="form-control" id="agPaciente"><option value="">— Selecione —</option></select></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-control" id="agTipo"><option>Avaliação</option><option>Sessão</option><option>Retorno</option><option>Remarcado</option></select></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="agData" type="date"/></div><div class="form-group"><label class="form-label">Horário *</label><input class="form-control" id="agHora" type="time"/></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" id="agValor" type="number" placeholder="150"/></div><div class="form-group"><label class="form-label">Status</label><select class="form-control" id="agStatus"><option>Confirmado</option><option>Pendente</option><option>Cancelado</option><option>Remarcado</option></select></div></div>
+      <div class="form-group">
+        <label class="form-label">Local do Atendimento</label>
+        <select class="form-control" id="agLocal">
+          <option value="Clínica">🏥 Clínica</option>
+          <option value="Domiciliar">🏠 Domiciliar</option>
+          <option value="Online">💻 Online</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="agObs" placeholder="Notas..."></textarea></div>
     </div>
     <div class="modal-foot" style="flex-wrap:wrap;gap:8px">
@@ -1363,6 +1447,38 @@ Vamos retomar? Aguardo você!
   </div>
 </div>
 
+
+<!-- Modal Configurações da Clínica -->
+<div class="modal-overlay" id="modalSettings">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head"><span class="modal-title">⚙️ Configurações da Clínica</span><button class="modal-close" onclick="closeModal('modalSettings')">×</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px">Dados do Profissional</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nome Completo *</label><input class="form-control" id="cfgNome" placeholder="Dr. Igor Matheus"/></div>
+        <div class="form-group"><label class="form-label">CREFITO *</label><input class="form-control" id="cfgCrefito" placeholder="Ex: 402890-F"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Especialidade</label><input class="form-control" id="cfgEspecialidade" placeholder="Ex: Ortopedia e Traumatologia"/></div>
+        <div class="form-group"><label class="form-label">WhatsApp Clínica</label><input class="form-control" id="cfgTel" placeholder="(87) 9.9922-1295" oninput="this.value=maskTel(this.value)"/></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 14px">Dados da Clínica</div>
+      <div class="form-group"><label class="form-label">Nome da Clínica</label><input class="form-control" id="cfgClinica" placeholder="MultiCare Fisioterapia &amp; Reabilitação"/></div>
+      <div class="form-group"><label class="form-label">Endereço</label><input class="form-control" id="cfgEndereco" placeholder="Rua Dr. José Mariano, 345, Centro — Garanhuns, PE"/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Instagram</label><input class="form-control" id="cfgInstagram" placeholder="@multicarefisioterapia"/></div>
+        <div class="form-group"><label class="form-label">Chave PIX</label><input class="form-control" id="cfgPix" placeholder="(87) 9.9922-1295"/></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 14px">Política da Clínica</div>
+      <div class="form-group"><label class="form-label">Política de Cancelamento</label><textarea class="form-control" id="cfgPolitica" rows="2" placeholder="Ex: Cancelamentos devem ser feitos com 24h de antecedência..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modalSettings')">Cancelar</button>
+      <button class="btn btn-green" onclick="salvarConfigs()">Salvar Configurações</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1460,11 +1576,11 @@ function goTo(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   var el=document.getElementById('page-'+page);if(el)el.classList.add('active');
-  var titles={dashboard:'Dashboard',prontuario:'Prontuário do Paciente',protocolo:'Protocolos Clínicos',engajamento:'Engajamento & PROMs',autoridade:'Autoridade & Laudos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
+  var titles={dashboard:'Dashboard',documentos:'Documentos & Prontuário',prontuario:'Prontuário do Paciente',protocolo:'Protocolos Clínicos',engajamento:'Engajamento & PROMs',autoridade:'Autoridade & Laudos',agenda:'Agenda',pacientes:'Pacientes',financeiro:'Financeiro',relatorios:'Relatórios',lembretes:'Lembretes & Mensagens',aniversariantes:'Aniversariantes','link-paciente':'Link do Paciente'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
   closeSidebar();
-  var renders={dashboard:renderDashboard,prontuario:renderProntuario,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,'link-paciente':renderLinkPaciente,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
+  var renders={dashboard:renderDashboard,documentos:renderDocumentos,prontuario:renderProntuario,protocolo:renderProtocolo,engajamento:renderEngajamento,autoridade:renderAutoridade,'link-paciente':renderLinkPaciente,agenda:renderAgenda,pacientes:renderPacientes,financeiro:renderFinanceiro,relatorios:renderRelatorios,lembretes:renderLembretes,aniversariantes:renderAniversariantes};
   if(renders[page])renders[page]();
   populateSelects();
 }
@@ -1743,7 +1859,8 @@ async function excluirPaciente(id){
 async function salvarAgendar(sendWa){
   var pid=document.getElementById('agPaciente').value,data=document.getElementById('agData').value,hora=document.getElementById('agHora').value;
   if(!pid||!data||!hora){toast('Preencha paciente, data e horário','error');return;}
-  var body={paciente_id:parseInt(pid),tipo:document.getElementById('agTipo').value,data,hora,valor:parseFloat(document.getElementById('agValor').value)||0,status:document.getElementById('agStatus').value,obs:document.getElementById('agObs').value};
+  var localAg = document.getElementById('agLocal') ? document.getElementById('agLocal').value : 'Clínica';
+  var body={paciente_id:parseInt(pid),tipo:document.getElementById('agTipo').value,data,hora,valor:parseFloat(document.getElementById('agValor').value)||0,status:document.getElementById('agStatus').value,local:localAg,obs:document.getElementById('agObs').value};
   var aid=document.getElementById('agId').value;
   try{
     aid?await apiPatch('agendamentos',aid,body):await apiPost('agendamentos',body);
@@ -1773,7 +1890,8 @@ function renderAgenda(){
       var evs=state.agendamentos.filter(a=>a.data===dateStr&&a.hora===h);
       html+=`<div class="ag-slot${isToday?' today-col':''}" onclick="openSlot('${dateStr}','${h}')">`;
       evs.forEach(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);var ec=a.status==='Cancelado'?'ag-event-red':a.tipo==='Avaliação'?'ag-event-blue':a.tipo==='Remarcado'?'ag-event-amber':'ag-event';var statusDot = a.status==='Pendente'?'🟡':a.status==='Cancelado'?'🔴':'';
-      html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''} — ${a.status}">${statusDot}${p?p.nome.split(' ')[0]:'?'}<br><span style="font-size:9px">${a.hora} ${a.tipo}</span></div>`;});
+      var localIcon = a.local==='Domiciliar'?'🏠':a.local==='Online'?'💻':'';
+      html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''} — ${a.status}${a.local?' — '+a.local:''}">${statusDot}${localIcon}${p?p.nome.split(' ')[0]:'?'}<br><span style="font-size:9px">${a.hora} ${a.tipo}</span></div>`;});
       html+='</div>';
     });
   });
@@ -1792,6 +1910,8 @@ function editarAgendamento(id){
   document.getElementById('agValor').value=a.valor;
   document.getElementById('agStatus').value=a.status;
   document.getElementById('agObs').value=a.obs||'';
+  var agLocalEl = document.getElementById('agLocal');
+  if(agLocalEl) agLocalEl.value = a.local||'Clínica';
   // Show quick confirm button if status is Pendente
   var btnConf = document.getElementById('btnConfirmarRapido');
   if(btnConf) btnConf.style.display = a.status==='Pendente'?'inline-flex':'none';
@@ -1974,6 +2094,7 @@ function initApp(){
   loadEng2State();
   initPromTipoListener();
   setTimeout(applyMasks, 300);
+  loadConfigs();
   var mes=hoje().substring(0,7);
   ['relFiltroMes','relFiltroLanMes'].forEach(id=>{var el=document.getElementById(id);if(el)el.value=mes;});
   // Definir período padrão dos gráficos (últimos 30 dias)
@@ -3929,6 +4050,318 @@ async function registrarPagamentoSessaoPending(){
   } catch(e){ toast('Erro ao registrar','error'); }
 }
 
+
+// ── CONFIGURAÇÕES DA CLÍNICA ──
+var clinicaConfig = {
+  nome: 'Dr. Igor Matheus',
+  crefito: '',
+  especialidade: 'Fisioterapia',
+  tel: '(87) 9.9922-1295',
+  clinica: 'MultiCare Fisioterapia & Reabilitação',
+  endereco: 'Rua Dr. José Mariano, 345, Centro — Garanhuns, PE',
+  instagram: '@multicarefisioterapia',
+  pix: '(87) 9.9922-1295',
+  politica: 'Cancelamentos devem ser avisados com pelo menos 24h de antecedência. Faltas sem aviso implicam cobrança da sessão.'
+};
+
+function loadConfigs(){
+  var saved = localStorage.getItem('mc_config');
+  if(saved) clinicaConfig = Object.assign(clinicaConfig, JSON.parse(saved));
+  // Apply to UI
+  document.getElementById('sbName').textContent = clinicaConfig.nome;
+  document.getElementById('sbRole').textContent = clinicaConfig.especialidade + (clinicaConfig.crefito ? ' · CREFITO '+clinicaConfig.crefito : '');
+}
+
+function abrirSettings(){
+  document.getElementById('cfgNome').value = clinicaConfig.nome||'';
+  document.getElementById('cfgCrefito').value = clinicaConfig.crefito||'';
+  document.getElementById('cfgEspecialidade').value = clinicaConfig.especialidade||'';
+  document.getElementById('cfgTel').value = clinicaConfig.tel||'';
+  document.getElementById('cfgClinica').value = clinicaConfig.clinica||'';
+  document.getElementById('cfgEndereco').value = clinicaConfig.endereco||'';
+  document.getElementById('cfgInstagram').value = clinicaConfig.instagram||'';
+  document.getElementById('cfgPix').value = clinicaConfig.pix||'';
+  document.getElementById('cfgPolitica').value = clinicaConfig.politica||'';
+  openModal('modalSettings');
+}
+
+function salvarConfigs(){
+  clinicaConfig.nome = document.getElementById('cfgNome').value.trim();
+  clinicaConfig.crefito = document.getElementById('cfgCrefito').value.trim();
+  clinicaConfig.especialidade = document.getElementById('cfgEspecialidade').value.trim();
+  clinicaConfig.tel = document.getElementById('cfgTel').value.trim();
+  clinicaConfig.clinica = document.getElementById('cfgClinica').value.trim();
+  clinicaConfig.endereco = document.getElementById('cfgEndereco').value.trim();
+  clinicaConfig.instagram = document.getElementById('cfgInstagram').value.trim();
+  clinicaConfig.pix = document.getElementById('cfgPix').value.trim();
+  clinicaConfig.politica = document.getElementById('cfgPolitica').value.trim();
+  localStorage.setItem('mc_config', JSON.stringify(clinicaConfig));
+  loadConfigs();
+  closeModal('modalSettings');
+  toast('Configurações salvas!','success');
+}
+
+
+// ════════════════════════════════════
+// GERADOR DE DOCUMENTOS
+// ════════════════════════════════════
+
+function renderDocumentos(){
+  var sel = document.getElementById('docPacSelect');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione um paciente —</option>'
+      + state.pacientes.map(function(p){
+          return '<option value="'+p.id+'">'+p.nome+'</option>';
+        }).join('');
+  }
+}
+
+function getPacienteDoc(){
+  var sel = document.getElementById('docPacSelect');
+  if(!sel||!sel.value){ toast('Selecione um paciente primeiro','error'); return null; }
+  return state.pacientes.find(function(x){return x.id==sel.value;});
+}
+
+function cabecalhoDoc(){
+  var c = clinicaConfig;
+  return '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #1c5c34">'
+    +'<div>'
+      +'<div style="font-family:Playfair Display,serif;font-size:20px;color:#1c5c34;font-weight:700">'+c.clinica+'</div>'
+      +'<div style="font-size:12px;color:#7a8077;margin-top:2px">'+c.nome+(c.crefito?' · CREFITO '+c.crefito:'')+'</div>'
+      +'<div style="font-size:11px;color:#7a8077;margin-top:1px">'+c.endereco+'</div>'
+    +'</div>'
+    +'<div style="text-align:right;font-size:11px;color:#7a8077">'
+      +'<div>'+c.tel+'</div>'
+      +'<div>'+c.instagram+'</div>'
+      +'<div>'+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})+'</div>'
+    +'</div>'
+  +'</div>';
+}
+
+function rodapeDoc(){
+  var c = clinicaConfig;
+  return '<div style="margin-top:48px;padding-top:16px;border-top:1px solid #e4e6e0">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-end">'
+      +'<div style="text-align:center;border-top:1px solid #0f1410;padding-top:6px;min-width:240px">'
+        +'<div style="font-size:12px">'+c.nome+'</div>'
+        +'<div style="font-size:11px;color:#7a8077">CREFITO '+c.crefito+'</div>'
+      +'</div>'
+      +'<div style="text-align:center;border-top:1px solid #0f1410;padding-top:6px;min-width:200px">'
+        +'<div style="font-size:12px">Paciente / Responsável</div>'
+        +'<div style="font-size:11px;color:#7a8077">Assinatura</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="text-align:center;margin-top:20px;font-size:11px;color:#7a8077">'+c.clinica+' · '+c.endereco+'</div>'
+  +'</div>';
+}
+
+function abrirJanela(titulo, conteudo){
+  var win = window.open('','_blank','width=800,height=700');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titulo+'</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">'
+    +'<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Outfit,sans-serif;padding:40px;color:#0f1410;max-width:720px;margin:0 auto;font-size:13px;line-height:1.7}'
+    +'.titulo{font-family:Playfair Display,serif;font-size:18px;color:#1c5c34;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #e4e6e0}'
+    +'.campo{margin-bottom:16px}.label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#7a8077;margin-bottom:4px}'
+    +'.valor{font-size:13px;color:#3a4038;line-height:1.65}'
+    +'.linha{border:none;border-top:1px solid #e4e6e0;margin:20px 0}'
+    +'.linha-assin{border-top:1px solid #0f1410;width:280px;margin-top:48px;padding-top:6px;font-size:12px}'
+    +'@media print{body{padding:20px}}</style>'
+    +'<scr'+'ipt>setTimeout(function(){window.print();},800)</scr'+'ipt>'
+    +'</head><body>'+conteudo+'</body></html>');
+  win.document.close();
+}
+
+function fmtData(d){ return d?d.split('-').reverse().join('/'):'—'; }
+
+function gerarDoc(tipo){
+  var p = getPacienteDoc();
+  if(!p) return;
+  var c = clinicaConfig;
+  var ags = state.agendamentos.filter(function(a){return a.paciente_id==p.id;});
+  var lans = state.lancamentos.filter(function(l){return l.paciente_id==p.id;});
+  var protKey = localStorage.getItem('mc_prot_'+p.id);
+  var prot = protKey ? JSON.parse(protKey) : {};
+  var an = prot.anamnese || {};
+  var evs = prot.evolucoes || [];
+  var hoje_str = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var idadeAnos = p.nasc ? Math.floor((new Date()-new Date(p.nasc.replace(/-/g,'/')))/(365.25*24*3600*1000)) : '—';
+  var cab = cabecalhoDoc();
+  var rod = rodapeDoc();
+
+  var conteudo = '';
+
+  if(tipo==='ficha_cadastro'){
+    conteudo = cab
+      +'<div class="titulo">Ficha de Cadastro do Paciente</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+        +'<div class="campo"><div class="label">Nome Completo</div><div class="valor">'+p.nome+'</div></div>'
+        +'<div class="campo"><div class="label">Data de Nascimento / Idade</div><div class="valor">'+(p.nasc?fmtData(p.nasc)+' ('+idadeAnos+' anos)':'—')+'</div></div>'
+        +'<div class="campo"><div class="label">CPF</div><div class="valor">'+(p.cpf||'—')+'</div></div>'
+        +'<div class="campo"><div class="label">WhatsApp</div><div class="valor">'+p.tel+'</div></div>'
+        +'<div class="campo"><div class="label">E-mail</div><div class="valor">'+(p.email||'—')+'</div></div>'
+        +'<div class="campo"><div class="label">Convênio</div><div class="valor">'+(p.convenio||'Particular')+'</div></div>'
+      +'</div>'
+      +'<hr class="linha">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+        +'<div class="campo"><div class="label">Responsável (se houver)</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Contato do Responsável</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Contato de Emergência</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Relação</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+      +'</div>'
+      +rod;
+  }
+
+  else if(tipo==='avaliacao_inicial'){
+    conteudo = cab
+      +'<div class="titulo">Avaliação Fisioterapêutica Inicial</div>'
+      +'<div style="font-size:12px;color:#7a8077;margin-bottom:16px">Paciente: <strong>'+p.nome+'</strong> · '+fmtData(p.nasc)+' ('+idadeAnos+' anos) · Data: '+hoje_str+'</div>'
+      +'<div style="font-weight:600;color:#1c5c34;margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em">1. Identificação</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+        +'<div class="campo"><div class="label">Diagnóstico Médico / CID</div><div class="valor">'+(an.diagnostico||'_________________')+'</div></div>'
+        +'<div class="campo"><div class="label">Fase Clínica</div><div class="valor">'+(an.fase||'_________________')+'</div></div>'
+      +'</div>'
+      +'<div style="font-weight:600;color:#1c5c34;margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em">2. Anamnese</div>'
+      +'<div class="campo"><div class="label">Queixa Principal</div><div class="valor">'+(an.queixa||'_________________')+'</div></div>'
+      +'<div class="campo"><div class="label">História da Doença Atual</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:8px;min-height:60px">'+(an.queixa||'')+'</div></div>'
+      +'<div class="campo"><div class="label">Medicamentos em uso</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:8px;min-height:40px">'+(an.historico||'')+'</div></div>'
+      +'<hr class="linha">'
+      +'<div style="font-weight:600;color:#1c5c34;margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em">3. Avaliação Física</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+        +'<div class="campo"><div class="label">EVA Inicial</div><div class="valor">'+(an.eva||'—')+'/10</div></div>'
+        +'<div class="campo"><div class="label">Achados Físicos</div><div class="valor">'+(an.achados||'—')+'</div></div>'
+        +'<div class="campo"><div class="label">Amplitude de Movimento</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Força Muscular (MRC)</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Marcha / Equilíbrio</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+        +'<div class="campo"><div class="label">Prótese / Órtese / Dispositivo</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px">&nbsp;</div></div>'
+      +'</div>'
+      +'<div class="campo"><div class="label">Diagnóstico Fisioterapêutico</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:8px;min-height:50px"></div></div>'
+      +'<div class="campo"><div class="label">Objetivo do Paciente</div><div class="valor">'+(an.objetivo||'—')+'</div></div>'
+      +rod;
+  }
+
+  else if(tipo==='evolucao'){
+    var sessoesHtml = evs.length
+      ? evs.map(function(ev){
+          return '<div style="margin-bottom:14px;padding:12px;border:1px solid #e4e6e0;border-radius:8px;border-left:3px solid #2a7d48">'
+            +'<div style="font-weight:600;margin-bottom:6px;color:#1c5c34">'+fmtData(ev.data)+' — '+ev.fase+' — EVA '+ev.eva+'/10</div>'
+            +'<div style="font-size:12px;line-height:1.7">'+ev.condutas+'</div>'
+            +(ev.obs?'<div style="font-size:12px;color:#7a8077;margin-top:4px;font-style:italic">'+ev.obs+'</div>':'')
+          +'</div>';
+        }).join('')
+      : '<div style="color:#7a8077;font-style:italic">Nenhuma evolução registrada</div>';
+    conteudo = cab
+      +'<div class="titulo">Evolução Fisioterapêutica</div>'
+      +'<div style="font-size:12px;color:#7a8077;margin-bottom:20px">Paciente: <strong>'+p.nome+'</strong> · '+p.tel+'</div>'
+      +sessoesHtml
+      +rod;
+  }
+
+  else if(tipo==='relatorio_fisio'){
+    conteudo = cab
+      +'<div class="titulo">Relatório Fisioterapêutico</div>'
+      +'<div class="campo"><div class="label">Paciente</div><div class="valor">'+p.nome+' · CPF: '+(p.cpf||'—')+' · Nasc: '+fmtData(p.nasc)+'</div></div>'
+      +'<div class="campo"><div class="label">Período de Tratamento</div><div class="valor">'+fmtData(ags.sort(function(a,b){return a.data.localeCompare(b.data);})[0]&&ags[0].data)+' a '+fmtData(ags[ags.length-1]&&ags[ags.length-1].data)+'</div></div>'
+      +'<div class="campo"><div class="label">Diagnóstico</div><div class="valor">'+(an.diagnostico||'—')+'</div></div>'
+      +'<div class="campo"><div class="label">Sessões Realizadas</div><div class="valor">'+evs.length+' sessões</div></div>'
+      +'<div class="campo"><div class="label">Evolução Clínica</div><div class="valor">EVA inicial: '+(an.eva||'—')+'/10 · EVA atual: '+(evs.length?evs[evs.length-1].eva:'—')+'/10</div></div>'
+      +'<div class="campo"><div class="label">Condutas Realizadas</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:10px;min-height:80px">'+(prot.protocolo?prot.protocolo.resumo:'')+'</div></div>'
+      +'<div class="campo"><div class="label">Objetivo do Paciente</div><div class="valor">'+(an.objetivo||'—')+'</div></div>'
+      +'<div class="campo"><div class="label">Prognóstico / Previsão de Alta</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:10px;min-height:60px">'+(prot.protocolo?prot.protocolo.previsaoAlta:'')+'</div></div>'
+      +rod;
+  }
+
+  else if(tipo==='recibo'){
+    var totalPago = lans.filter(function(l){return l.tipo==='Recebido';}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
+    conteudo = cab
+      +'<div class="titulo">Recibo de Pagamento</div>'
+      +'<div style="border:2px solid #1c5c34;border-radius:10px;padding:24px;margin-bottom:20px">'
+        +'<div style="font-size:13px;margin-bottom:12px">Recebi de <strong>'+p.nome+'</strong> (CPF: '+(p.cpf||'—')+') a importância de:</div>'
+        +'<div style="font-family:Playfair Display,serif;font-size:32px;color:#1c5c34;text-align:center;margin:16px 0">R$ '+totalPago.toFixed(2).replace('.',',')+'</div>'
+        +'<div style="font-size:13px">Referente a: serviços de fisioterapia prestados na '+c.clinica+'.</div>'
+        +'<div style="font-size:13px;margin-top:8px">Período: _____________ a _____________</div>'
+      +'</div>'
+      +rod;
+  }
+
+  else if(tipo==='declaracao_comparecimento'){
+    var sessRealizadas = ags.filter(function(a){return a.data<new Date().toISOString().split('T')[0]&&a.status!=='Cancelado';});
+    conteudo = cab
+      +'<div class="titulo">Declaração de Comparecimento</div>'
+      +'<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:20px">'
+        +'Declaro para os devidos fins que o(a) paciente <strong>'+p.nome+'</strong>, portador(a) do CPF nº '+(p.cpf||'_____________')+', compareceu a este serviço de fisioterapia para realização de tratamento fisioterapêutico, conforme sessões registradas abaixo:'
+      +'</div>'
+      +'<div style="border:1px solid #e4e6e0;border-radius:8px;padding:14px;margin-bottom:20px">'
+        +sessRealizadas.slice(-10).map(function(a){return '<div style="padding:4px 0;border-bottom:1px solid #f0f0ee;font-size:12px">'+fmtData(a.data)+' — '+a.hora+'h — '+a.tipo+'</div>';}).join('')
+      +'</div>'
+      +'<div style="font-size:13px;line-height:1.9">Total de sessões: <strong>'+sessRealizadas.length+'</strong></div>'
+      +'<div style="font-size:13px;margin-top:8px">Garanhuns/PE, '+hoje_str+'.</div>'
+      +rod;
+  }
+
+  else if(tipo==='consentimento_tratamento'){
+    conteudo = cab
+      +'<div class="titulo">Termo de Consentimento Livre e Esclarecido para Tratamento Fisioterapêutico</div>'
+      +'<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:16px">'
+        +'Eu, <strong>'+p.nome+'</strong>, portador(a) do CPF nº '+(p.cpf||'_____________')+', declaro ter sido informado(a) de forma clara e objetiva, pelo(a) fisioterapeuta <strong>'+c.nome+'</strong> (CREFITO '+c.crefito+'), sobre o diagnóstico fisioterapêutico, os objetivos, os métodos, os possíveis riscos e os benefícios do tratamento proposto.'
+      +'</div>'
+      +'<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:16px">'
+        +'Autorizo a realização das condutas fisioterapêuticas descritas no plano de tratamento, bem como o registro de dados clínicos, fotográficos e de vídeo para fins exclusivos de acompanhamento clínico.'
+      +'</div>'
+      +'<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:16px">'
+        +'Compreendo que posso revogar este consentimento a qualquer momento, sem prejuízo ao atendimento, desde que comunicado ao profissional responsável.'
+      +'</div>'
+      +'<div style="text-align:justify;line-height:1.9;font-size:13px;margin-bottom:24px">'
+        +'Garanhuns/PE, '+hoje_str+'.'
+      +'</div>'
+      +rod;
+  }
+
+  else if(tipo==='alta'){
+    conteudo = cab
+      +'<div class="titulo">Alta Fisioterapêutica</div>'
+      +'<div class="campo"><div class="label">Paciente</div><div class="valor">'+p.nome+' · '+fmtData(p.nasc)+' ('+idadeAnos+' anos)</div></div>'
+      +'<div class="campo"><div class="label">Diagnóstico</div><div class="valor">'+(an.diagnostico||'—')+'</div></div>'
+      +'<div class="campo"><div class="label">Período de Tratamento</div><div class="valor">'+evs.length+' sessões realizadas</div></div>'
+      +'<div class="campo"><div class="label">Evolução EVA</div><div class="valor">Inicial: '+(an.eva||'—')+'/10 → Alta: '+(evs.length?evs[evs.length-1].eva:'—')+'/10</div></div>'
+      +'<div class="campo"><div class="label">Objetivos Alcançados</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:10px;min-height:60px"></div></div>'
+      +'<div class="campo"><div class="label">Condição Funcional na Alta</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:10px;min-height:60px"></div></div>'
+      +'<div class="campo"><div class="label">Orientações Fornecidas</div><div class="valor" style="border:1px solid #e4e6e0;border-radius:6px;padding:10px;min-height:60px">'+(prot.protocolo?(prot.protocolo.orientacoes||[]).join(', '):'')+'</div></div>'
+      +'<div class="campo"><div class="label">Motivo da Alta</div><div class="valor" style="border-bottom:1px solid #ccc;min-height:24px"></div></div>'
+      +'<div style="font-size:13px;margin-top:16px">Garanhuns/PE, '+hoje_str+'.</div>'
+      +rod;
+  }
+
+  else {
+    // Generic template for other documents
+    var titulos = {
+      anamnese:'Anamnese Fisioterapêutica',
+      plano_terapeutico:'Plano Terapêutico',
+      reavaliacao:'Reavaliação Fisioterapêutica',
+      relatorio_inss:'Relatório Fisioterapêutico para INSS',
+      relatorio_homecare:'Relatório para Home Care',
+      relatorio_protese:'Relatório para Solicitação de Prótese/Órtese',
+      encaminhamento:'Encaminhamento Interdisciplinar',
+      abandono:'Termo de Abandono de Tratamento',
+      intercorrencia:'Registro de Intercorrência',
+      consentimento_imagem:'Termo de Consentimento para Uso de Imagem',
+      contrato:'Contrato de Prestação de Serviços',
+      ciencia_faltas:'Termo de Ciência de Faltas e Cancelamentos',
+      quitacao:'Comprovante de Quitação',
+      declaracao_tratamento:'Declaração de Tratamento Fisioterapêutico',
+      resp_domiciliar:'Termo de Responsabilidade para Atendimento Domiciliar',
+      recusa:'Termo de Recusa de Tratamento',
+      alta_pedido:'Termo de Alta a Pedido'
+    };
+    conteudo = cab
+      +'<div class="titulo">'+(titulos[tipo]||tipo)+'</div>'
+      +'<div style="font-size:12px;color:#7a8077;margin-bottom:20px">Paciente: <strong>'+p.nome+'</strong> · CPF: '+(p.cpf||'—')+' · Data: '+hoje_str+'</div>'
+      +'<div style="border:1px solid #e4e6e0;border-radius:8px;padding:20px;min-height:300px;font-size:13px;color:#7a8077;font-style:italic">Preencha as informações específicas deste documento...</div>'
+      +rod;
+  }
+
+  abrirJanela(titulos&&titulos[tipo]||tipo, conteudo);
+}
+
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
 
 // ══════════════════════════════════════
@@ -4542,8 +4975,19 @@ Responda APENAS em JSON puro (sem markdown) com esta estrutura:
         messages:[{role:'user',content:prompt}]
       })
     });
+    if(!r.ok){
+      var errTxt = await r.text();
+      throw new Error('API '+r.status+': '+errTxt.substring(0,200));
+    }
     var data = await r.json();
+    if(!data.content||!data.content[0]){
+      throw new Error('Resposta inválida da API');
+    }
     var txt = data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    // Extract JSON if wrapped in text
+    var jsonStart = txt.indexOf('{');
+    var jsonEnd = txt.lastIndexOf('}');
+    if(jsonStart > 0) txt = txt.substring(jsonStart, jsonEnd+1);
     var prot = JSON.parse(txt);
     protState.protocolo = prot;
     salvarProtState();
