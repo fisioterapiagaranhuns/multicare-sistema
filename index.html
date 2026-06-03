@@ -4106,8 +4106,11 @@ function prontRenderFinanceiro(p, lans){
   var aReceber = lans.filter(function(l){return l.tipo==='A Receber' && parseFloat(l.valor||0)>0;}).reduce(function(s,l){return s+parseFloat(l.valor||0);},0);
 
   var resumo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
-    +'<div style="background:var(--forest-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">R$'+recebido.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Recebido</div></div>'
-    +'<div style="background:var(--red-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--red)">R$'+aReceber.toFixed(0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">A Receber</div></div>'
+    +'<div style="background:var(--forest-light);border-radius:8px;padding:14px;text-align:center"><div style="font-family:Playfair Display,serif;font-size:22px;color:var(--forest)">R$'+recebido.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+'</div><div style="font-size:11px;color:var(--ink3);margin-top:3px">Recebido</div></div>'
+    +'<div style="background:var(--red-light);border-radius:8px;padding:14px;text-align:center;cursor:pointer" onclick="abrirTabFinanceiro()" title="Ver detalhes">'
+      +'<div style="font-family:Playfair Display,serif;font-size:22px;color:var(--red)">R$'+aReceber.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+'</div>'
+      +'<div style="font-size:11px;color:var(--ink3);margin-top:3px">A Receber — '+sessoesRestantes+' sessões</div>'
+    +'</div>'
     +'</div>';
 
   // Per-session: build session-by-session entries from agendamentos
@@ -4850,9 +4853,9 @@ function getDocFields(tipo, p, an, evs, ags, lans, hoje_str){
         +campo('Forma de Pagamento', formaPT||'—', false)
         +campo('Modalidade', p.local_preferencial||'Clínica', false)
       +'</div>'
-      +blocoEditavel('Objetivos de Curto Prazo (1-4 semanas)', objPT)
+      +blocoEditavel('Objetivos de Curto Prazo (1-4 semanas)', '')
       +blocoEditavel('Objetivos de Médio Prazo (4-8 semanas)', '')
-      +blocoEditavel('Objetivos de Longo Prazo / Alta', '')
+      +blocoEditavel('Objetivos de Longo Prazo / Alta — Meta Principal', objPT)
       +blocoEditavel('Recursos Terapêuticos / Condutas Propostas', '')
       +blocoEditavel('Exercícios Domiciliares', '');
   }
