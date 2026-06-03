@@ -2007,7 +2007,10 @@ async function salvarAgendar(sendWa){
   var pid=document.getElementById('agPaciente').value,data=document.getElementById('agData').value,hora=document.getElementById('agHora').value;
   if(!pid||!data||!hora){toast('Preencha paciente, data e horário','error');return;}
   var localAg = document.getElementById('agLocal') ? document.getElementById('agLocal').value : 'Clínica';
-  var body={paciente_id:parseInt(pid),tipo:document.getElementById('agTipo').value,data,hora,valor:parseFloat(document.getElementById('agValor').value)||0,status:document.getElementById('agStatus').value,local:localAg,obs:document.getElementById('agObs').value};
+  var obsVal = document.getElementById('agObs').value||'';
+  // Store local in obs prefix since 'local' column may not exist in DB
+  var obsComLocal = localAg !== 'Clínica' ? '['+localAg+'] '+obsVal : obsVal;
+  var body={paciente_id:parseInt(pid),tipo:document.getElementById('agTipo').value,data,hora,valor:parseFloat(document.getElementById('agValor').value)||0,status:document.getElementById('agStatus').value,obs:obsComLocal};
   var aid=document.getElementById('agId').value;
   try{
     aid?await apiPatch('agendamentos',aid,body):await apiPost('agendamentos',body);
@@ -2037,7 +2040,8 @@ function renderAgenda(){
       var evs=state.agendamentos.filter(a=>a.data===dateStr&&a.hora===h);
       html+=`<div class="ag-slot${isToday?' today-col':''}" onclick="openSlot('${dateStr}','${h}')">`;
       evs.forEach(a=>{var p=state.pacientes.find(x=>x.id==a.paciente_id);var ec=a.status==='Cancelado'?'ag-event-red':a.tipo==='Avaliação'?'ag-event-blue':a.tipo==='Remarcado'?'ag-event-amber':'ag-event';var statusDot = a.status==='Pendente'?'🟡':a.status==='Cancelado'?'🔴':'';
-      var localIcon = a.local==='Domiciliar'?'🏠':a.local==='Online'?'💻':'';
+      var _obsAg = a.obs||'';
+      var localIcon = _obsAg.startsWith('[Domiciliar]')?'🏠':_obsAg.startsWith('[Online]')?'💻':'';
       html+=`<div class="${ec}" onclick="event.stopPropagation();editarAgendamento(${a.id})" title="${p?p.nome:''} — ${a.status}${a.local?' — '+a.local:''}">${statusDot}${localIcon}${p?p.nome.split(' ')[0]:'?'}<br><span style="font-size:9px">${a.hora} ${a.tipo}</span></div>`;});
       html+='</div>';
     });
@@ -2058,7 +2062,14 @@ function editarAgendamento(id){
   document.getElementById('agStatus').value=a.status;
   document.getElementById('agObs').value=a.obs||'';
   var agLocalEl = document.getElementById('agLocal');
-  if(agLocalEl) agLocalEl.value = a.local||'Clínica';
+  if(agLocalEl){
+    var obsStr = a.obs||'';
+    if(obsStr.startsWith('[Domiciliar]')) agLocalEl.value='Domiciliar';
+    else if(obsStr.startsWith('[Online]')) agLocalEl.value='Online';
+    else agLocalEl.value='Clínica';
+    // Strip local prefix from obs display
+    document.getElementById('agObs').value = obsStr.replace(/^\[(Domiciliar|Online|Clínica)\]\s*/,'');
+  }
   // Show quick confirm button if status is Pendente
   var btnConf = document.getElementById('btnConfirmarRapido');
   if(btnConf) btnConf.style.display = a.status==='Pendente'?'inline-flex':'none';
@@ -3706,6 +3717,7 @@ async function salvarPlano(){
     // Criar agendamentos em série
     for(var i=0;i<datas.length;i++){
       var localPlano = document.getElementById('plLocal') ? document.getElementById('plLocal').value : 'Clínica';
+      var obsPlano = localPlano !== 'Clínica' ? '['+localPlano+'] Plano de tratamento · '+forma+' · Sessão '+(i+1)+' de '+n : 'Plano de tratamento · '+forma+' · Sessão '+(i+1)+' de '+n;
       await apiPost('agendamentos',{
         paciente_id:parseInt(pid),
         tipo: i===0?'Avaliação':'Sessão',
@@ -3713,8 +3725,7 @@ async function salvarPlano(){
         hora:datas[i].hora,
         valor:v,
         status:'Pendente',
-        local:localPlano,
-        obs:'Plano de tratamento · '+forma+' · Sessão '+(i+1)+' de '+n
+        obs:obsPlano
       });
     }
     // Registrar lançamento financeiro
@@ -3980,7 +3991,7 @@ function prontRenderSessoes(p, ags){
         +'<div style="font-size:9px;color:var(--ink3)">'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(a.data.split('-')[1])-1]+'</div>'
       +'</div>'
       +'<div style="flex:1">'
-        +'<div style="font-size:13px;font-weight:500">'+a.tipo+' — '+a.hora+'h'+(a.local&&a.local!=='Clínica'?' <span style=\'font-size:10px;background:#fff8e7;padding:2px 6px;border-radius:4px;color:#7a4f00\'>'+( a.local==='Domiciliar'?'🏠 Domiciliar':'💻 Online')+'</span>':'')+'</div>'
+        +'<div style="font-size:13px;font-weight:500">'+a.tipo+' — '+a.hora+'h'+getLocalBadge(a.obs)+'</div>'
         +'<div style="font-size:11px;color:var(--ink3)">'+dataFmt+(a.obs?' · '+a.obs.substring(0,40):'')+'</div>'
       +'</div>'
       +'<span class="badge '+bc+'" id="pront-badge-'+a.id+'">'+a.status+'</span>'
@@ -5179,6 +5190,26 @@ function imprimirEvolucoes(){
   +'</div>';
   
   abrirJanela('Evolução Fisioterapêutica — '+p.nome, conteudo);
+}
+
+
+async function excluirLancamento(id){
+  if(!confirm('Excluir este lançamento permanentemente?')) return;
+  try{
+    await apiDel('lancamentos', id);
+    await loadAll();
+    renderFinanceiro();
+    renderDashboard();
+    toast('Lançamento excluído','success');
+  } catch(e){ toast('Erro ao excluir: '+e.message,'error'); }
+}
+
+
+function getLocalBadge(obs){
+  var o = obs||'';
+  if(o.indexOf('[Domiciliar]')===0) return ' <span style="font-size:10px;background:#fff8e7;padding:2px 6px;border-radius:4px;color:#7a4f00">🏠 Domiciliar</span>';
+  if(o.indexOf('[Online]')===0) return ' <span style="font-size:10px;background:#e8f4fd;padding:2px 6px;border-radius:4px;color:#004080">💻 Online</span>';
+  return '';
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
